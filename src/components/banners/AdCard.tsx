@@ -31,14 +31,24 @@ export function AdCard({ ad, className = "" }: { ad: AdCardData; className?: str
             src={ad.image_url}
             alt={alt}
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              if (e.currentTarget.nextElementSibling) {
+                (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+              }
+            }}
             className="h-full w-full object-cover"
           />
-        ) : (
-          <div
-            className="h-full w-full"
-            style={{ background: ad.bg_color ?? "linear-gradient(120deg,#0b4f9c,#22a7f0)" }}
-          />
-        )}
+        ) : null}
+        <div
+          className="h-full w-full items-center justify-center p-4 text-center font-bold text-white"
+          style={{
+            display: ad.image_url ? "none" : "flex",
+            background: ad.bg_color ?? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+          }}
+        >
+          <span className="text-sm font-extrabold">{alt || t("storeName")}</span>
+        </div>
       </div>
     </article>
   );

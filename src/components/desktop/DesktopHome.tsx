@@ -81,13 +81,21 @@ export function DesktopHome({
                         src={c.image_url}
                         alt={pick(c.name_ar, c.name_ku, lang)}
                         loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          if (e.currentTarget.nextElementSibling) {
+                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = "grid";
+                          }
+                        }}
                         className="size-8 shrink-0 rounded-lg object-contain"
                       />
-                    ) : (
-                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-[13px]">
-                        🦷
-                      </span>
-                    )}
+                    ) : null}
+                    <span
+                      style={{ display: c.image_url ? "none" : "grid" }}
+                      className="size-8 shrink-0 place-items-center rounded-lg bg-muted text-[13px]"
+                    >
+                      🦷
+                    </span>
                     <span className="min-w-0 flex-1 truncate">
                       {pick(c.name_ar, c.name_ku, lang)}
                     </span>
