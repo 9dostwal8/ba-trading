@@ -1,7 +1,5 @@
 -- =========================================================================
--- BA TRADING — COMPLETE ORIGINAL CATALOG & SEED DATA
--- This script populates all original products, categories, bundles,
--- flash deals, tier pricing, clearance discounts, and banners.
+-- BA TRADING — COMPLETE ORIGINAL CATALOG & SEED DATA (Ready to Run)
 -- =========================================================================
 
 -- 1. STORE SETTINGS
@@ -43,21 +41,21 @@ INSERT INTO public.brand_cards (name, mark, match_key, logo_domain, hue, chroma,
   ('Septodont', 'SP', 'septodont', 'septodont.com', 10, 0.19, 8, true)
 ON CONFLICT DO NOTHING;
 
--- 5. PRODUCTS (Full Original Catalog)
+-- 5. PRODUCTS (Full Original Catalog with correct clearance_kind default)
 DELETE FROM public.products;
 
 INSERT INTO public.products (category_id, name_ar, name_ku, description_ar, description_ku, brand, sku, price, compare_price, stock, image_url, is_featured, is_active, clearance_kind, expiry_date)
 SELECT c.id, p.na, p.nk, p.da, p.dk, p.br, p.sku, p.price, p.cmp, p.stock, p.img, p.feat, true, p.ckind, p.exp
 FROM (VALUES
- ('materials','كومبوزيت ضوئي Filtek Z350 XT','کۆمپۆزیتی ڕووناکی Filtek Z350 XT','حشوة نانو ضوئية عالية الجودة لترميم الأسنان الأمامية والخلفية','پرکردنەوەی نانۆ ڕووناکی کوالیتی بەرز بۆ ددانەکانی پێشەوە و دواوە','3M ESPE','3M-Z350',42000,55000,60,'/images/p-composite.jpg',true,null,null),
- ('equipment','جهاز تعقيم أوتوكلاف 18 لتر كلاس B','ئامێری دەرمانکردن ئۆتۆکلاڤ ١٨ لیتر','تعقيم سريع وآمن مع شاشة ديجيتال ونظام تجفيف هوائي','دەرمانکردنی خێرا و سەلامەت بە شاشەی دیجیتاڵ','Woodpecker','WP-18B',1450000,1800000,6,'/images/p-autoclave.jpg',true,null,null),
- ('equipment','جهاز تصليب الحشوات الضوئي اللاسلكي LED','ڕووناکی توندکردنی LED بێ وایەر','بطارية طويلة الأمد مع قوة تصليب 2000mW','باتریی دوورخایەن بە هێزی ٢٠٠٠ مێگاوات','Eighteeth','ET-LED',115000,150000,20,'/images/p-curing-light.jpg',true,null,null),
- ('instruments','طقم أدوات فحص الأسنان ستانلس ستيل','سێتی ئامێری پشکنینی ددان','طقم ستانلس ستيل 5 قطع مقاوم للصدأ والتعقيم المتكرر','سێتی ستەینلێس ستیل ٥ پارچە بۆ پشکنین','BA Dental','INST-101',25000,35000,50,'/images/p-instruments-set.jpg',true,null,null),
+ ('materials','كومبوزيت ضوئي Filtek Z350 XT','کۆمپۆزیتی ڕووناکی Filtek Z350 XT','حشوة نانو ضوئية عالية الجودة لترميم الأسنان الأمامية والخلفية','پرکردنەوەی نانۆ ڕووناکی کوالیتی بەرز بۆ ددانەکانی پێشەوە و دواوە','3M ESPE','3M-Z350',42000,55000,60,'/images/p-composite.jpg',true,'none',null),
+ ('equipment','جهاز تعقيم أوتوكلاف 18 لتر كلاس B','ئامێری دەرمانکردن ئۆتۆکلاڤ ١٨ لیتر','تعقيم سريع وآمن مع شاشة ديجيتال ونظام تجفيف هوائي','دەرمانکردنی خێرا و سەلامەت بە شاشەی دیجیتاڵ','Woodpecker','WP-18B',1450000,1800000,6,'/images/p-autoclave.jpg',true,'none',null),
+ ('equipment','جهاز تصليب الحشوات الضوئي اللاسلكي LED','ڕووناکی توندکردنی LED بێ وایەر','بطارية طويلة الأمد مع قوة تصليب 2000mW','باتریی دوورخایەن بە هێزی ٢٠٠٠ مێگاوات','Eighteeth','ET-LED',115000,150000,20,'/images/p-curing-light.jpg',true,'none',null),
+ ('instruments','طقم أدوات فحص الأسنان ستانلس ستيل','سێتی ئامێری پشکنینی ددان','طقم ستانلس ستيل 5 قطع مقاوم للصدأ والتعقيم المتكرر','سێتی ستەینلێس ستیل ٥ پارچە بۆ پشکنین','BA Dental','INST-101',25000,35000,50,'/images/p-instruments-set.jpg',true,'none',null),
  ('materials','أسمنت زجاجي Fuji II LC لاصق','سیمانی شووشەیی Fuji II LC','لاصق وحشوة زجاجية للأطفال وترميمات العنق','لکێنەر و پڕکەرەوەی شووشەیی بۆ منداڵان','GC Dental','GC-FUJI',48000,60000,35,'/images/p-cement.jpg',true,'near_expiry', now() + interval '4 months'),
- ('orthodontics','حاصرات تقويم معدنية Mini Roth 0.22','براکێتی مەتەلی ڕێکخستن','طقم كامل 20 حاصرة عالية الجودة والدقة','سێتی تەواو ٢٠ براکێت بۆ تەقویم','Dentaurum','ORTHO-MR',35000,45000,40,'/images/p-ortho.jpg',false,null,null),
- ('orthodontics','أسلاك تقويم NiTi فائقة المرونة','وایەری تەقویمی NiTi','مرونة عالية وثباتية للقوس التقويمي','نەرمی بەرز بۆ تەقویم','OrthoLine','OL-3002',22000,30000,80,'/images/p-ortho.jpg',false,null,null),
- ('instruments','كلابات قلع الأسنان ألماني ستانلس ستيل','مقاشی نەشتەرگەری و کێشان','مجموعة متكاملة مصممة لراحة الطبيب والقبضة المحكمة','کۆمەڵەی کەلبەتەی کێشان بە دیزاینی ئەرگونۆمیک','BA Dental','DP-1002',65000,85000,25,'/images/p-forceps.jpg',false,null,null),
- ('disposables','قفازات فحص طبية نيتريل (100 قطعة)','دەستکێشی نایترایل (١٠٠ دانە)','خالية من البودرة ومقاومة للتمزق','بێ پۆدرە و بەهێز بۆ ڕۆژانە','SafeHand','SH-4001',14000,18000,150,'/images/p-gloves.jpg',true,null,null),
+ ('orthodontics','حاصرات تقويم معدنية Mini Roth 0.22','براکێتی مەتەلی ڕێکخستن','طقم كامل 20 حاصرة عالية الجودة والدقة','سێتی تەواو ٢٠ براکێت بۆ تەقویم','Dentaurum','ORTHO-MR',35000,45000,40,'/images/p-ortho.jpg',false,'none',null),
+ ('orthodontics','أسلاك تقويم NiTi فائقة المرونة','وایەری تەقویمی NiTi','مرونة عالية وثباتية للقوس التقويمي','نەرمی بەرز بۆ تەقویم','OrthoLine','OL-3002',22000,30000,80,'/images/p-ortho.jpg',false,'none',null),
+ ('instruments','كلابات قلع الأسنان ألماني ستانلس ستيل','مقاشی نەشتەرگەری و کێشان','مجموعة متكاملة مصممة لراحة الطبيب والقبضة المحكمة','کۆمەڵەی کەلبەتەی کێشان بە دیزاینی ئەرگونۆمیک','BA Dental','DP-1002',65000,85000,25,'/images/p-forceps.jpg',false,'none',null),
+ ('disposables','قفازات فحص طبية نيتريل (100 قطعة)','دەستکێشی نایترایل (١٠٠ دانە)','خالية من البودرة ومقاومة للتمزق','بێ پۆدرە و بەهێز بۆ ڕۆژانە','SafeHand','SH-4001',14000,18000,150,'/images/p-gloves.jpg',true,'none',null),
  ('disposables','كمامات طبية ثلاث طبقات بفلتر (50 قطعة)','ماسکی پزیشکی (٥٠ دانە)','ثلاث طبقات لحماية فائقة ومريحة للتنفس','سێ چین بۆ پاراستنی ڕۆژانە','SafeHand','SH-4002',6000,9000,250,'/images/p-masks.jpg',false,'outlet', null)
 ) AS p(cslug,na,nk,da,dk,br,sku,price,cmp,stock,img,feat,ckind,exp)
 JOIN public.categories c ON c.slug = p.cslug;
