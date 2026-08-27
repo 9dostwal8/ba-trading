@@ -44,7 +44,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const PHONE_DOMAIN = "dentalstore.app";
+const PHONE_DOMAIN = "batrading.com";
 
 function normalizePhone(input: string) {
   const digits = input.replace(/\D/g, "");
