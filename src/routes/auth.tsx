@@ -258,6 +258,7 @@ function AuthPage() {
   ];
 
   const demoAccounts = [
+    { label: "مدير المتجر / Admin (Full Access)", phone: "07700000000", password: "admin123" },
     { label: "د. بەهزاد کاکە (Dentist)", phone: "07700000001", password: "dentist123" },
     { label: "GC Iraq (Vendor)", phone: "07710000001", password: "vendor123" },
     { label: "Tokuyama Center (Vendor)", phone: "07710000002", password: "vendor123" },
