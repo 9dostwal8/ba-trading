@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
@@ -18,6 +18,7 @@ import {
   Receipt,
   Settings,
   Shapes,
+  ShieldCheck,
   Sparkles,
   Store,
   Ticket,
@@ -26,6 +27,8 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { StoreLayout } from "@/components/StoreLayout";
 import { PanelShell } from "@/components/panel/PanelShell";
 import { PromoStudio } from "@/components/promo/PromoStudio";
