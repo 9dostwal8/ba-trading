@@ -299,26 +299,32 @@ export function DesktopHome({
             </div>
           ) : null}
 
-          {/* Featured + newest */}
-          {(featured.length ? featured : newest).length ? (
-            <div style={sectionStyle(featured.length ? "featured" : "newest")}>
-              <Panel
-              icon={Flame}
-              title={
-                featured.length
-                  ? pick("الأكثر مبيعاً", "زۆرترین فرۆشتن", lang)
-                  : pick("وصل حديثاً", "نوێ گەیشتووە", lang)
-              }
-              seeAll={featured.length ? "/featured" : "/new"}
-            >
-              <div className="grid grid-cols-5 gap-3">
-                {(featured.length ? featured : newest).slice(0, 10).map((p) => (
-                  <ProductCard key={p.id} product={p} price={priceOf(p.id, p.price)} />
-                ))}
+          {/* Featured, newest, or full catalog */}
+          {(() => {
+            const list = featured.length ? featured : newest.length ? newest : data.products;
+            if (!list.length) return null;
+            return (
+              <div style={sectionStyle("featured")}>
+                <Panel
+                  icon={Flame}
+                  title={
+                    featured.length
+                      ? pick("الأكثر مبيعاً", "زۆرترین فرۆشتن", lang)
+                      : newest.length
+                        ? pick("وصل حديثاً", "نوێ گەیشتووە", lang)
+                        : pick("جميع المنتجات", "هەموو بەرهەمەکان", lang)
+                  }
+                  seeAll="/products"
+                >
+                  <div className="grid grid-cols-4 gap-3 xl:grid-cols-5">
+                    {list.slice(0, 15).map((p) => (
+                      <ProductCard key={p.id} product={p} price={priceOf(p.id, p.price)} />
+                    ))}
+                  </div>
+                </Panel>
               </div>
-              </Panel>
-            </div>
-          ) : null}
+            );
+          })()}
         </div>
       </div>
     </div>

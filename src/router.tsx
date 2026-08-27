@@ -23,7 +23,7 @@ export const getRouter = () => {
     },
     queryCache: new QueryCache({
       onError: (error) => {
-        if (typeof window !== "undefined") toast.error(message(error));
+        console.warn("[Query Error]:", error);
       },
     }),
   });
