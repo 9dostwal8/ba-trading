@@ -162,10 +162,50 @@ function AdminPage() {
     },
   });
 
+  const [claiming, setClaiming] = useState(false);
+
+  const handleClaim = async () => {
+    setClaiming(true);
+    try {
+      const { data, error } = await supabase.rpc("claim_admin");
+      if (error) throw error;
+      if (data) {
+        toast.success(lang === "ar" ? "تم تفعيل صلاحيات المدير بنجاح!" : lang === "ku" ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!" : "Admin rights claimed successfully!");
+        window.location.reload();
+      } else {
+        toast.error(lang === "ar" ? "يوجد مدير مسجل مسبقاً في النظام" : lang === "ku" ? "بەڕێوەبەرێکی تر لە پێشدا تۆمارکراوە" : "An admin already exists");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Error claiming admin");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
   if (isAdmin === false) {
     return (
       <StoreLayout>
-        <p className="py-20 text-center text-sm text-muted-foreground">{t("notAdmin")}</p>
+        <div className="mx-auto max-w-md px-4 py-20 text-center">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <ShieldCheck className="size-8" />
+          </div>
+          <h2 className="mb-2 text-lg font-bold text-foreground">
+            {lang === "ar" ? "لوحة تحكم الإدارة" : lang === "ku" ? "پانێلی بەڕێوەبردن" : "Admin Dashboard"}
+          </h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {user ? (lang === "ar" ? "أنت مسجل الدخول ولكن ليس لديك صلاحية مدير." : lang === "ku" ? "چوویتەژوورەوە بەڵام دەسەڵاتی بەڕێوەبەرت نییە." : "You are logged in but not an admin.") : t("notAdmin")}
+          </p>
+
+          {user ? (
+            <Button onClick={handleClaim} disabled={claiming} className="w-full font-bold">
+              {claiming ? "..." : (lang === "ar" ? "تفعيل حساب المدير الأول (Claim Admin)" : lang === "ku" ? "چالاککردنی بەڕێوەبەری یەکەم" : "Claim First Admin Account")}
+            </Button>
+          ) : (
+            <Link to="/auth" className="inline-flex w-full items-center justify-center rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground">
+              {lang === "ar" ? "تسجيل الدخول أولاً" : lang === "ku" ? "سەرەتا بچۆ ژوورەوە" : "Login First"}
+            </Link>
+          )}
+        </div>
       </StoreLayout>
     );
   }
