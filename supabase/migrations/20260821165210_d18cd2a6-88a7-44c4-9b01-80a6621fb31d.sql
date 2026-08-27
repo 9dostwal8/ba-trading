@@ -1,0 +1,1 @@
+UPDATE public.store_settings SET primary_hue = 17, primary_chroma = 0.183, accent_hue = 92, accent_chroma = 0.16, radius_px = 8;

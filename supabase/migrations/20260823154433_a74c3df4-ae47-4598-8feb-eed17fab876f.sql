@@ -1,0 +1,2 @@
+ALTER TABLE public.vendor_settlements DROP CONSTRAINT vendor_settlements_status_check;
+ALTER TABLE public.vendor_settlements ADD CONSTRAINT vendor_settlements_status_check CHECK (status = ANY (ARRAY['paid'::text, 'partly_paid'::text, 'unpaid'::text]));

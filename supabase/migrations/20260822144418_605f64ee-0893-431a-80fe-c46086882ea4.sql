@@ -1,0 +1,13 @@
+CREATE INDEX IF NOT EXISTS products_active_created_idx ON public.products (is_active, created_at DESC);
+CREATE INDEX IF NOT EXISTS products_vendor_idx ON public.products (vendor_id);
+CREATE INDEX IF NOT EXISTS products_category_idx ON public.products (category_id);
+CREATE INDEX IF NOT EXISTS products_catalog_item_idx ON public.products (catalog_item_id);
+CREATE INDEX IF NOT EXISTS vendors_active_name_idx ON public.vendors (is_active, name);
+CREATE INDEX IF NOT EXISTS offer_products_offer_idx ON public.offer_products (offer_id);
+CREATE INDEX IF NOT EXISTS offer_products_product_idx ON public.offer_products (product_id);
+CREATE INDEX IF NOT EXISTS product_tiers_product_idx ON public.product_tiers (product_id, min_qty);
+CREATE INDEX IF NOT EXISTS banners_slot_active_idx ON public.banners (slot_key, is_active, sort_order);
+CREATE INDEX IF NOT EXISTS flash_deals_active_idx ON public.flash_deals (is_active, priority DESC);
+CREATE INDEX IF NOT EXISTS bundles_active_sort_idx ON public.bundles (is_active, sort_order);
+ANALYZE public.products;
+ANALYZE public.vendors;

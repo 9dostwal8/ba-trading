@@ -1,0 +1,1 @@
+ALTER TABLE public.ui_texts ADD COLUMN IF NOT EXISTS en text;

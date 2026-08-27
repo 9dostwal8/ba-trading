@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.enforce_order_item_price() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.order_items_recalc_money() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.sanitize_new_order() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.order_item_price_floor(uuid, uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.recalc_order_money(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.enforce_order_item_price() TO postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.order_items_recalc_money() TO postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.sanitize_new_order() TO postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.order_item_price_floor(uuid, uuid) TO postgres, service_role;
+GRANT EXECUTE ON FUNCTION public.recalc_order_money(uuid) TO postgres, service_role;

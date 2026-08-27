@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.mark_order_paid_on_confirm() FROM anon, authenticated, PUBLIC;

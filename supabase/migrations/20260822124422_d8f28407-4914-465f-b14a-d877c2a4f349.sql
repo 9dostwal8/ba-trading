@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.vendor_shipping_cost(uuid, text, numeric) FROM anon, authenticated;

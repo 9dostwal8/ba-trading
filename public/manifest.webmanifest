@@ -1,0 +1,13 @@
+{
+  "name": "OfferDent",
+  "short_name": "OfferDent",
+  "description": "Clearance marketplace for dental supplies in Iraq.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4056",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [{ "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }]
+}

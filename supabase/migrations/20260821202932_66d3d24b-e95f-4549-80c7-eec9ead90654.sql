@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.charge_product_clearance() FROM PUBLIC, anon, authenticated;

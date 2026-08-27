@@ -1,0 +1,2 @@
+ALTER TABLE public.vendors ALTER COLUMN slug SET DEFAULT '';
+ALTER TABLE public.vendors ALTER COLUMN code SET DEFAULT '';

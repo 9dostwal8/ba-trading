@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS badges text[] NOT NULL DEFAULT '{}'::text[];
