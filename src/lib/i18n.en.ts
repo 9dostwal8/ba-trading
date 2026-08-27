@@ -1,7 +1,7 @@
 /** English wording for every UI text key (generated baseline, editable in admin). */
 export const enTexts: Record<string, string> = {
-  storeName: "Dental Store",
-  tagline: "All dental clinic supplies at wholesale price",
+  storeName: "BA Trading",
+  tagline: "Dental & Medical Supplies Trading",
   langAr: "Arabic",
   langKu: "Kurdish",
   home: "Home",

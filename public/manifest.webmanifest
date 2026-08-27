@@ -1,7 +1,7 @@
 {
-  "name": "OfferDent",
-  "short_name": "OfferDent",
-  "description": "Clearance marketplace for dental supplies in Iraq.",
+  "name": "BA Trading",
+  "short_name": "BA Trading",
+  "description": "Marketplace and supply for dental clinic products and equipment in Iraq.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -76,10 +76,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "دنتال ستور | مستلزمات طب الأسنان" },
+      { title: "BA Trading | بي أي تريدنج لمستلزمات طب الأسنان" },
       {
         name: "description",
-        content: "متجر مستلزمات طب الأسنان بالعربية والكردية: أدوات، مواد، أجهزة وعروض يومية.",
+        content: "متجر وتجهيزات طب الأسنان بالجملة: مواد، أجهزة، وأدوات وماركات عالمية بأسعار الجملة.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

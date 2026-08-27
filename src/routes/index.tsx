@@ -15,16 +15,16 @@ export const Route = createFileRoute("/")({
 
   head: () => ({
     meta: [
-      { title: "دنتال ستور | عروض ماركات طب الأسنان" },
+      { title: "BA Trading | بي أي تريدنج - عروض ماركات طب الأسنان" },
       {
         name: "description",
         content:
-          "عروض وخصومات على ماركات طب الأسنان العالمية: 3M، GC، Tokuyama، Bisco، Eighteeth وغيرها بأسعار الجملة.",
+          "عروض وخصومات على ماركات طب الأسنان العالمية: 3M، GC، Tokuyama، Bisco، Eighteeth وغيرها بأسعار الجملة من BA Trading.",
       },
-      { property: "og:title", content: "دنتال ستور | عروض ماركات طب الأسنان" },
+      { property: "og:title", content: "BA Trading | بي أي تريدنج - عروض ماركات طب الأسنان" },
       {
         property: "og:description",
-        content: "خصومات على ماركات طب الأسنان العالمية بأسعار الجملة.",
+        content: "خصومات على ماركات طب الأسنان العالمية بأسعار الجملة من BA Trading.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
