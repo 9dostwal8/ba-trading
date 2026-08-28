@@ -44,20 +44,76 @@ function parseCSV(text) {
   return { headers, rows };
 }
 
-function formatSqlValue(val) {
-  if (val === "" || val === undefined || val === null) return "NULL";
+function formatSqlValue(val, colName) {
+  // Columns that require empty string '' instead of NULL when empty
+  const notNullTextCols = [
+    "title_ar",
+    "title_ku",
+    "name_ar",
+    "name_ku",
+    "subtitle_ar",
+    "subtitle_ku",
+    "description_ar",
+    "description_ku",
+    "badge_ar",
+    "badge_ku",
+    "cta_ar",
+    "cta_ku",
+    "brand",
+    "sku",
+    "brand_key",
+    "slot_key",
+    "kind",
+    "layout",
+    "mark",
+    "match_key",
+    "slug",
+    "name",
+    "icon",
+    "fulfillment_status",
+    "status",
+    "code",
+    "discount_type",
+    "commission_type",
+    "label",
+    "city",
+    "address_line",
+    "customer_name",
+    "phone",
+    "role",
+    "clearance_kind",
+  ];
+
+  if (val === "" || val === undefined || val === null) {
+    if (notNullTextCols.includes(colName)) return "''";
+    return "NULL";
+  }
+
   if (val === "t" || val === "true") return "TRUE";
   if (val === "f" || val === "false") return "FALSE";
 
-  // Check if JSON or Array
+  // Handle postgres arrays (e.g. product_ids uuid[])
+  if (colName === "product_ids" || colName === "tags" || colName === "preferred_categories") {
+    if (val === "{}" || val === "[]" || val === "") return "'{}'";
+    if (val.startsWith("{") && val.endsWith("}")) return `'${val}'`;
+    if (val.startsWith("[") && val.endsWith("]")) {
+      try {
+        const arr = JSON.parse(val);
+        return `'${"{" + arr.join(",") + "}"}'`;
+      } catch {
+        return `'${val}'`;
+      }
+    }
+    return `'${val}'`;
+  }
+
+  // Check if JSON
   if (
     (val.startsWith("{") && val.endsWith("}")) ||
     (val.startsWith("[") && val.endsWith("]"))
   ) {
-    // Array or JSON in postgres
     if (val.startsWith("{") && val.endsWith("}")) {
-      // Postgres array literal or JSON
-      if (val.includes(":") || val === "{}") {
+      if (val.includes(":")) {
         return `'${val.replace(/'/g, "''")}'::jsonb`;
       }
       return `'${val.replace(/'/g, "''")}'`;
@@ -88,7 +144,7 @@ function generateTableInsert(tableName) {
   sql += `INSERT INTO public.${tableName} (${headers.map((h) => `"${h}"`).join(", ")})\nVALUES\n`;
 
   const rowStrings = rows.map((r) => {
-    return `  (${r.map((v) => formatSqlValue(v)).join(", ")})`;
+    return `  (${r.map((v, i) => formatSqlValue(v, headers[i])).join(", ")})`;
   });
 
   sql += rowStrings.join(",\n") + ";\n\n";
