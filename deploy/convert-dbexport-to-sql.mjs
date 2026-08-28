@@ -45,67 +45,61 @@ function parseCSV(text) {
 }
 
 function formatSqlValue(val, colName) {
-  // Columns that require empty string '' instead of NULL when empty
-  const notNullTextCols = [
-    "title_ar",
-    "title_ku",
-    "name_ar",
-    "name_ku",
-    "subtitle_ar",
-    "subtitle_ku",
-    "description_ar",
-    "description_ku",
-    "badge_ar",
-    "badge_ku",
-    "cta_ar",
-    "cta_ku",
-    "brand",
-    "sku",
-    "brand_key",
-    "slot_key",
-    "kind",
-    "layout",
-    "mark",
-    "match_key",
-    "slug",
-    "name",
-    "icon",
-    "fulfillment_status",
-    "status",
-    "code",
-    "discount_type",
-    "commission_type",
-    "label",
-    "city",
-    "address_line",
-    "customer_name",
-    "phone",
-    "role",
-    "clearance_kind",
-  ];
-
-  if (val === "" || val === undefined || val === null) {
-    if (notNullTextCols.includes(colName)) return "''";
-    return "NULL";
-  }
-
-  if (val === "t" || val === "true") return "TRUE";
-  if (val === "f" || val === "false") return "FALSE";
-
-  // Handle postgres arrays (e.g. product_ids uuid[])
-  if (colName === "product_ids" || colName === "tags" || colName === "preferred_categories") {
-    if (val === "{}" || val === "[]" || val === "") return "'{}'";
-    if (val.startsWith("{") && val.endsWith("}")) return `'${val}'`;
+  // Handle postgres arrays (e.g. product_ids uuid[], brands text[])
+  if (colName === "product_ids" || colName === "tags" || colName === "preferred_categories" || colName === "brands") {
+    if (val === "{}" || val === "[]" || val === "" || val === undefined || val === null) return "'{}'";
+    if (val.startsWith("{") && val.endsWith("}")) return `'${val.replace(/'/g, "''")}'`;
     if (val.startsWith("[") && val.endsWith("]")) {
       try {
         const arr = JSON.parse(val);
         return `'${"{" + arr.join(",") + "}"}'`;
       } catch {
-        return `'${val}'`;
+        return `'${val.replace(/'/g, "''")}'`;
       }
     }
-    return `'${val}'`;
+    return `'${val.replace(/'/g, "''")}'`;
   }
+
+  // Nullable foreign keys, dates, URLs, numbers when empty
+  const nullableCols = [
+    "vendor_id",
+    "category_id",
+    "product_id",
+    "order_id",
+    "user_id",
+    "offer_id",
+    "slot_id",
+    "badge_fee_id",
+    "referred_by",
+    "parent_id",
+    "created_at",
+    "updated_at",
+    "starts_at",
+    "ends_at",
+    "expiry_date",
+    "banned_until",
+    "cover_url",
+    "image_url",
+    "logo_url",
+    "logo_domain",
+    "link",
+    "note",
+    "notes",
+    "compare_price",
+    "discount_value",
+    "latitude",
+    "longitude",
+  ];
+
+  if (val === "" || val === undefined || val === null) {
+    if (nullableCols.includes(colName) || colName.endsWith("_id") || colName.endsWith("_at")) {
+      return "NULL";
+    }
+    return "''";
+  }
+
+  if (val === "t" || val === "true") return "TRUE";
+  if (val === "f" || val === "false") return "FALSE";
 
   // Check if JSON
   if (
