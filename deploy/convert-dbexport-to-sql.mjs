@@ -46,7 +46,13 @@ function parseCSV(text) {
 
 function formatSqlValue(val, colName) {
   // Handle postgres arrays (e.g. product_ids uuid[], brands text[])
-  if (colName === "product_ids" || colName === "tags" || colName === "preferred_categories" || colName === "brands") {
+  if (
+    colName === "product_ids" ||
+    colName === "tags" ||
+    colName === "preferred_categories" ||
+    colName === "brands" ||
+    colName === "badges"
+  ) {
     if (val === "{}" || val === "[]" || val === "" || val === undefined || val === null) return "'{}'";
     if (val.startsWith("{") && val.endsWith("}")) return `'${val.replace(/'/g, "''")}'`;
     if (val.startsWith("[") && val.endsWith("]")) {
@@ -72,26 +78,52 @@ function formatSqlValue(val, colName) {
     colName === "created_at" ||
     colName === "updated_at";
 
-  // Check if numeric column
+  // Comprehensive numeric column detection
   const isNumericCol =
-    colName === "price" ||
-    colName === "compare_price" ||
-    colName === "stock" ||
-    colName === "discount_value" ||
-    colName === "reward_multiplier" ||
-    colName === "reward_bonus_points" ||
-    colName === "min_qty" ||
-    colName === "sort_order" ||
-    colName === "item_limit" ||
-    colName === "max_banners" ||
-    colName === "months_left" ||
-    colName === "discount_percent" ||
-    colName === "hue" ||
-    colName === "chroma" ||
-    colName === "radius_px" ||
-    colName === "commission_value" ||
-    colName === "latitude" ||
-    colName === "longitude";
+    colName.endsWith("_qty") ||
+    colName.endsWith("_count") ||
+    colName.endsWith("_amount") ||
+    colName.endsWith("_value") ||
+    colName.endsWith("_percent") ||
+    colName.endsWith("_multiplier") ||
+    colName.endsWith("_points") ||
+    colName.endsWith("_fee") ||
+    colName.endsWith("_rate") ||
+    colName.endsWith("_order") ||
+    colName.endsWith("_limit") ||
+    colName.endsWith("_price") ||
+    colName.endsWith("_discount") ||
+    colName.endsWith("_banners") ||
+    [
+      "price",
+      "compare_price",
+      "stock",
+      "discount_value",
+      "reward_multiplier",
+      "reward_bonus_points",
+      "min_qty",
+      "sort_order",
+      "item_limit",
+      "max_banners",
+      "months_left",
+      "discount_percent",
+      "hue",
+      "chroma",
+      "radius_px",
+      "commission_value",
+      "latitude",
+      "longitude",
+      "max_discount",
+      "max_qty_per_order",
+      "priority",
+      "min_order",
+      "subtotal",
+      "total",
+      "discount",
+      "unit_price",
+      "quantity",
+      "balance",
+    ].includes(colName);
 
   // Check if reference or nullable media/link/note
   const isNullableRefCol =
@@ -116,6 +148,11 @@ function formatSqlValue(val, colName) {
   if (val === "t" || val === "true") return "TRUE";
   if (val === "f" || val === "false") return "FALSE";
 
+  // If numeric column with valid number, return unquoted numeric
+  if (isNumericCol && !isNaN(Number(val))) {
+    return val;
+  }
+
   // Check if JSON
   if (
     (val.startsWith("{") && val.endsWith("}")) ||
@@ -128,11 +165,6 @@ function formatSqlValue(val, colName) {
       return `'${val.replace(/'/g, "''")}'`;
     }
     return `'${val.replace(/'/g, "''")}'::jsonb`;
-  }
-
-  // Check numeric
-  if (!isNaN(Number(val)) && !val.startsWith("0") && val.length < 15) {
-    return val;
   }
 
   return `'${val.replace(/'/g, "''")}'`;
