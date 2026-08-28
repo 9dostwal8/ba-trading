@@ -60,39 +60,54 @@ function formatSqlValue(val, colName) {
     return `'${val.replace(/'/g, "''")}'`;
   }
 
-  // Nullable foreign keys, dates, URLs, numbers when empty
-  const nullableCols = [
-    "vendor_id",
-    "category_id",
-    "product_id",
-    "order_id",
-    "user_id",
-    "offer_id",
-    "slot_id",
-    "badge_fee_id",
-    "referred_by",
-    "parent_id",
-    "created_at",
-    "updated_at",
-    "starts_at",
-    "ends_at",
-    "expiry_date",
-    "banned_until",
-    "cover_url",
-    "image_url",
-    "logo_url",
-    "logo_domain",
-    "link",
-    "note",
-    "notes",
-    "compare_price",
-    "discount_value",
-    "latitude",
-    "longitude",
-  ];
+  // Check if date or timestamp column
+  const isDateCol =
+    colName.endsWith("_date") ||
+    colName.endsWith("_at") ||
+    colName.endsWith("_since") ||
+    colName === "expiry_date" ||
+    colName === "stocked_since" ||
+    colName === "starts_at" ||
+    colName === "ends_at" ||
+    colName === "created_at" ||
+    colName === "updated_at";
+
+  // Check if numeric column
+  const isNumericCol =
+    colName === "price" ||
+    colName === "compare_price" ||
+    colName === "stock" ||
+    colName === "discount_value" ||
+    colName === "reward_multiplier" ||
+    colName === "reward_bonus_points" ||
+    colName === "min_qty" ||
+    colName === "sort_order" ||
+    colName === "item_limit" ||
+    colName === "max_banners" ||
+    colName === "months_left" ||
+    colName === "discount_percent" ||
+    colName === "hue" ||
+    colName === "chroma" ||
+    colName === "radius_px" ||
+    colName === "commission_value" ||
+    colName === "latitude" ||
+    colName === "longitude";
+
+  // Check if reference or nullable media/link/note
+  const isNullableRefCol =
+    colName.endsWith("_id") ||
+    colName === "cover_url" ||
+    colName === "image_url" ||
+    colName === "logo_url" ||
+    colName === "logo_domain" ||
+    colName === "link" ||
+    colName === "note" ||
+    colName === "notes" ||
+    colName === "referred_by" ||
+    colName === "parent_id";
 
   if (val === "" || val === undefined || val === null) {
-    if (nullableCols.includes(colName) || colName.endsWith("_id") || colName.endsWith("_at")) {
+    if (isDateCol || isNullableRefCol || isNumericCol) {
       return "NULL";
     }
     return "''";
