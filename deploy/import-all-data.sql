@@ -3,6 +3,8 @@
 -- Run this in Supabase SQL Editor to restore all 126 products, categories, banners, etc.
 -- =========================================================================
 
+SET session_replication_role = 'replica'; -- Disables foreign key checks during bulk import
+
 -- ------------------------------------------------------------
 -- Table: categories (15 rows)
 -- ------------------------------------------------------------
@@ -724,3 +726,4 @@ VALUES
   ('a4b71e39-45b1-498c-8cff-1567c111b47a', '8c5cef4e-2041-4f96-8cdd-d37b8c1b423a', 'badge', 'f00c2072-aa9e-4002-bb71-a0b9ad2af5b8', 'freeship', 490, 'unpaid', NULL, '2026-08-23 10:51:03.684997+00', '2026-08-23 10:51:03.684997+00'),
   ('571627f0-e59a-431b-b628-3f13021279bd', '8c5cef4e-2041-4f96-8cdd-d37b8c1b423a', 'badge', 'f00c2072-aa9e-4002-bb71-a0b9ad2af5b8', 'limited', 490, 'unpaid', NULL, '2026-08-23 10:51:03.684997+00', '2026-08-23 10:51:03.684997+00');
 
+SET session_replication_role = 'origin'; -- Re-enables foreign key checks

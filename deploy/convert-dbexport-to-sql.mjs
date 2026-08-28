@@ -1,0 +1,143 @@
+import fs from "fs";
+import path from "path";
+
+const CSV_DIR = path.resolve("dbexport/csv");
+const OUTPUT_SQL = path.resolve("deploy/import-all-data.sql");
+
+// Parse simple CSV handling quoted strings
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return { headers: [], rows: [] };
+
+  function parseLine(line) {
+    const res = [];
+    let cur = "";
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuote && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuote = !inQuote;
+        }
+      } else if (c === "," && !inQuote) {
+        res.push(cur);
+        cur = "";
+      } else {
+        cur += c;
+      }
+    }
+    res.push(cur);
+    return res;
+  }
+
+  const headers = parseLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseLine(lines[i]);
+    if (vals.length === headers.length) {
+      rows.push(vals);
+    }
+  }
+  return { headers, rows };
+}
+
+function formatSqlValue(val) {
+  if (val === "" || val === undefined || val === null) return "NULL";
+  if (val === "t" || val === "true") return "TRUE";
+  if (val === "f" || val === "false") return "FALSE";
+
+  // Check if JSON or Array
+  if (
+    (val.startsWith("{") && val.endsWith("}")) ||
+    (val.startsWith("[") && val.endsWith("]"))
+  ) {
+    // Array or JSON in postgres
+    if (val.startsWith("{") && val.endsWith("}")) {
+      // Postgres array literal or JSON
+      if (val.includes(":") || val === "{}") {
+        return `'${val.replace(/'/g, "''")}'::jsonb`;
+      }
+      return `'${val.replace(/'/g, "''")}'`;
+    }
+    return `'${val.replace(/'/g, "''")}'::jsonb`;
+  }
+
+  // Check numeric
+  if (!isNaN(Number(val)) && !val.startsWith("0") && val.length < 15) {
+    return val;
+  }
+
+  return `'${val.replace(/'/g, "''")}'`;
+}
+
+function generateTableInsert(tableName) {
+  const filePath = path.join(CSV_DIR, `${tableName}.csv`);
+  if (!fs.existsSync(filePath)) return "";
+
+  const text = fs.readFileSync(filePath, "utf8");
+  const { headers, rows } = parseCSV(text);
+  if (rows.length === 0) return "";
+
+  let sql = `-- ------------------------------------------------------------\n`;
+  sql += `-- Table: ${tableName} (${rows.length} rows)\n`;
+  sql += `-- ------------------------------------------------------------\n`;
+  sql += `DELETE FROM public.${tableName};\n`;
+  sql += `INSERT INTO public.${tableName} (${headers.map((h) => `"${h}"`).join(", ")})\nVALUES\n`;
+
+  const rowStrings = rows.map((r) => {
+    return `  (${r.map((v) => formatSqlValue(v)).join(", ")})`;
+  });
+
+  sql += rowStrings.join(",\n") + ";\n\n";
+  return sql;
+}
+
+function buildFullSQL() {
+  // Ordered by foreign key dependencies
+  const tables = [
+    "categories",
+    "brand_cards",
+    "banner_slots",
+    "banners",
+    "vendors",
+    "catalog_items",
+    "products",
+    "product_tiers",
+    "bundles",
+    "flash_deals",
+    "offers",
+    "offer_products",
+    "clearance_rules",
+    "home_sections",
+    "store_settings",
+    "design_settings",
+    "marketing_plans",
+    "page_blocks",
+    "page_documents",
+    "coupons",
+    "badge_fees",
+    "reward_rules",
+    "vendor_shipping_rates",
+    "vendor_charges",
+  ];
+
+  let output = `-- =========================================================================\n`;
+  output += `-- COMPLETE 1:1 RESTORATION DATA FROM DBEXPORT\n`;
+  output += `-- Run this in Supabase SQL Editor to restore all 126 products, categories, banners, etc.\n`;
+  output += `-- =========================================================================\n\n`;
+  output += `SET session_replication_role = 'replica'; -- Disables foreign key checks during bulk import\n\n`;
+
+  for (const t of tables) {
+    output += generateTableInsert(t);
+  }
+
+  output += `SET session_replication_role = 'origin'; -- Re-enables foreign key checks\n`;
+
+  fs.writeFileSync(OUTPUT_SQL, output, "utf8");
+  console.log(`Generated ${OUTPUT_SQL} successfully!`);
+}
+
+buildFullSQL();
