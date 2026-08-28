@@ -491,7 +491,7 @@ VALUES
 DELETE FROM public.store_settings;
 INSERT INTO public.store_settings ("id", "singleton", "primary_hue", "primary_chroma", "accent_hue", "accent_chroma", "radius_px", "show_search", "created_at", "updated_at", "site_name_ar", "site_name_ku", "tagline_ar", "tagline_ku", "meta_title_ar", "meta_title_ku", "meta_description_ar", "meta_description_ku", "logo_url", "favicon_url", "og_image_url", "logo_emoji", "contact_phone", "whatsapp", "contact_email", "address_ar", "address_ku", "instagram_url", "facebook_url", "telegram_url", "default_lang", "currency_ar", "currency_ku", "min_order_total", "delivery_fee", "free_delivery_over", "announcement_ar", "announcement_ku", "show_announcement", "maintenance_mode", "maintenance_note_ar", "maintenance_note_ku", "price_flash_deal", "price_offer", "price_bundle", "price_badge", "wallet_enabled", "wallet_max_balance", "wallet_note_ar", "wallet_note_ku", "lang_ar_enabled", "lang_ku_enabled", "lang_en_enabled", "rewards_enabled", "points_per_1000_iqd", "rewards_max_redeem_percent", "rewards_note_ar", "rewards_note_ku", "rewards_note_en", "reward_vendor_enabled", "reward_vendor_max_multiplier", "reward_vendor_max_bonus", "reward_vendor_cost_factor", "show_reward_bar", "reward_bar_link", "show_vendor_join_cta", "vendor_join_cta_link", "reward_bar_items", "reward_bar_cta", "reward_bar_icon", "vendor_cta", "cost_usd_per_credit", "cost_subscription_usd", "cost_fixed_credits", "cost_credits_per_order", "cost_credits_per_vendor", "cost_credits_per_dentist", "cost_usd_iqd_rate")
 VALUES
-  ('c0d4c106-d1cb-4844-a4dc-681f7736fdc2', TRUE, '20', '0.19', '20', '0.17', 12, FALSE, '2026-08-19 11:34:36.576584+00', '2026-08-23 14:03:23.09315+00', 'دنتال ستور', 'دەنتاڵ ستۆر', '', '', '', '', '', '', NULL, '', '', '🦷', '', '', '', '', '', '', '', '', 'ar', 'د.ع', 'د.ع', '0', 0, '0', '', 'Order verified Orodeka Products ', FALSE, FALSE, '', '', '5000', '2000', '3500', '500', TRUE, '5000000', '', '', TRUE, TRUE, FALSE, TRUE, '100', 50, '', '', '', TRUE, 5, '2000', '1', TRUE, '/rewards', TRUE, '/vendor-signup', '[{"ar": "١٠٠٠ نقطة = ١٠٠٠ د.ع", "en": "1000 points = 1000 IQD", "ku": "١٠٠٠ خاڵ = ١٠٠٠ د.ع", "icon": "coin"}, {"ar": "هدية أول طلب: ٥٠٠٠", "en": "First order: 5000 pts", "ku": "دیاری یەکەم: ٥٠٠٠", "icon": "gift"}, {"ar": "نقاط مع كل شراء", "en": "Points on every buy", "ku": "خاڵ لە هەر کڕینێک", "icon": "trend"}, {"ar": "نقاط على كل تقييم", "en": "Points for reviews", "ku": "خاڵ بۆ هەر پێداچوونێک", "icon": "star"}, {"ar": "ادعُ زملاءك واربح", "en": "Invite colleagues", "ku": "هاوڕێ بانگ بکە", "icon": "users"}, {"ar": "تحديات شهرية", "en": "Monthly challenges", "ku": "چالاکی مانگانە", "icon": "zap"}, {"ar": "خصم فوري بالنقاط", "en": "Instant checkout discount", "ku": "داشکاندنی خێرا", "icon": "sparkles"}, {"ar": "أكمل ملف العيادة", "en": "Complete profile", "ku": "تەواوکردنی پرۆفایل", "icon": "gift"}]'::jsonb, '{"ar": "تفاصيل", "en": "Details", "ku": "وردەکاری"}'::jsonb, 'coin', '{"icon": "store", "sub_ar": "٣ خطوات فقط — بعد موافقة الإدارة", "sub_en": "3 quick steps — after admin approval", "sub_ku": "تەنها ٣ هەنگاو — دوای ڕەزامەندی بەڕێوەبەر", "title_ar": "عندك متجر؟ سجّل كبائع", "title_en": "Own a store? Sell with us", "title_ku": "فرۆشگات هەیە؟ وەک فرۆشیار تۆمار بکە"}'::jsonb, '0.25', '25', '20', 0.01, '0.05', '0.005', 1530);
+  ('c0d4c106-d1cb-4844-a4dc-681f7736fdc2', TRUE, '20', '0.19', '20', '0.17', 12, FALSE, '2026-08-19 11:34:36.576584+00', '2026-08-23 14:03:23.09315+00', 'دنتال ستور', 'دەنتاڵ ستۆر', '', '', '', '', '', '', NULL, '', '', '🦷', '', '', '', '', '', '', '', '', 'ar', 'د.ع', 'د.ع', '0', 0, 0, '', 'Order verified Orodeka Products ', FALSE, FALSE, '', '', 5000, 2000, 3500, 500, TRUE, 5000000, '', '', TRUE, TRUE, FALSE, TRUE, 100, 50, '', '', '', TRUE, 5, 2000, 1, TRUE, '/rewards', TRUE, '/vendor-signup', '[{"ar": "١٠٠٠ نقطة = ١٠٠٠ د.ع", "en": "1000 points = 1000 IQD", "ku": "١٠٠٠ خاڵ = ١٠٠٠ د.ع", "icon": "coin"}, {"ar": "هدية أول طلب: ٥٠٠٠", "en": "First order: 5000 pts", "ku": "دیاری یەکەم: ٥٠٠٠", "icon": "gift"}, {"ar": "نقاط مع كل شراء", "en": "Points on every buy", "ku": "خاڵ لە هەر کڕینێک", "icon": "trend"}, {"ar": "نقاط على كل تقييم", "en": "Points for reviews", "ku": "خاڵ بۆ هەر پێداچوونێک", "icon": "star"}, {"ar": "ادعُ زملاءك واربح", "en": "Invite colleagues", "ku": "هاوڕێ بانگ بکە", "icon": "users"}, {"ar": "تحديات شهرية", "en": "Monthly challenges", "ku": "چالاکی مانگانە", "icon": "zap"}, {"ar": "خصم فوري بالنقاط", "en": "Instant checkout discount", "ku": "داشکاندنی خێرا", "icon": "sparkles"}, {"ar": "أكمل ملف العيادة", "en": "Complete profile", "ku": "تەواوکردنی پرۆفایل", "icon": "gift"}]'::jsonb, '{"ar": "تفاصيل", "en": "Details", "ku": "وردەکاری"}'::jsonb, 'coin', '{"icon": "store", "sub_ar": "٣ خطوات فقط — بعد موافقة الإدارة", "sub_en": "3 quick steps — after admin approval", "sub_ku": "تەنها ٣ هەنگاو — دوای ڕەزامەندی بەڕێوەبەر", "title_ar": "عندك متجر؟ سجّل كبائع", "title_en": "Own a store? Sell with us", "title_ku": "فرۆشگات هەیە؟ وەک فرۆشیار تۆمار بکە"}'::jsonb, 0.25, 25, 20, 0.01, 0.05, 0.005, 1530);
 
 -- ------------------------------------------------------------
 -- Table: design_settings (1 rows)
@@ -507,12 +507,12 @@ VALUES
 DELETE FROM public.marketing_plans;
 INSERT INTO public.marketing_plans ("id", "kind", "price", "duration_days", "vendor_allowed", "note_ar", "note_ku", "sort_order", "created_at", "updated_at")
 VALUES
-  ('f975f544-f350-41d7-b4fe-3ff398ccfdac', 'flash_deal', 5000, '30', TRUE, '', '', 1, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
-  ('84e5b0ed-1063-4e5e-acc2-55ec7f57cd6a', 'offer', 2000, '30', TRUE, '', '', 2, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
-  ('8c79f9de-8861-4e63-b690-b8ad886a21c2', 'bundle', 3500, '30', TRUE, '', '', 3, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
-  ('5e30c25b-a9d1-418f-a436-87e20a0475f0', 'near_expiry', 10000, '30', TRUE, '', '', 5, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
-  ('a2d93186-9d36-4477-bc76-846a004ff2c2', 'outlet', 2750, '30', TRUE, '', '', 6, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
-  ('303034e7-135c-4e46-a3c0-e51901db9f2a', 'badge', 490, '30', TRUE, '', '', 4, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00');
+  ('f975f544-f350-41d7-b4fe-3ff398ccfdac', 'flash_deal', 5000, 30, TRUE, '', '', 1, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
+  ('84e5b0ed-1063-4e5e-acc2-55ec7f57cd6a', 'offer', 2000, 30, TRUE, '', '', 2, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
+  ('8c79f9de-8861-4e63-b690-b8ad886a21c2', 'bundle', 3500, 30, TRUE, '', '', 3, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
+  ('5e30c25b-a9d1-418f-a436-87e20a0475f0', 'near_expiry', 10000, 30, TRUE, '', '', 5, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
+  ('a2d93186-9d36-4477-bc76-846a004ff2c2', 'outlet', 2750, 30, TRUE, '', '', 6, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00'),
+  ('303034e7-135c-4e46-a3c0-e51901db9f2a', 'badge', 490, 30, TRUE, '', '', 4, '2026-08-21 20:20:43.095959+00', '2026-08-21 20:26:04.506976+00');
 
 -- ------------------------------------------------------------
 -- Table: page_blocks (17 rows)
@@ -552,8 +552,8 @@ VALUES
 DELETE FROM public.coupons;
 INSERT INTO public.coupons ("id", "code", "discount_type", "discount_value", "min_order", "max_uses", "used_count", "starts_at", "ends_at", "is_active", "created_at")
 VALUES
-  ('6ba0f36c-c4ab-4166-ae4d-23dae3cafdd5', 'DENTAL10', 'percent', 10.00, 50000.00, '', 0, '2026-08-19 09:29:21.208405+00', '2026-09-18 09:29:21.208405+00', TRUE, '2026-08-19 09:29:21.208405+00'),
-  ('4ebe2aab-ff8b-4b90-99d8-a97675c783fd', 'WELCOME5000', 'fixed', 5000.00, 100000.00, '', 0, '2026-08-19 09:29:21.208405+00', '2026-09-18 09:29:21.208405+00', TRUE, '2026-08-19 09:29:21.208405+00');
+  ('6ba0f36c-c4ab-4166-ae4d-23dae3cafdd5', 'DENTAL10', 'percent', 10.00, 50000.00, NULL, 0, '2026-08-19 09:29:21.208405+00', '2026-09-18 09:29:21.208405+00', TRUE, '2026-08-19 09:29:21.208405+00'),
+  ('4ebe2aab-ff8b-4b90-99d8-a97675c783fd', 'WELCOME5000', 'fixed', 5000.00, 100000.00, NULL, 0, '2026-08-19 09:29:21.208405+00', '2026-09-18 09:29:21.208405+00', TRUE, '2026-08-19 09:29:21.208405+00');
 
 -- ------------------------------------------------------------
 -- Table: badge_fees (10 rows)
@@ -578,22 +578,22 @@ VALUES
 DELETE FROM public.reward_rules;
 INSERT INTO public.reward_rules ("id", "key", "points", "is_active", "sort_order", "created_at", "updated_at")
 VALUES
-  ('d99e2ff1-906d-4032-b427-40b550690079', 'purchase_per_1000_iqd', '1', TRUE, 10, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('d9a66df6-131d-4911-a1f2-51d0f5ffa696', 'first_order', '500', TRUE, 20, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('5091bf33-5ba3-4de3-a5c9-2d56cf76912f', 'review', '50', TRUE, 30, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('a6cabc2c-00f0-4880-9d42-82bc3869e006', 'review_photo', '100', TRUE, 40, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('64542bd6-486f-4616-beb1-486f9ef9ed83', 'referral_inviter', '500', TRUE, 50, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('1a33138a-9613-48e0-8bcd-7cd92a3eff90', 'referral_invitee', '500', TRUE, 60, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('c4dede53-9b81-40f9-aa14-944a2b33a8e5', 'streak_3', '500', TRUE, 70, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('f71ea263-2d8b-4450-8ce3-eaf16ed48797', 'streak_6', '1500', TRUE, 80, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('507d22e2-f113-41c3-83f5-5f7ba91402e4', 'streak_12', '5000', TRUE, 90, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('6c14de8f-8f6d-4b85-a13a-a48e5ae353f8', 'challenge_target_iqd', '500000', TRUE, 100, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('6e9afa53-bdae-4e3f-89d6-ed61891dccf1', 'challenge_bonus', '1000', TRUE, 110, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('84c46c20-09af-45dd-b482-a7a1cbafcc5c', 'profile_clinic_name', '50', TRUE, 120, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('c0168cef-b012-4bba-bc15-9be436f222c8', 'profile_specialty', '50', TRUE, 130, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('3ff87930-ec64-4337-ab3d-833f86513041', 'profile_city', '50', TRUE, 140, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('ec8219cb-f11c-4285-b882-36f26db2b17f', 'profile_categories', '50', TRUE, 150, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
-  ('f1d43e31-df8c-49d9-a434-343b157c41e3', 'profile_complete', '200', TRUE, 160, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00');
+  ('d99e2ff1-906d-4032-b427-40b550690079', 'purchase_per_1000_iqd', 1, TRUE, 10, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('d9a66df6-131d-4911-a1f2-51d0f5ffa696', 'first_order', 500, TRUE, 20, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('5091bf33-5ba3-4de3-a5c9-2d56cf76912f', 'review', 50, TRUE, 30, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('a6cabc2c-00f0-4880-9d42-82bc3869e006', 'review_photo', 100, TRUE, 40, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('64542bd6-486f-4616-beb1-486f9ef9ed83', 'referral_inviter', 500, TRUE, 50, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('1a33138a-9613-48e0-8bcd-7cd92a3eff90', 'referral_invitee', 500, TRUE, 60, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('c4dede53-9b81-40f9-aa14-944a2b33a8e5', 'streak_3', 500, TRUE, 70, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('f71ea263-2d8b-4450-8ce3-eaf16ed48797', 'streak_6', 1500, TRUE, 80, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('507d22e2-f113-41c3-83f5-5f7ba91402e4', 'streak_12', 5000, TRUE, 90, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('6c14de8f-8f6d-4b85-a13a-a48e5ae353f8', 'challenge_target_iqd', 500000, TRUE, 100, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('6e9afa53-bdae-4e3f-89d6-ed61891dccf1', 'challenge_bonus', 1000, TRUE, 110, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('84c46c20-09af-45dd-b482-a7a1cbafcc5c', 'profile_clinic_name', 50, TRUE, 120, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('c0168cef-b012-4bba-bc15-9be436f222c8', 'profile_specialty', 50, TRUE, 130, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('3ff87930-ec64-4337-ab3d-833f86513041', 'profile_city', 50, TRUE, 140, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('ec8219cb-f11c-4285-b882-36f26db2b17f', 'profile_categories', 50, TRUE, 150, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00'),
+  ('f1d43e31-df8c-49d9-a434-343b157c41e3', 'profile_complete', 200, TRUE, 160, '2026-08-22 06:26:26.676822+00', '2026-08-22 06:26:26.676822+00');
 
 -- ------------------------------------------------------------
 -- Table: vendor_shipping_rates (1 rows)

@@ -94,6 +94,11 @@ function formatSqlValue(val, colName) {
     colName.endsWith("_price") ||
     colName.endsWith("_discount") ||
     colName.endsWith("_banners") ||
+    colName.endsWith("_uses") ||
+    colName.endsWith("_days") ||
+    colName.endsWith("_factor") ||
+    colName.endsWith("_bonus") ||
+    colName.endsWith("_balance") ||
     [
       "price",
       "compare_price",
@@ -123,6 +128,31 @@ function formatSqlValue(val, colName) {
       "unit_price",
       "quantity",
       "balance",
+      "max_uses",
+      "used_count",
+      "duration_days",
+      "points",
+      "buy_qty",
+      "get_qty",
+      "delivery_fee",
+      "free_delivery_over",
+      "price_flash_deal",
+      "price_offer",
+      "price_bundle",
+      "price_badge",
+      "wallet_max_balance",
+      "points_per_1000_iqd",
+      "rewards_max_redeem_percent",
+      "reward_vendor_max_multiplier",
+      "reward_vendor_max_bonus",
+      "reward_vendor_cost_factor",
+      "cost_usd_per_credit",
+      "cost_subscription_usd",
+      "cost_fixed_credits",
+      "cost_credits_per_order",
+      "cost_credits_per_vendor",
+      "cost_credits_per_dentist",
+      "cost_usd_iqd_rate",
     ].includes(colName);
 
   // Check if reference or nullable media/link/note
