@@ -175,8 +175,23 @@ function generateTableInsert(tableName) {
   if (!fs.existsSync(filePath)) return "";
 
   const text = fs.readFileSync(filePath, "utf8");
-  const { headers, rows } = parseCSV(text);
+  let { headers, rows } = parseCSV(text);
   if (rows.length === 0) return "";
+
+  // Ignored columns that do not exist in the target schema
+  const ignoredCols = {
+    store_settings: ["theme_gradient"],
+  };
+
+  if (ignoredCols[tableName]) {
+    const toIgnore = ignoredCols[tableName];
+    const validIndices = headers
+      .map((h, idx) => (toIgnore.includes(h) ? -1 : idx))
+      .filter((idx) => idx !== -1);
+
+    headers = validIndices.map((i) => headers[i]);
+    rows = rows.map((r) => validIndices.map((i) => r[i]));
+  }
 
   let sql = `-- ------------------------------------------------------------\n`;
   sql += `-- Table: ${tableName} (${rows.length} rows)\n`;
