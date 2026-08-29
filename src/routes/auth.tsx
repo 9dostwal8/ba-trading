@@ -27,6 +27,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
 import { reverseGeocode } from "@/lib/geocode.functions";
 import { sendWhatsAppOtp } from "@/lib/whatsapp-otp.functions";
+import { sendFirebaseSms } from "@/lib/firebase";
+import type { ConfirmationResult } from "firebase/auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -112,6 +114,7 @@ function AuthPage() {
   const [generatedOtp, setGeneratedOtp] = useState("123456");
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const quiz = useMemo(
@@ -235,6 +238,13 @@ function AuthPage() {
           lang: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
         },
       }).catch((err) => console.error("WhatsApp dispatch error:", err));
+    } else if (otpChannel === "sms") {
+      sendFirebaseSms(form.phone)
+        .then((result) => setConfirmationResult(result))
+        .catch((err) => {
+          console.error("Firebase SMS error:", err);
+          toast.error(err instanceof Error ? err.message : "SMS dispatch error");
+        });
     }
 
     toast.success(
@@ -294,6 +304,13 @@ function AuthPage() {
           lang: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
         },
       }).catch((err) => console.error("WhatsApp dispatch error:", err));
+    } else if (channel === "sms") {
+      sendFirebaseSms(form.phone)
+        .then((result) => setConfirmationResult(result))
+        .catch((err) => {
+          console.error("Firebase SMS error:", err);
+          toast.error(err instanceof Error ? err.message : "SMS dispatch error");
+        });
     }
 
     toast.success(
@@ -313,7 +330,14 @@ function AuthPage() {
       return;
     }
 
-    if (enteredCode !== generatedOtp && enteredCode !== "123456") {
+    if (confirmationResult) {
+      try {
+        await confirmationResult.confirm(enteredCode);
+      } catch {
+        toast.error(lang === "ar" ? "رمز التحقق غير صحيح، يرجى المحاولة ثانية" : lang === "ku" ? "کۆدی پشتڕاستکردنەوە هەڵەیە" : "Invalid verification code");
+        return;
+      }
+    } else if (enteredCode !== generatedOtp && enteredCode !== "123456") {
       toast.error(lang === "ar" ? "رمز التحقق غير صحيح، يرجى المحاولة ثانية" : lang === "ku" ? "کۆدی پشتڕاستکردنەوە هەڵەیە" : "Invalid verification code");
       return;
     }
@@ -730,6 +754,9 @@ function AuthPage() {
           </div>
         </div>
       )}
+
+      {/* Invisible Recaptcha container for Firebase SMS */}
+      <div id="recaptcha-container" />
 
     </div>
   );
