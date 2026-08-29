@@ -644,27 +644,6 @@ function AuthPage() {
               </button>
             </div>
 
-            {/* Direct WhatsApp Instant Action link */}
-            {otpChannel === "whatsapp" && (
-              <a
-                href={`https://wa.me/964${normalizePhone(form.phone)}?text=${encodeURIComponent(
-                  lang === "ar"
-                    ? `مرحباً، رمز التحقق الخاص بك في دنتال ستور هو: ${generatedOtp}`
-                    : lang === "ku"
-                    ? `سڵاو، کۆدی پشتڕاستکردنەوەی هەژمارەکەت لە دنتال ستۆر بریتییە لە: ${generatedOtp}`
-                    : `Hello, your Dental Store verification code is: ${generatedOtp}`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200/80 px-3 py-2 text-[12px] font-black text-emerald-800 hover:bg-emerald-100 transition"
-              >
-                <MessageCircle className="size-4 text-emerald-600" />
-                <span>
-                  {lang === "ar" ? "اضغط هنا لاستلام الرمز مباشرة على واتساب" : lang === "ku" ? "کلیک بکە بۆ وەرگرتنی کۆد لە واتسئاپ" : "Click to receive code on WhatsApp"}
-                </span>
-              </a>
-            )}
-
             {/* 6-Digit OTP Input Pins */}
             <div className="my-6 flex items-center justify-center gap-2" dir="ltr">
               {otpDigits.map((digit, idx) => (
