@@ -7,7 +7,7 @@ import {
 } from "firebase/auth";
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyBMLgTBHwn7jGG1BjmUmU3fnG_tjbgcIzA",
+  apiKey: "AIzaSyBMlgTBhWn7jGG1BjmUmU3fnG_tJbgcIzA",
   authDomain: "ba-trading-f49dd.firebaseapp.com",
   projectId: "ba-trading-f49dd",
   storageBucket: "ba-trading-f49dd.firebasestorage.app",
