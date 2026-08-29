@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
 import { reverseGeocode } from "@/lib/geocode.functions";
+import { sendWhatsAppOtp } from "@/lib/whatsapp-otp.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -85,6 +86,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const getPlace = useServerFn(reverseGeocode);
+  const sendWa = useServerFn(sendWhatsAppOtp);
 
   const [mode, setMode] = useState<"in" | "up">("in");
   const [busy, setBusy] = useState(false);
@@ -225,6 +227,16 @@ function AuthPage() {
     setCanResend(false);
     setShowOtpModal(true);
 
+    if (otpChannel === "whatsapp") {
+      sendWa({
+        data: {
+          phone,
+          code: newOtp,
+          lang: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
+        },
+      }).catch((err) => console.error("WhatsApp dispatch error:", err));
+    }
+
     toast.success(
       lang === "ar"
         ? `تم إرسال رمز التحقق إلى رقم هاتفك عبر ${otpChannel === "whatsapp" ? "واتساب" : "SMS"}`
@@ -267,11 +279,23 @@ function AuthPage() {
 
   // Resend OTP
   function handleResendOtp(channel = otpChannel) {
+    const phone = normalizePhone(form.phone);
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(newOtp);
     setCountdown(60);
     setCanResend(false);
     setOtpDigits(["", "", "", "", "", ""]);
+
+    if (channel === "whatsapp") {
+      sendWa({
+        data: {
+          phone,
+          code: newOtp,
+          lang: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
+        },
+      }).catch((err) => console.error("WhatsApp dispatch error:", err));
+    }
+
     toast.success(
       lang === "ar"
         ? `تمت إعادة إرسال رمز التحقق إلى رقمك عبر ${channel === "whatsapp" ? "واتساب" : "SMS"}`
