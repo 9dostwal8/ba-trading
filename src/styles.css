@@ -78,15 +78,15 @@
   --card-foreground: oklch(0.28 0.005 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.28 0.005 260);
-  --primary: oklch(0.622 0.183 17);
+  --primary: #007979;
   --primary-foreground: oklch(1 0 0);
-  --primary-deep: oklch(0.5 0.17 17);
+  --primary-deep: #005e5e;
   --secondary: oklch(0.965 0.002 260);
   --secondary-foreground: oklch(0.36 0.006 260);
   --muted: oklch(0.965 0.002 260);
   --muted-foreground: oklch(0.56 0.005 260);
-  --accent: oklch(0.955 0.02 17);
-  --accent-foreground: oklch(0.45 0.16 17);
+  --accent: oklch(0.955 0.03 192);
+  --accent-foreground: #007979;
   --deal: oklch(0.86 0.16 92);
   --deal-foreground: oklch(0.35 0.09 80);
   --clearance: oklch(0.56 0.16 52);
@@ -106,19 +106,17 @@
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9 0.002 260);
   --input: oklch(0.9 0.002 260);
-  --ring: oklch(0.622 0.183 17);
+  --ring: #007979;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.28 0.005 260);
-  --sidebar-primary: oklch(0.622 0.183 17);
+  --sidebar-primary: #007979;
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.955 0.02 17);
-  --sidebar-accent-foreground: oklch(0.45 0.16 17);
-  --sidebar-border: oklch(0.9 0.002 260);
-  --sidebar-ring: oklch(0.622 0.183 17);
+  --sidebar-accent: oklch(0.955 0.03 192);
+  --sidebar-accent-foreground: #007979;
 
   --gradient-hero: linear-gradient(135deg, oklch(0.5 0.17 17), oklch(0.622 0.183 17) 60%, oklch(0.68 0.17 25));
   --gradient-deal: linear-gradient(135deg, oklch(0.86 0.16 92), oklch(0.9 0.14 98));
-  --gradient-vibrant: linear-gradient(135deg, oklch(0.55 0.19 17), oklch(0.5 0.2 5) 55%, oklch(0.62 0.18 35));
+  --gradient-vibrant: linear-gradient(135deg, #007979, #008f8f 55%, #006666);
 
   /* Premium dark hero-card surface used inside the light storefront */
   --hero-card: oklch(0.27 0.02 20);

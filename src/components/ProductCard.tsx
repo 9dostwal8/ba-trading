@@ -87,7 +87,7 @@ export function ProductCard({
         </Link>
         {/* Top-End: Discount Badge */}
         {percent > 0 && (
-          <span className="absolute top-2.5 end-2.5 rounded-full bg-rose-600 px-2 py-0.5 text-[10.5px] font-black text-white shadow-sm z-10">
+          <span className="absolute top-2.5 end-2.5 rounded-full bg-[#007979] px-2 py-0.5 text-[10.5px] font-black text-white shadow-sm z-10">
             {percent}%
           </span>
         )}

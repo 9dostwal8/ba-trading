@@ -159,7 +159,7 @@ export function DesktopHome({
 
       {/* 2. "عروض سريعة ومميزة" (Incredible Deals Carousel - GooshiShop Style) */}
       {dealProducts.length > 0 && (
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 p-4 sm:p-5 text-white shadow-xl">
+        <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#007979] via-[#008f8f] to-[#006666] p-4 sm:p-5 text-white shadow-xl">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-center">
             
             {/* Countdown Box & Title on the side */}
@@ -172,7 +172,7 @@ export function DesktopHome({
                   <h2 className="text-[17px] font-black leading-tight">
                     {lang === "ar" ? "عروض سريعة" : lang === "ku" ? "ئۆفەری خێرا" : "Flash Deals"}
                   </h2>
-                  <p className="text-[11px] font-semibold text-rose-100 hidden lg:block mt-1">
+                  <p className="text-[11px] font-semibold text-teal-100 hidden lg:block mt-1">
                     {lang === "ar" ? "خصومات خاصة لفترة محدودة" : lang === "ku" ? "داشکاندنی کاتی سنووردار" : "Limited Time Offers"}
                   </p>
                 </div>
@@ -195,7 +195,7 @@ export function DesktopHome({
 
               <Link
                 to="/deals"
-                className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-[12px] font-extrabold text-rose-700 shadow-sm transition hover:bg-rose-50 active:scale-95"
+                className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-[12px] font-extrabold text-[#007979] shadow-sm transition hover:bg-teal-50 active:scale-95"
               >
                 <span>{lang === "ar" ? "مشاهدة الكل" : lang === "ku" ? "بینینی هەمووی" : "View All"}</span>
                 <ChevronLeft className="size-3.5 ltr:rotate-180" />
@@ -220,7 +220,7 @@ export function DesktopHome({
                       {/* Product Image & Discount Badge */}
                       <div className="relative mb-2 flex h-32 w-full items-center justify-center rounded-xl bg-slate-50 p-2">
                         {discountPercent > 0 && (
-                          <span className="absolute top-2 right-2 rounded-full bg-rose-600 px-2 py-0.5 text-[11px] font-black text-white shadow-sm">
+                          <span className="absolute top-2 right-2 rounded-full bg-[#007979] px-2 py-0.5 text-[11px] font-black text-white shadow-sm">
                             {discountPercent}%
                           </span>
                         )}
@@ -247,7 +247,7 @@ export function DesktopHome({
                             {formatPrice(Number(old), lang)}
                           </p>
                         )}
-                        <p className="text-[13.5px] font-black text-rose-600">
+                        <p className="text-[13.5px] font-black text-[#007979]">
                           {formatPrice(currentPrice, lang)}
                         </p>
                       </div>

@@ -453,16 +453,16 @@ export function GooshiHeader() {
                       <Link
                         to="/deals"
                         onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-rose-50/80 p-2.5 border border-rose-100/80 transition-all hover:bg-rose-100 hover:scale-[1.02]"
+                        className="flex items-center gap-2.5 rounded-2xl bg-teal-50/80 p-2.5 border border-teal-100/80 transition-all hover:bg-teal-100 hover:scale-[1.02]"
                       >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white shadow-sm">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#007979] text-white shadow-sm">
                           <Zap className="size-4.5 fill-white" />
                         </div>
                         <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-rose-800">
+                          <span className="block truncate text-[12.5px] font-black text-teal-900">
                             {lang === "ar" ? "عروض سريعة" : lang === "ku" ? "ئۆفەری خێرا" : "Flash Deals"}
                           </span>
-                          <span className="block text-[10px] font-medium text-rose-500">
+                          <span className="block text-[10px] font-medium text-[#007979]">
                             {lang === "ar" ? "خصومات قوية" : lang === "ku" ? "داشکاندنی بەهێز" : "Hot discounts"}
                           </span>
                         </div>

@@ -61,7 +61,7 @@ export function AmazingRail({
       .sort()[0] ?? null;
 
   return (
-    <div className="mx-2 my-2 overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 p-3.5 text-white shadow-xl">
+    <div className="mx-2 my-2 overflow-hidden rounded-3xl bg-gradient-to-r from-[#007979] via-[#008f8f] to-[#006666] p-3.5 text-white shadow-xl">
       <div className="flex items-center gap-2 px-1 pb-3">
         <div className="flex size-7 items-center justify-center rounded-lg bg-white/20">
           <Zap className="size-4.5 text-amber-300 fill-amber-300" strokeWidth={0} />
