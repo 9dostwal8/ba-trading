@@ -18,11 +18,16 @@ export type BrandCard = {
   is_active: boolean;
 };
 
-/** Transparent PNG logo for a brand card: custom URL wins, else logo.dev by domain. */
-export function brandLogo(brand: Pick<BrandCard, "logo_url" | "logo_domain">, size = 240) {
+/** Transparent PNG logo for a brand card: custom URL wins, else logo.dev or unavatar fallback. */
+export function brandLogo(brand: Pick<BrandCard, "logo_url" | "logo_domain"> & { name?: string }, size = 240) {
   if (brand.logo_url) return brand.logo_url;
-  if (!brand.logo_domain || !LOGO_TOKEN) return null;
-  return `https://img.logo.dev/${brand.logo_domain}?token=${LOGO_TOKEN}&size=${size}&format=png&retina=true`;
+  if (brand.logo_domain) {
+    if (LOGO_TOKEN) {
+      return `https://img.logo.dev/${brand.logo_domain}?token=${LOGO_TOKEN}&size=${size}&format=png&retina=true`;
+    }
+    return `https://unavatar.io/${brand.logo_domain}?fallback=https://www.google.com/s2/favicons?domain=${brand.logo_domain}&sz=128`;
+  }
+  return null;
 }
 
 /** Products belonging to a brand card: hand-picked list first, else keyword match. */

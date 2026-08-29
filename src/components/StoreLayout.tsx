@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Home, LayoutGrid, Tag, ShoppingBag, User, Languages } from "lucide-react";
 import { QrScanBar } from "@/components/QrScanBar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { GooshiHeader } from "@/components/GooshiHeader";
+import { GooshiFooter } from "@/components/GooshiFooter";
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { useCart } from "@/lib/cart";
@@ -123,103 +125,36 @@ export function StoreLayout({ children }: { children: ReactNode }) {
   return (
     <div
       ref={rootRef}
-      className="mx-auto flex min-h-screen w-full max-w-3xl flex-col bg-background lg:max-w-[var(--page-max)]"
+      className="flex min-h-screen w-full flex-col bg-slate-50/40"
     >
       <SiteMeta settings={s} lang={lang} />
       {s?.show_announcement && pick(s.announcement_ar, s.announcement_ku, lang) ? (
-        <div className="bg-gradient-hero px-3 py-1.5 text-center text-[11.5px] font-bold text-primary-foreground lg:py-2.5 lg:text-[13px]">
+        <div className="w-full bg-gradient-to-r from-blue-700 to-indigo-700 px-3 py-2 text-center text-[12px] font-bold text-white shadow-sm">
           {pick(s.announcement_ar, s.announcement_ku, lang)}
         </div>
       ) : null}
 
-      {/* Mobile header */}
-      <header className="sticky top-0 z-20 hairline bg-card lg:hidden">
-        <div className="flex items-center gap-2 px-3 py-2">
-          {brand}
-          <QrScanBar compact />
-          <NotificationBell />
-          {langBtn}
-        </div>
-      </header>
-
-      {/* Desktop header */}
-      <header className="sticky top-0 z-20 hidden hairline bg-card lg:block">
-        <div className="flex items-center gap-5 px-6 py-3">
-          {brand}
-          <nav className="flex items-center gap-1">
-            {desktopLinks.map((item) => {
-              const active = isActive(item);
-              return (
-                <Link
-                  key={item.key}
-                  to={item.to as never} {...(item.search ? { search: item.search } : {})}
-                  className={cn(
-                    "rounded-xl px-3 py-2 text-[13.5px] font-bold transition-colors",
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {staffLabel(item.key)}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="min-w-0 flex-1">
-            <QrScanBar compact />
-          </div>
-          <NotificationBell />
-          {langBtn}
-          {!isStaff && <Link
-            to="/cart"
-            className="relative inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13.5px] font-extrabold text-primary-foreground shadow-pop transition hover:opacity-95"
-          >
-            <ShoppingBag className="size-[18px]" />
-            {t("cart")}
-            {cart.count > 0 && (
-              <span className="grid min-w-[20px] place-items-center rounded-full bg-primary-foreground px-1 text-[11px] font-extrabold text-primary">
-                {cart.count}
-              </span>
-            )}
-          </Link>}
-          {isStaff && (
-            <Link
-              to={panelTo}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13.5px] font-extrabold text-primary-foreground shadow-pop transition hover:opacity-95"
-            >
-              <LayoutDashboard className="size-[18px]" />
-              {staffLabel("manage")}
-            </Link>
-          )}
-        </div>
-      </header>
+      {/* GooshiShop Modern Sticky Header */}
+      <GooshiHeader />
 
       {s?.maintenance_mode ? (
-        <div className="mx-3 mt-2 rounded-2xl border border-deal/40 bg-deal/10 px-3 py-2 text-[11.5px] font-bold text-foreground lg:mx-6">
-          {pick(s.maintenance_note_ar, s.maintenance_note_ku, lang) || "🔧"}
+        <div className="mx-auto my-3 w-full max-w-[1536px] px-4">
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-[12.5px] font-bold text-amber-900 shadow-sm">
+            {pick(s.maintenance_note_ar, s.maintenance_note_ku, lang) || "🔧"}
+          </div>
         </div>
       ) : null}
-      <main className="flex-1 pb-24 lg:pb-10">{children}</main>
+      
+      <main className="flex-1 w-full pb-20 lg:pb-0">{children}</main>
 
-      {/* Desktop footer */}
-      <footer className="hidden border-t border-border/70 bg-card px-6 py-6 lg:block">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {brand}
-          <nav className="flex flex-wrap items-center gap-4 text-[13px] font-bold text-muted-foreground">
-            {desktopLinks.map((item) => (
-              <Link key={item.key} to={item.to as never} {...(item.search ? { search: item.search } : {})} className="hover:text-foreground">
-                {staffLabel(item.key)}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
-
-
+      {/* GooshiShop Modern Footer */}
+      <div className="w-full hidden lg:block">
+        <GooshiFooter />
+      </div>
 
       {!isCart && (
-        <nav className="fixed bottom-0 z-20 w-full max-w-3xl border-t lg:hidden border-border/70 bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-          <ul className="flex items-end justify-between px-2 py-1">
+        <nav className="fixed bottom-0 inset-x-0 z-30 w-full border-t lg:hidden border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl shadow-lg">
+          <ul className="flex items-end justify-between px-2 py-1 max-w-lg mx-auto">
             <div className="flex flex-1 items-center justify-around">
               {leftItems.map((item) => {
                 const active = isActive(item);

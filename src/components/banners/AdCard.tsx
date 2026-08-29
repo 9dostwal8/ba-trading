@@ -23,8 +23,8 @@ export function AdCard({ ad, className = "" }: { ad: AdCardData; className?: str
   const alt = pick(ad.title_ar, ad.title_ku, lang);
 
   const body = (
-    <article className={`dk-ad dk-glass dk-glass-sweep group ${className}`}>
-      <div className="relative h-[186px] w-full overflow-hidden">
+    <article className={`dk-ad group h-full w-full ${className}`}>
+      <div className="relative h-full w-full overflow-hidden">
         <span className="dk-glass-ad">{t("sponsored")}</span>
         {ad.image_url ? (
           <img
@@ -54,7 +54,7 @@ export function AdCard({ ad, className = "" }: { ad: AdCardData; className?: str
   );
 
   return ad.link ? (
-    <Link to={ad.link as string} className="block active:scale-[0.985]">
+    <Link to={ad.link as string} className="block h-full w-full active:scale-[0.985]">
       {body}
     </Link>
   ) : (

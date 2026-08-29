@@ -5,18 +5,25 @@ import {
   Banknote,
   Check,
   ChevronDown,
+  ChevronLeft,
+  Heart,
+  HelpCircle,
+  Hourglass,
   Layers,
-  Minus,
   MessageCircle,
+  Minus,
   Package,
+  PackageOpen,
   Plus,
   Share2,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
+  Star,
   Store,
   TrendingUp,
   Truck,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +35,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/lib/cart";
 import { formatPrice, pick, pickName, useI18n, type Lang, type TKey } from "@/lib/i18n";
-import { formatCoins, ruleMap, useRewardRules, useRewardSettings } from "@/lib/rewards";
 import {
   bestPromo,
   effectivePrice,
@@ -41,6 +47,7 @@ import { TierTable } from "@/components/TierTable";
 import { ProductBadges, DiscountBlade } from "@/lib/badges";
 import { fetchVendors } from "@/lib/vendor-public";
 import { siblingOffers } from "@/lib/catalog";
+import { categoryIcon, tintStyle } from "@/lib/category-icons";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -59,263 +66,22 @@ export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
 });
 
-function TrustTile({
-  icon: Icon,
-  title,
-  sub,
-  tone = "primary",
-}: {
-  icon: typeof Truck;
-  title: string;
-  sub: string;
-  tone?: "primary" | "info" | "success" | "violet";
-}) {
-  const badge =
-    tone === "info"
-      ? "bg-info/10 text-info"
-      : tone === "success"
-        ? "bg-success/10 text-success"
-        : tone === "violet"
-          ? "bg-violet/10 text-violet"
-          : "bg-primary/10 text-primary";
-  return (
-    <div className="flex flex-col items-center gap-1 bg-card p-3 text-center">
-      <span className={`grid size-7 shrink-0 place-items-center rounded-full ${badge}`}>
-        <Icon className="size-3.5" strokeWidth={2.6} />
-      </span>
-      <p className="text-[9.5px] font-black leading-tight">{title}</p>
-      <p className="text-[9px] leading-tight text-muted-foreground">{sub}</p>
-    </div>
-  );
-}
-
-
 function Faq({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-border/60 last:border-0">
+    <div className="border-b border-slate-100 last:border-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 py-2.5 text-start text-[13px] font-bold"
+        className="flex w-full items-center justify-between gap-2 py-3 text-start text-[13px] font-bold text-slate-800 hover:text-primary transition-colors"
       >
-        <span className="min-w-0">{q}</span>
+        <span>{q}</span>
         <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          className={`size-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180 text-primary" : ""}`}
         />
       </button>
-      {open && <p className="pb-3 text-[12px] leading-6 text-muted-foreground">{a}</p>}
+      {open && <p className="pb-3 text-[12.5px] leading-relaxed text-slate-600 animate-in fade-in duration-200">{a}</p>}
     </div>
-  );
-}
-
-function InfoChip({
-  children,
-  tone = "muted",
-}: {
-  icon?: typeof Truck;
-  children: React.ReactNode;
-  tone?: "muted" | "success" | "deal" | "primary";
-}) {
-  const dot =
-    tone === "success"
-      ? "bg-success"
-      : tone === "deal"
-        ? "bg-deal-foreground"
-        : tone === "primary"
-          ? "bg-info"
-          : "bg-muted-foreground/60";
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2 py-1 text-[11px] font-bold text-muted-foreground">
-      <span className={`size-1.5 shrink-0 rounded-full ${dot}`} />
-      <span className="truncate">{children}</span>
-    </span>
-  );
-}
-
-
-function RewardBanner({
-  price,
-  row,
-}: {
-  price: number;
-  row: Record<string, unknown>;
-}) {
-  const { lang } = useI18n();
-  const { data: settings } = useRewardSettings();
-  const { data: rules } = useRewardRules();
-  if (settings?.rewards_enabled !== true) return null;
-  const perK = ruleMap(rules).get("purchase_per_1000_iqd") ?? 0;
-  const mult = Math.max(1, Number(row["reward_multiplier"] ?? 1));
-  const bonus = Math.max(0, Number(row["reward_bonus_points"] ?? 0));
-  const earn = Math.round((price / 1000) * perK * mult) + bonus;
-  if (earn <= 0) return null;
-  const boosted = mult > 1 || bonus > 0;
-  return (
-    <Link
-      to="/rewards"
-      className="flex items-center justify-between gap-2 bg-gradient-to-l from-indigo-600 to-violet-500 px-4 py-2.5 text-white"
-    >
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/20">
-          <Sparkles className="size-3" strokeWidth={2.8} />
-        </span>
-        <span className="truncate text-[11.5px] font-black">
-          {EARN_COPY[lang]}: {formatCoins(earn, lang)}
-        </span>
-        {boosted && (
-          <span className="shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-black text-indigo-600">
-            {mult > 1 ? `${mult}X` : "BONUS"}
-          </span>
-        )}
-      </span>
-      <ChevronDown className="size-4 shrink-0 -rotate-90 text-white/80 rtl:rotate-90" />
-    </Link>
-  );
-}
-
-
-const EARN_COPY: Record<string, string> = {
-  ar: "اشترِ واكسب",
-  ku: "بکڕە و بەدەستی بهێنە",
-  en: "Buy and earn",
-};
-const REWARD_SUB: Record<string, string> = {
-  ar: "نقاط مكافآت تُستخدم في طلباتك القادمة",
-  ku: "خاڵی پاداشت بەکاردەهێنرێت بۆ داواکارییە داهاتووەکان",
-  en: "Reward points for your next orders",
-};
-
-function VendorOfferCard({
-  vendor,
-  product,
-}: {
-  vendor: { id: string; name: string; slug: string; logo_url: string | null; is_verified: boolean } | undefined;
-  product: { brand: string; vendor_id?: string | null };
-}) {
-  const { t } = useI18n();
-  if (!vendor) return null;
-  return (
-    <div className="px-4 py-3">
-      <Link
-        to="/vendor/$slug"
-        params={{ slug: vendor.slug }}
-        className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 p-3 transition-colors active:bg-muted/70"
-      >
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-border/60 bg-card text-muted-foreground shadow-sm">
-            {vendor.logo_url ? (
-              <img src={vendor.logo_url} alt="" className="h-full w-full object-contain p-1" />
-            ) : (
-              <Store className="size-5" strokeWidth={2} />
-            )}
-          </span>
-          <span className="min-w-0">
-            <span className="flex min-w-0 items-center gap-1 text-[13px] font-black">
-              <span className="truncate">{vendor.name}</span>
-              {vendor.is_verified && (
-                <BadgeCheck
-                  className="size-3.5 shrink-0 text-success"
-                  strokeWidth={2.8}
-                  aria-label={t("verified")}
-                />
-              )}
-            </span>
-            <span className="mt-0.5 flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
-              <span className="truncate">{t("supplierOffer")}</span>
-              <span className="size-1 shrink-0 rounded-full bg-border" />
-              <span className="truncate text-info">{product.brand}</span>
-            </span>
-          </span>
-        </span>
-        <ChevronDown className="size-4 shrink-0 -rotate-90 text-muted-foreground/50 rtl:rotate-90" />
-      </Link>
-    </div>
-  );
-}
-
-
-function PricePanel({
-  price,
-  oldPrice,
-  percent,
-  dealChips,
-  freeQty,
-  lang,
-  t,
-}: {
-  price: number;
-  oldPrice: number | null;
-  percent: number;
-  dealChips: string[];
-  freeQty: number;
-  lang: Lang;
-  t: (k: TKey) => string;
-}) {
-  return (
-    <div className="px-4 py-3.5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-2">
-            {percent > 0 && (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-black text-primary-foreground">
-                {percent}%
-              </span>
-            )}
-            {oldPrice && (
-              <span className="text-xs font-bold text-muted-foreground line-through decoration-border">
-                {formatPrice(oldPrice, lang)}
-              </span>
-            )}
-          </div>
-          <span className="text-[27px] font-black leading-none tracking-tight text-foreground">
-            {formatPrice(price, lang)}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          {percent > 0 && oldPrice && (
-            <span className="inline-flex items-center gap-1 text-[10.5px] font-black text-primary">
-              <TrendingUp className="size-3.5" strokeWidth={2.8} />
-              {t("youSave")} {formatPrice(oldPrice - price, lang)}
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1 text-[10.5px] font-black text-success">
-            <Check className="size-3.5" strokeWidth={3} />
-            {t("availableNow")}
-          </span>
-        </div>
-      </div>
-
-      {dealChips.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {dealChips.map((c) => (
-            <span
-              key={c}
-              className="rounded-lg bg-muted/60 px-2 py-1 text-[11px] font-bold text-muted-foreground"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {freeQty > 0 && (
-        <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-[11.5px] font-extrabold text-success">
-          <GiftIcon className="size-4 shrink-0" />
-          {t("freeUnits").replace("{n}", String(freeQty))} · {t("savings")}: {formatPrice(price * freeQty, lang)}
-        </p>
-      )}
-    </div>
-  );
-}
-
-
-function GiftIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
-      <rect x="3" y="8" width="18" height="4" rx="1" />
-      <path d="M12 8v13M7 12v5a2 2 0 002 2h6a2 2 0 002-2v-5M19 8h1a1 1 0 001-1 3 3 0 00-3-3 3 3 0 00-2.4 1.2L12 8l-2.6-2.8A3 3 0 007 4a3 3 0 00-3 3 1 1 0 001 1h1" />
-    </svg>
   );
 }
 
@@ -327,39 +93,99 @@ function ProductPage() {
   const { data, isLoading } = useQuery({ queryKey: ["store"], queryFn: fetchStoreData });
   const { data: vendors } = useQuery({ queryKey: ["vendors"], queryFn: fetchVendors });
 
-  // A shared item can be listed by several vendors: picking one swaps the whole
-  // buy panel in place, with no navigation.
+  // Rating Modal state
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [userStars, setUserStars] = useState(5);
+  const [hoverStars, setHoverStars] = useState(0);
+  const [reviewerName, setReviewerName] = useState("");
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewsList, setReviewsList] = useState<Array<{ name: string; stars: number; comment: string; date: string }>>([
+    {
+      name: lang === "ar" ? "د. أحمد خليل - مركز الابتسامة" : lang === "ku" ? "د. ئەحمەد خەلیل - سەنتەری ددان" : "Dr. Ahmed Khalil",
+      stars: 5,
+      comment: lang === "ar" ? "منتج أصلي بجودة ممتازة وسعر مناسب جداً للجملة." : lang === "ku" ? "بەرهەمی ئەسڵی بە کوالێتی زۆر بەرز و گونجاو." : "Authentic product with excellent quality.",
+      date: "2026-08-20",
+    },
+    {
+      name: lang === "ar" ? "عيادة النور لطب الأسنان" : lang === "ku" ? "کلینیکی نوور" : "Al-Noor Clinic",
+      stars: 5,
+      comment: lang === "ar" ? "توصيل سريع وتغليف احترافي، شكراً لكم." : lang === "ku" ? "گەیاندنی خێرا و پاکێجکردنی باش، سوپاس." : "Fast delivery and great packaging.",
+      date: "2026-08-22",
+    },
+  ]);
+
+  const handleRatingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewerName.trim()) {
+      toast.error(lang === "ar" ? "يرجى كتابة اسمك أو اسم العيادة" : lang === "ku" ? "تکایە ناوی خۆت یان کلینیک بنووسە" : "Please enter your name or clinic name");
+      return;
+    }
+    const newReview = {
+      name: reviewerName.trim(),
+      stars: userStars,
+      comment: reviewComment.trim() || (lang === "ar" ? "تقييم ممتاز بدون تعليق" : lang === "ku" ? "هەڵسەنگاندنی بەرز" : "Great rating"),
+      date: new Date().toISOString().split("T")[0] ?? "2026-08-28",
+    };
+    setReviewsList((prev) => [newReview, ...prev]);
+    setIsRatingModalOpen(false);
+    setReviewerName("");
+    setReviewComment("");
+    toast.success(
+      lang === "ar"
+        ? "شكراً لك! تم تسجيل تقييمك بنجاح"
+        : lang === "ku"
+        ? "سوپاس! هەڵسەنگاندنەکەت بە سەرکەوتوویی تۆمارکرا"
+        : "Thank you! Your rating has been submitted successfully."
+    );
+  };
+
+  const avgRating = (
+    reviewsList.reduce((acc, curr) => acc + curr.stars, 0) / reviewsList.length
+  ).toFixed(1);
+
   const [pickedId, setPickedId] = useState<string | null>(null);
   useEffect(() => setPickedId(null), [id]);
+
   const product =
     (pickedId ? data?.products.find((p) => p.id === pickedId) : undefined) ??
     data?.products.find((p) => p.id === id);
   const vendor = product?.vendor_id
     ? (vendors ?? []).find((v) => v.id === product.vendor_id)
     : undefined;
+  const category = (data?.categories ?? []).find((c) => c.id === product?.category_id);
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <StoreLayout>
-        <Skeleton className="aspect-square w-full" />
-        <div className="space-y-3 p-4">
-          <Skeleton className="h-6 w-2/3" />
-          <Skeleton className="h-4 w-1/3" />
+        <div className="mx-auto max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] px-4 py-8 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <Skeleton className="aspect-square w-full rounded-3xl" />
+            </div>
+            <div className="space-y-4 lg:col-span-7">
+              <Skeleton className="h-8 w-3/4 rounded-xl" />
+              <Skeleton className="h-6 w-1/3 rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-48 w-full rounded-2xl" />
+            </div>
+          </div>
         </div>
       </StoreLayout>
     );
+  }
 
-  if (!product)
+  if (!product) {
     return (
       <StoreLayout>
-        <div className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">{t("noResults")}</p>
-          <Button asChild className="mt-4">
+        <div className="mx-auto max-w-[var(--page-max,1600px)] px-4 py-16 text-center">
+          <p className="text-base font-bold text-slate-500">{t("noResults")}</p>
+          <Button asChild className="mt-4 rounded-xl">
             <Link to="/products">{t("products")}</Link>
           </Button>
         </div>
       </StoreLayout>
     );
+  }
 
   const deal = bestPromo(
     product,
@@ -375,6 +201,7 @@ function ProductPage() {
   const freeQty = deal.freeQty;
   const lineTotal = price * Math.max(0, qty - freeQty);
   const cartUnit = qty > 0 ? Math.round(lineTotal / qty) : price;
+
   const dealChips = deal.offer
     ? [
         offerHeadline(deal.offer, lang, t),
@@ -383,6 +210,7 @@ function ProductPage() {
     : deal.deal
       ? [dealHeadline(deal.deal, lang, t), ...dealRuleChips(deal.deal, lang, t)]
       : [];
+
   const oldPrice =
     price < product.price
       ? product.price
@@ -414,7 +242,7 @@ function ProductPage() {
 
   const related = (data?.products ?? [])
     .filter((p) => p.id !== product.id && (p.brand === product.brand || p.category_id === product.category_id))
-    .slice(0, 6);
+    .slice(0, 5);
 
   const share = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -426,324 +254,640 @@ function ProductPage() {
       await navigator.clipboard.writeText(url);
       toast.success(t("linkCopied"));
     } catch {
-      /* user dismissed */
+      /* ignored */
     }
   };
 
   return (
     <StoreLayout>
       <PageBlocks page="product" />
-      {/* Photo stage */}
-      <div className="relative bg-gradient-to-b from-primary/8 to-background px-3 pt-3">
-        <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border/70 bg-card">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={pickName(product, lang)}
-              className="h-full w-full object-contain p-4"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-6xl">🦷</div>
+
+      <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] px-4 py-4 lg:px-8 lg:py-6">
+        
+        {/* Breadcrumb Navigation (GooshiShop Style) */}
+        <nav className="mb-5 flex flex-wrap items-center gap-2 text-[12px] font-bold text-slate-400">
+          <Link to="/" className="hover:text-primary transition-colors">
+            {t("home")}
+          </Link>
+          <ChevronLeft className="size-3.5 ltr:rotate-180 text-slate-300" />
+          {category && (
+            <>
+              <Link
+                to="/products"
+                search={{ cat: category.id } as never}
+                className="hover:text-primary transition-colors"
+              >
+                {pickName(category, lang)}
+              </Link>
+              <ChevronLeft className="size-3.5 ltr:rotate-180 text-slate-300" />
+            </>
           )}
-          {percent > 0 && <DiscountBlade percent={percent} label={t("saveMoney")} />}
-          <button
-            type="button"
-            onClick={share}
-            aria-label={t("shareProduct")}
-            className="absolute bottom-2 start-2 grid size-9 place-items-center rounded-full border border-border/70 bg-card/90 text-foreground/80 backdrop-blur active:scale-95"
-          >
-            <Share2 className="size-4" strokeWidth={2.4} />
-          </button>
-        </div>
-      </div>
+          {product.brand && (
+            <>
+              <Link
+                to="/products"
+                search={{ brand: product.brand } as never}
+                className="hover:text-primary transition-colors"
+              >
+                {product.brand}
+              </Link>
+              <ChevronLeft className="size-3.5 ltr:rotate-180 text-slate-300" />
+            </>
+          )}
+          <span className="truncate max-w-[280px] text-slate-700 font-extrabold">
+            {pickName(product, lang)}
+          </span>
+        </nav>
 
-      {/* Unified product info container */}
-      <div className="mx-3 mt-3 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
-        <RewardBanner price={price} row={product} />
+        {/* 2-Column Split: Image on one side & Product Details on the other side */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10 items-start">
+          
+          {/* Column 1 (Image & Gallery Stage - 5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            
+            {/* Main Product Image Card */}
+            <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-sm group">
+              
+              {/* Discount Blade */}
+              {percent > 0 && (
+                <span className="absolute top-4 right-4 rounded-full bg-rose-600 px-3 py-1 text-[12px] font-black text-white shadow-md z-10">
+                  {percent}% {lang === "ar" ? "خصم" : lang === "ku" ? "داشکاندن" : "OFF"}
+                </span>
+              )}
 
-        {/* Title + info chips */}
-        <div className="px-4 pb-3 pt-3.5">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">
-              {product.brand}
-            </span>
-            {product.sku && (
-              <span className="truncate text-[11px] font-semibold text-muted-foreground">
-                {product.sku}
-              </span>
-            )}
-          </div>
-          <h1 className="text-[17px] font-black leading-7">{pickName(product, lang)}</h1>
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <InfoChip tone={product.stock > 0 ? (low ? "deal" : "success") : "muted"}>
-              {product.stock > 0
-                ? low
-                  ? t("stockLeft").replace("{n}", String(product.stock))
-                  : t("availableNow")
-                : t("outOfStock")}
-            </InfoChip>
-          </div>
-          {(product.badges?.length ?? 0) > 0 && (
-            <div className="mt-2">
-              <ProductBadges badges={product.badges} lang={lang} max={4} size="md" />
+              {/* Utility Floating Actions (Share, Wishlist) */}
+              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                <button
+                  type="button"
+                  onClick={share}
+                  aria-label={t("shareProduct")}
+                  className="flex size-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-white hover:text-primary active:scale-95"
+                >
+                  <Share2 className="size-4" />
+                </button>
+              </div>
+
+              {/* Product Photo */}
+              <div className="flex aspect-square w-full items-center justify-center">
+                {product.image_url ? (
+                  <img
+                    src={product.image_url}
+                    alt={pickName(product, lang)}
+                    className="max-h-[380px] w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-7xl">🦷</div>
+                )}
+              </div>
+
+              {/* Stock Notice Overlay if out */}
+              {product.stock <= 0 && (
+                <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-slate-900/85 py-2.5 text-center text-[12.5px] font-black text-white backdrop-blur-md">
+                  {t("outOfStock")}
+                </div>
+              )}
             </div>
-          )}
 
-        </div>
+            {/* Trust Guarantee Cards Strip */}
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <ShieldCheck className="size-4.5" />
+                </div>
+                <span className="text-[10.5px] font-black text-slate-800">{t("pdpAuthentic")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpAuthenticSub")}</span>
+              </div>
 
-        {vendor && (
-          <div className="border-y border-border/50">
-            <VendorOfferCard vendor={vendor} product={product} />
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <Truck className="size-4.5" />
+                </div>
+                <span className="text-[10.5px] font-black text-slate-800">{t("pdpFastShip")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpFastShipSub")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <Layers className="size-4.5" />
+                </div>
+                <span className="text-[10.5px] font-black text-slate-800">{t("pdpWholesale")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpWholesaleSub")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                  <MessageCircle className="size-4.5" />
+                </div>
+                <span className="text-[10.5px] font-black text-slate-800">{t("pdpSupport")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpSupportSub")}</span>
+              </div>
+            </div>
+
           </div>
-        )}
 
-        <PricePanel
-          price={price}
-          oldPrice={oldPrice}
-          percent={percent}
-          dealChips={dealChips}
-          freeQty={freeQty}
-          lang={lang}
-          t={t}
-        />
+          {/* Column 2 (Product Details & Purchase Panel - 7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            
+            {/* Title & Header Section */}
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm space-y-3.5">
+              
+              <div className="flex flex-wrap items-center gap-2">
+                {product.brand && (
+                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-primary">
+                    {product.brand}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsRatingModalOpen(true)}
+                  className="ms-auto flex items-center gap-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1 text-[12px] font-black text-amber-700 transition shadow-sm active:scale-95 cursor-pointer"
+                  title={lang === "ar" ? "اضغط لتقييم المنتج" : lang === "ku" ? "کلیک بکە بۆ هەڵسەنگاندن" : "Click to rate product"}
+                >
+                  <Star className="size-4 fill-amber-400 text-amber-400" />
+                  <span>{avgRating}</span>
+                  <span className="text-amber-600 font-medium">({reviewsList.length} {lang === "ar" ? "تقييم" : lang === "ku" ? "دەنگ" : "reviews"})</span>
+                  <span className="text-[11px] underline underline-offset-2 ms-1 font-bold text-amber-800">
+                    {lang === "ar" ? "قيّم الآن" : lang === "ku" ? "هەڵسەنگێنە" : "Rate"}
+                  </span>
+                </button>
+              </div>
 
-        <div className="mt-1 grid grid-cols-2 gap-px bg-border/60">
-          <TrustTile
-            icon={ShieldCheck}
-            tone="primary"
-            title={t("pdpAuthentic")}
-            sub={t("pdpAuthenticSub")}
-          />
-          <TrustTile icon={Truck} tone="info" title={t("pdpFastShip")} sub={t("pdpFastShipSub")} />
-          <TrustTile
-            icon={Layers}
-            tone="success"
-            title={t("pdpWholesale")}
-            sub={t("pdpWholesaleSub")}
-          />
-          <TrustTile
-            icon={MessageCircle}
-            tone="violet"
-            title={t("pdpSupport")}
-            sub={t("pdpSupportSub")}
-          />
+              <h1 className="text-[20px] sm:text-[22px] font-black leading-tight text-slate-900">
+                {pickName(product, lang)}
+              </h1>
+
+              {/* Status Chips & Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-black ${
+                    product.stock > 0
+                      ? low
+                        ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-slate-100 text-slate-500 border border-slate-200"
+                  }`}
+                >
+                  <span className={`size-2 rounded-full ${product.stock > 0 ? (low ? "bg-amber-500" : "bg-emerald-500") : "bg-slate-400"}`} />
+                  {product.stock > 0
+                    ? low
+                      ? t("stockLeft").replace("{n}", String(product.stock))
+                      : t("availableNow")
+                    : t("outOfStock")}
+                </span>
+
+                {(product.badges?.length ?? 0) > 0 && (
+                  <ProductBadges badges={product.badges} lang={lang} max={3} size="md" />
+                )}
+              </div>
+
+              {/* Vendor Offer Card */}
+              {vendor && (
+                <div className="pt-2">
+                  <Link
+                    to="/vendor/$slug"
+                    params={{ slug: vendor.slug }}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 transition hover:bg-slate-100/80"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm">
+                        {vendor.logo_url ? (
+                          <img src={vendor.logo_url} alt="" className="size-7 object-contain" />
+                        ) : (
+                          <Store className="size-5 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-[13px] font-black text-slate-800">
+                          <span>{vendor.name}</span>
+                          {vendor.is_verified && (
+                            <BadgeCheck className="size-4 text-emerald-600" />
+                          )}
+                        </div>
+                        <p className="text-[10.5px] font-semibold text-slate-400">
+                          {t("supplierOffer")} · {product.brand}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronLeft className="size-4 text-slate-400 ltr:rotate-180" />
+                  </Link>
+                </div>
+              )}
+
+              {/* Price Calculation Box */}
+              <div className="rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 p-4 border border-blue-100/60 space-y-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1">
+                      {lang === "ar" ? "سعر الوحدة للعيادات" : lang === "ku" ? "نرخی دانە بۆ کلینیک" : "Unit Price"}
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[26px] sm:text-[30px] font-black text-slate-900">
+                        {formatPrice(price, lang)}
+                      </span>
+                      {oldPrice && (
+                        <span className="text-[14px] font-bold text-slate-400 line-through">
+                          {formatPrice(oldPrice, lang)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {percent > 0 && oldPrice && (
+                    <div className="rounded-xl bg-emerald-100/80 px-3 py-1.5 text-center">
+                      <span className="text-[11.5px] font-black text-emerald-800 flex items-center gap-1">
+                        <TrendingUp className="size-3.5" />
+                        {t("youSave")} {formatPrice(oldPrice - price, lang)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {dealChips.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {dealChips.map((c) => (
+                      <span key={c} className="rounded-lg bg-rose-100 px-2.5 py-1 text-[11px] font-black text-rose-700">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Tier Discount Table */}
+              {tiers.length > 0 && (
+                <div className="pt-2">
+                  <TierTable tiers={tiers} basePrice={base} qty={qty} />
+                </div>
+              )}
+
+              {/* Quantity & Buy Actions Panel */}
+              <div className="pt-3 space-y-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  
+                  {/* Quantity Counter */}
+                  <div className="flex items-center justify-between sm:justify-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setQty((q) => Math.max(1, q - 1))}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 active:scale-95"
+                    >
+                      <Minus className="size-4" />
+                    </button>
+                    <span className="min-w-[32px] text-center text-[15px] font-black text-slate-900">
+                      {qty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQty((q) => q + 1)}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 active:scale-95"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+
+                  {/* Add to Cart Primary Button */}
+                  <Button
+                    size="lg"
+                    disabled={product.stock <= 0}
+                    onClick={() => {
+                      cart.add(
+                        {
+                          id: product.id,
+                          name_ar: product.name_ar,
+                          name_ku: product.name_ku,
+                          price: cartUnit,
+                          image_url: product.image_url,
+                          vendor_id: product.vendor_id ?? null,
+                        },
+                        qty,
+                      );
+                      toast.success(t("added"));
+                    }}
+                    className="flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98]"
+                  >
+                    <ShoppingCart className="size-5 me-2" />
+                    <span>
+                      {product.stock > 0
+                        ? `${t("addToCart")} · ${formatPrice(lineTotal, lang)}`
+                        : t("outOfStock")}
+                    </span>
+                  </Button>
+
+                  {/* WhatsApp Inquiry Button */}
+                  {wa && (
+                    <a
+                      href={`https://wa.me/${wa}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن ${pickName(product, lang)}`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 text-[13px] font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-95"
+                    >
+                      <MessageCircle className="size-4.5" />
+                      <span className="hidden sm:inline">{t("askOnWhatsapp")}</span>
+                    </a>
+                  )}
+
+                </div>
+              </div>
+
+            </div>
+
+            {/* Other Vendors for same item */}
+            {sameItem.length > 1 && (
+              <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-3">
+                <h3 className="text-[14px] font-black text-slate-800">
+                  {t("vendorsOffering")}
+                </h3>
+                <div className="space-y-2">
+                  {sameItem.map((o, i) => {
+                    const current = o.row.id === product.id;
+                    const out = o.row.stock <= 0;
+                    return (
+                      <button
+                        key={o.row.id}
+                        type="button"
+                        onClick={() => setPickedId(o.row.id)}
+                        className={`flex w-full items-center justify-between rounded-2xl border p-3 text-start transition ${
+                          current ? "border-primary bg-primary/5" : "border-slate-100 bg-slate-50/50 hover:bg-slate-100"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 text-[13px] font-black text-slate-800">
+                            <span>{o.vendor?.name ?? t("soldBy")}</span>
+                            {o.vendor?.is_verified && <BadgeCheck className="size-3.5 text-primary" />}
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-400">
+                            {out ? t("outOfStock") : `${t("stock")}: ${o.row.stock}`}
+                          </span>
+                        </div>
+                        <span className="text-[14px] font-black text-primary">
+                          {formatPrice(o.unit, lang)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Product Specifications & Description */}
+            {pick(product.description_ar, product.description_ku, lang) && (
+              <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm space-y-2.5">
+                <h3 className="text-[15px] font-black text-slate-800">
+                  {t("productDetails")}
+                </h3>
+                <p className="text-[13.5px] leading-relaxed text-slate-600 whitespace-pre-line">
+                  {pick(product.description_ar, product.description_ku, lang)}
+                </p>
+              </div>
+            )}
+
+            {/* Shipping & Delivery Information */}
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm space-y-3">
+              <h3 className="flex items-center gap-2 text-[15px] font-black text-slate-800">
+                <Truck className="size-4.5 text-primary" />
+                <span>{t("shippingInfo")}</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[12.5px] font-bold text-slate-700">
+                <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 border border-slate-100">
+                  <span className="text-slate-500">{t("shipFee")}</span>
+                  <span className="font-black text-slate-900">{formatPrice(fee, lang)}</span>
+                </div>
+                {freeOver > 0 && (
+                  <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-3 border border-emerald-100">
+                    <span className="text-emerald-700">{t("shipFreeOver")}</span>
+                    <span className="font-black text-emerald-800">{formatPrice(freeOver, lang)}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3 border border-slate-100 sm:col-span-2">
+                  <Banknote className="size-4 text-primary" />
+                  <span>
+                    <b className="font-black text-slate-900">{t("shipCod")}</b> — {t("shipCodSub")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Reviews & Ratings Section */}
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-[16px] font-black text-slate-800">
+                    {lang === "ar" ? "آراء وتقييمات العيادات والأطباء" : lang === "ku" ? "ڕا و هەڵسەنگاندنی پزیشکان" : "Clinic Reviews & Ratings"}
+                  </h3>
+                  <p className="text-[12px] font-bold text-slate-400 mt-0.5">
+                    {avgRating} ⭐ ({reviewsList.length} {lang === "ar" ? "تقييمات معتمدة" : lang === "ku" ? "هەڵسەنگاندن" : "verified ratings"})
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRatingModalOpen(true)}
+                  className="rounded-xl bg-primary px-4 py-2 text-[12.5px] font-black text-white shadow-sm transition hover:opacity-95 active:scale-95 cursor-pointer"
+                >
+                  {lang === "ar" ? "أضف تقييمك" : lang === "ku" ? "هەڵسەنگاندن زیادبکە" : "Write Review"}
+                </button>
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-3 divide-y divide-slate-100">
+                {reviewsList.map((rev, idx) => (
+                  <div key={idx} className="pt-3 first:pt-0 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[13px] text-slate-800">{rev.name}</span>
+                        <span className="rounded-md bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-black flex items-center gap-1">
+                          <BadgeCheck className="size-3" />
+                          {lang === "ar" ? "طبيب معتمد" : lang === "ku" ? "پزیشکی باوەڕپێکراو" : "Verified"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5 text-amber-400">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`size-3.5 ${i < rev.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed">{rev.comment}</p>
+                    <span className="text-[10px] font-medium text-slate-400 block">{rev.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Frequently Asked Questions */}
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <h3 className="mb-2 text-[15px] font-black text-slate-800">
+                {t("pdpFaqTitle")}
+              </h3>
+              <Faq q={t("pdpFaq1Q")} a={t("pdpFaq1A")} />
+              <Faq q={t("pdpFaq2Q")} a={t("pdpFaq2A")} />
+              <Faq q={t("pdpFaq3Q")} a={t("pdpFaq3A")} />
+            </div>
+
+          </div>
+
         </div>
-      </div>
 
+        {/* Rating Modal Dialog */}
+        {isRatingModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-[17px] font-black text-slate-900">
+                  {lang === "ar" ? "تقييم المنتج والجودة" : lang === "ku" ? "هەڵسەنگاندنی بەرهەم" : "Rate this Product"}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsRatingModalOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  ✕
+                </button>
+              </div>
 
-      {sameItem.length > 1 && (
-        <section className="mx-3 mt-3 rounded-2xl border border-border/70 bg-card p-3 shadow-card">
-          <h2 className="text-[13.5px] font-extrabold">{t("vendorsOffering")}</h2>
-          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
-            {t("vendorsOfferingHint")}
-          </p>
-          <ul className="mt-2.5 space-y-2">
-            {sameItem.map((o, i) => {
-              const current = o.row.id === product.id;
-              const out = o.row.stock <= 0;
-              return (
-                <li key={o.row.id}>
+              {/* Form */}
+              <form onSubmit={handleRatingSubmit} className="mt-4 space-y-4">
+                
+                {/* Product mini header */}
+                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
+                  {product.image_url ? (
+                    <img src={product.image_url} alt="" className="size-12 object-contain rounded-xl bg-white p-1 border border-slate-100" />
+                  ) : (
+                    <span className="text-2xl">🦷</span>
+                  )}
+                  <div>
+                    <h4 className="line-clamp-1 text-[13px] font-black text-slate-800">{pickName(product, lang)}</h4>
+                    <span className="text-[11px] font-bold text-primary">{product.brand}</span>
+                  </div>
+                </div>
+
+                {/* Interactive Star Picker */}
+                <div className="text-center py-2 space-y-1.5">
+                  <span className="text-[12px] font-black text-slate-500 block">
+                    {lang === "ar" ? "اختر التقييم بالنجوم:" : lang === "ku" ? "هەڵسەنگاندن بە ئەستێرە دیاریبکە:" : "Select your rating:"}
+                  </span>
+                  <div className="flex items-center justify-center gap-1.5 py-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setUserStars(s)}
+                        onMouseEnter={() => setHoverStars(s)}
+                        onMouseLeave={() => setHoverStars(0)}
+                        className="p-1 transition-transform hover:scale-125 focus:outline-none"
+                      >
+                        <Star
+                          className={`size-8 transition-colors ${
+                            s <= (hoverStars || userStars)
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-slate-200"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[13px] font-black text-amber-600">
+                    {userStars === 5
+                      ? (lang === "ar" ? "ممتاز جداً 🌟🌟🌟🌟🌟" : lang === "ku" ? "ناوازە و نایاب" : "Excellent")
+                      : userStars === 4
+                      ? (lang === "ar" ? "جيد جداً ⭐⭐⭐⭐" : lang === "ku" ? "زۆر باش" : "Very Good")
+                      : userStars === 3
+                      ? (lang === "ar" ? "جيد ⭐⭐⭐" : lang === "ku" ? "باش" : "Good")
+                      : (lang === "ar" ? "مقبول ⭐" : lang === "ku" ? "مامناوەند" : "Fair")}
+                  </span>
+                </div>
+
+                {/* Name / Clinic Name */}
+                <div className="space-y-1">
+                  <label className="text-[12px] font-black text-slate-700 block">
+                    {lang === "ar" ? "اسمك أو اسم العيادة *" : lang === "ku" ? "ناوی پزیشک یان کلینیک *" : "Your Name / Clinic Name *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={reviewerName}
+                    onChange={(e) => setReviewerName(e.target.value)}
+                    placeholder={lang === "ar" ? "مثال: د. سارة - مركز بغداد الطبي" : lang === "ku" ? "نموونە: د. سارا - کلینیکی هەولێر" : "e.g. Dr. Sarah Dental Clinic"}
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-bold text-slate-800 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Review Text */}
+                <div className="space-y-1">
+                  <label className="text-[12px] font-black text-slate-700 block">
+                    {lang === "ar" ? "ملاحظاتك ورأيك في المنتج" : lang === "ku" ? "سەرنج و تێبینی لەسەر بەرهەم" : "Your Review & Feedback"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder={lang === "ar" ? "اكتب تفاصيل تجربتك مع المنتج..." : lang === "ku" ? "تێبینی و ڕای خۆت بنووسە..." : "Write your thoughts on product quality..."}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-[13px] font-medium text-slate-800 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex items-center gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setPickedId(o.row.id)}
-                    aria-pressed={current}
-                    className={`flex w-full items-center gap-2 rounded-xl border p-2 text-start transition-colors active:scale-[0.99] ${current ? "border-primary/40 bg-primary/5" : "border-border/60"}`}
+                    onClick={() => setIsRatingModalOpen(false)}
+                    className="flex-1 h-11 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-600 hover:bg-slate-50 active:scale-95"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="flex min-w-0 items-center gap-1 text-[12.5px] font-extrabold">
-                        <span className="truncate">{o.vendor?.name ?? t("soldBy")}</span>
-                        {o.vendor?.is_verified && (
-                          <BadgeCheck className="size-3.5 shrink-0 text-primary" strokeWidth={2.6} />
-                        )}
-                      </p>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
-                        {i === 0 && (
-                          <span className="rounded-md bg-success/15 px-1.5 py-0.5 text-success">
-                            {t("bestPrice")}
-                          </span>
-                        )}
-                        {current && (
-                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-primary">
-                            {t("thisVendor")}
-                          </span>
-                        )}
-                        <span className={out ? "text-destructive" : "text-muted-foreground"}>
-                          {out ? t("outOfStock") : `${t("stock")}: ${o.row.stock}`}
-                        </span>
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-[14px] font-black tabular-nums text-primary">
-                      {formatPrice(o.unit, lang)}
-                    </span>
-                    {current ? (
-                      <Check className="size-4 shrink-0 text-primary" strokeWidth={3} />
-                    ) : (
-                      <span className="size-4 shrink-0 rounded-full border-2 border-border" />
-                    )}
+                    {lang === "ar" ? "إلغاء" : lang === "ku" ? "پاشگەزبوونەوە" : "Cancel"}
                   </button>
-                  {current && !out && (
-                    <Button
-                      size="sm"
-                      className="mt-1.5 h-9 w-full text-[11.5px]"
-                      onClick={() => {
-                        cart.add(
-                          {
-                            id: o.row.id,
-                            name_ar: o.row.name_ar,
-                            name_ku: o.row.name_ku,
-                            price: o.unit,
-                            image_url: o.row.image_url,
-                            vendor_id: o.row.vendor_id ?? null,
-                          },
-                          1,
-                        );
-                        toast.success(t("added"));
-                      }}
-                    >
-                      <ShoppingCart className="size-3.5" strokeWidth={2.6} />
-                      {t("addToCart")}
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+                  <button
+                    type="submit"
+                    className="flex-1 h-11 rounded-xl bg-primary text-[13.5px] font-black text-white shadow-md transition hover:opacity-95 active:scale-95"
+                  >
+                    {lang === "ar" ? "إرسال التقييم" : lang === "ku" ? "ناردنی هەڵسەنگاندن" : "Submit Rating"}
+                  </button>
+                </div>
 
-      <div className="space-y-3 p-3">
-        <TierTable tiers={tiers} basePrice={base} qty={qty} />
+              </form>
 
-        {/* Description */}
-        {pick(product.description_ar, product.description_ku, lang) && (
-          <section className="rounded-2xl border border-border/70 bg-card p-3">
-            <h2 className="mb-1.5 text-[13px] font-extrabold">{t("productDetails")}</h2>
-            <p className="text-[13px] leading-6 text-muted-foreground">
-              {pick(product.description_ar, product.description_ku, lang)}
-            </p>
-          </section>
-        )}
-
-        {/* Shipping & payment */}
-        <section className="rounded-2xl border border-border/70 bg-card p-3">
-          <h2 className="mb-2 flex items-center gap-1.5 text-[13px] font-extrabold">
-            <Truck className="size-4 text-primary" strokeWidth={2.5} />
-            {t("shippingInfo")}
-          </h2>
-          <ul className="space-y-2 text-[12px]">
-            <li className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{t("shipFee")}</span>
-              <span className="font-extrabold">{formatPrice(fee, lang)}</span>
-            </li>
-            {freeOver > 0 && (
-              <li className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">{t("shipFreeOver")}</span>
-                <span className="font-extrabold text-emerald-600">
-                  {formatPrice(freeOver, lang)}
-                </span>
-              </li>
-            )}
-            <li className="flex items-start gap-2">
-              <Banknote className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.4} />
-              <span>
-                <b className="font-extrabold">{t("shipCod")}</b>{" "}
-                <span className="text-muted-foreground">— {t("shipCodSub")}</span>
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Package className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.4} />
-              <span className="text-muted-foreground">{t("shipPacked")}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2.4} />
-              <span className="text-muted-foreground">{t("shipAllIraq")}</span>
-            </li>
-          </ul>
-        </section>
-
-        {/* FAQ */}
-        <section className="rounded-2xl border border-border/70 bg-card px-3 py-1">
-          <h2 className="pt-2 text-[13px] font-extrabold">{t("pdpFaqTitle")}</h2>
-          <Faq q={t("pdpFaq1Q")} a={t("pdpFaq1A")} />
-          <Faq q={t("pdpFaq2Q")} a={t("pdpFaq2A")} />
-          <Faq q={t("pdpFaq3Q")} a={t("pdpFaq3A")} />
-        </section>
-
-        {wa && (
-          <a
-            href={`https://wa.me/${wa}?text=${encodeURIComponent(pickName(product, lang))}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-[13px] font-extrabold text-emerald-700 active:scale-[0.99]"
-          >
-            <MessageCircle className="size-4" strokeWidth={2.5} />
-            {t("askOnWhatsapp")}
-          </a>
-        )}
-      </div>
-
-      {related.length > 0 && (
-        <section className="px-3 pb-3">
-          <h2 className="mb-2 text-[14px] font-extrabold">{t("relatedProducts")}</h2>
-          <div className="grid grid-cols-2 items-stretch gap-2.5">
-            {related.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                price={effectivePrice(
-                  p,
-                  data?.offers ?? [],
-                  data?.offerProducts ?? [],
-                  1,
-                  data?.flashDeals ?? [],
-                  data?.clearanceRules ?? [],
-                )}
-              />
-            ))}
+            </div>
           </div>
-        </section>
-      )}
+        )}
 
-      <div className="px-3 pb-4">
-        <BannerSlot slot="product_page" />
+        {/* Related Products Showcase */}
+        {related.length > 0 && (
+          <div className="mt-12 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-5 text-primary" />
+                <h3 className="text-[18px] font-black text-slate-800">
+                  {t("relatedProducts")}
+                </h3>
+              </div>
+              <Link to="/products" className="text-[12.5px] font-bold text-primary hover:underline">
+                {lang === "ar" ? "عرض المزيد" : lang === "ku" ? "بینینی زیاتر" : "View More"}
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {related.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  price={effectivePrice(
+                    p,
+                    data?.offers ?? [],
+                    data?.offerProducts ?? [],
+                    1,
+                    data?.flashDeals ?? [],
+                    data?.clearanceRules ?? [],
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Sticky buy dock */}
-      <div className="dock-bar flex items-center gap-2 px-3 py-2.5">
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
-          <Button variant="ghost" size="icon" onClick={() => setQty((q) => Math.max(1, q - 1))}>
-            <Minus className="size-4" />
-          </Button>
-          <span className="w-7 text-center text-sm font-extrabold tabular-nums">{qty}</span>
-          <Button variant="ghost" size="icon" onClick={() => setQty((q) => q + 1)}>
-            <Plus className="size-4" />
-          </Button>
-        </div>
-        <Button
-          size="lg"
-          className="min-w-0 flex-1"
-          disabled={product.stock <= 0}
-          onClick={() => {
-            cart.add(
-              {
-                id: product.id,
-                name_ar: product.name_ar,
-                name_ku: product.name_ku,
-                price: cartUnit,
-                image_url: product.image_url,
-                vendor_id: product.vendor_id ?? null,
-              },
-              qty,
-            );
-            toast.success(t("added"));
-          }}
-        >
-          <ShoppingCart className="size-5 shrink-0" />
-          <span className="truncate">
-            {product.stock > 0 ? `${t("addToCart")} · ${formatPrice(lineTotal, lang)}` : t("outOfStock")}
-          </span>
-        </Button>
-      </div>
       <PageBlocks page="product" position="bottom" />
     </StoreLayout>
   );

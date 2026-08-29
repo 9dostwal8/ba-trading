@@ -18,31 +18,46 @@ export function CategoryCircles({
   const { lang } = useI18n();
   const item = (c: Category) => {
     const Icon = categoryIcon(c.icon);
+    const hasValidImage = c.image_url && !c.image_url.startsWith("/__l5e");
     return (
       <Link
         key={c.id}
         to="/products"
         search={{ cat: c.id }}
-        style={tintStyle(c.hue, c.chroma)}
-        className="flex h-full w-full flex-col items-center justify-between gap-2 rounded-[14px] border border-border bg-card px-2 pb-2.5 pt-3 active:scale-[0.97]"
+        className="group flex h-full w-full flex-col items-center justify-between gap-2 p-1 active:scale-[0.97]"
       >
-        {c.image_url ? (
-          <img
-            src={c.image_url}
-            alt={pickName(c, lang)}
-            loading="lazy"
-            width={512}
-            height={512}
-            className="size-[46px] object-contain"
-          />
-        ) : (
-          <Icon
-            className="size-[38px]"
-            strokeWidth={1.8}
-            style={{ color: "var(--tint-strong)" }}
-          />
-        )}
-        <span className="line-clamp-2 text-center text-[11px] font-bold leading-tight">
+        <div
+          style={tintStyle(c.hue, c.chroma)}
+          className="flex size-15 sm:size-16 items-center justify-center rounded-2xl p-2.5 shadow-sm transition-all group-hover:scale-105 border border-slate-100/60 group-hover:shadow-md"
+        >
+          {hasValidImage ? (
+            <img
+              src={c.image_url!}
+              alt={pickName(c, lang)}
+              loading="lazy"
+              width={512}
+              height={512}
+              className="size-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                if (e.currentTarget.nextElementSibling) {
+                  (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                }
+              }}
+            />
+          ) : null}
+          <div
+            className="size-full items-center justify-center"
+            style={{ display: hasValidImage ? "none" : "flex" }}
+          >
+            <Icon
+              className="size-7"
+              strokeWidth={2}
+              style={{ color: "var(--tint-strong)" }}
+            />
+          </div>
+        </div>
+        <span className="line-clamp-2 text-center text-[11.5px] font-bold text-slate-700 leading-tight group-hover:text-primary transition-colors">
           {pickName(c, lang)}
         </span>
       </Link>

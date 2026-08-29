@@ -70,7 +70,7 @@ export function ProductCard({
         <Link
           to="/product/$id"
           params={{ id: product.id }}
-          className="block w-full"
+          className="block w-full group-hover:scale-105 transition-transform duration-300"
           style={{ aspectRatio: "var(--card-img-ratio)" }}
         >
           {product.image_url ? (
@@ -85,44 +85,54 @@ export function ProductCard({
             <div className="grid h-full w-full place-items-center text-3xl">🦷</div>
           )}
         </Link>
+        {/* Top-End: Discount Badge */}
+        {percent > 0 && (
+          <span className="absolute top-2.5 end-2.5 rounded-full bg-rose-600 px-2 py-0.5 text-[10.5px] font-black text-white shadow-sm z-10">
+            {percent}%
+          </span>
+        )}
+
+        {/* Top-Start: Expiry & Custom Badges Overlay */}
+        <div className="absolute top-2.5 start-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
+          {dc.show_expiry && (nearExpiry || outlet) && (
+            <div
+              className="flex min-w-0 items-center gap-1"
+              style={tintStyle(nearExpiry ? tone.hue : 220, nearExpiry ? tone.chroma : 0.12)}
+            >
+              <span
+                className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold shadow-sm backdrop-blur-sm"
+                style={{ background: "var(--tint-soft)", color: "var(--tint-strong)" }}
+              >
+                {nearExpiry ? (
+                  <Hourglass className="size-2.5 shrink-0" strokeWidth={3} />
+                ) : (
+                  <PackageOpen className="size-2.5 shrink-0" strokeWidth={3} />
+                )}
+                <span className="truncate">
+                  {nearExpiry ? monthsChip(months, lang) : t("outlet")}
+                </span>
+              </span>
+            </div>
+          )}
+          {dc.show_badges && !!product.badges?.length && (
+            <div className="min-w-0">
+              <ProductBadges badges={product.badges} lang={lang} max={2} />
+            </div>
+          )}
+        </div>
+
         {out && (
-          <span className="absolute inset-x-2 bottom-2 rounded-md bg-foreground/75 py-0.5 text-center text-[10px] font-bold text-background">
+          <span className="absolute inset-x-2 bottom-2 rounded-lg bg-slate-900/80 py-1 text-center text-[10.5px] font-bold text-white backdrop-blur-sm z-10">
             {t("outOfStock")}
           </span>
         )}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 px-2.5 pb-2.5">
-        {dc.show_expiry && (nearExpiry || outlet) && (
-          <div
-            className="flex min-w-0 items-center gap-1"
-            style={tintStyle(nearExpiry ? tone.hue : 220, nearExpiry ? tone.chroma : 0.12)}
-          >
-            <span
-              className="inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold"
-              style={{ background: "var(--tint-soft)", color: "var(--tint-strong)" }}
-            >
-              {nearExpiry ? (
-                <Hourglass className="size-2.5 shrink-0" strokeWidth={3} />
-              ) : (
-                <PackageOpen className="size-2.5 shrink-0" strokeWidth={3} />
-              )}
-              <span className="truncate">
-                {nearExpiry ? monthsChip(months, lang) : t("outlet")}
-              </span>
-            </span>
-          </div>
-        )}
-        {dc.show_badges && !!product.badges?.length && (
-          <div className="min-w-0">
-            <ProductBadges badges={product.badges} lang={lang} max={3} />
-          </div>
-        )}
-
         <Link
           to="/product/$id"
           params={{ id: product.id }}
-          className="line-clamp-2 text-[11.5px] font-semibold leading-[1.55] text-foreground"
+          className="line-clamp-2 text-[12px] font-semibold leading-[1.5] text-foreground hover:text-primary transition-colors"
         >
           {dc.show_brand && product.brand ? <span className="font-extrabold">{product.brand} </span> : null}
           {pickName(product, lang)}
@@ -192,16 +202,6 @@ export function ProductCard({
             <p className="mt-1 text-[9.5px] font-bold text-primary">
               {product.stock} {t("stock")}
             </p>
-          )}
-          {!out && (
-            <button
-              onClick={add}
-              style={{ borderRadius: "calc(var(--card-radius) * 0.75)" }}
-              className="mt-2 inline-flex w-full items-center justify-center gap-1 bg-primary py-2 text-[11px] font-extrabold text-primary-foreground active:scale-[0.98]"
-            >
-              <ShoppingCart className="size-3.5" strokeWidth={2.6} />
-              {t("addToCart")}
-            </button>
           )}
         </div>
       </div>

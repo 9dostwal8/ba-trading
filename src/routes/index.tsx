@@ -64,53 +64,53 @@ function Home() {
 
   return (
     <StoreLayout>
-      {!isStaff && <RewardBar settings={data?.settings} />}
-      {!isStaff && <VendorJoinCta settings={data?.settings} />}
-      {isLoading ? (
-        <div className="space-y-4 px-3 pt-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Mobile template */}
-          <div className="lg:hidden">
-            <HomeSections
-              sections={data?.homeSections ?? []}
-              priceOf={priceOf}
-              data={{
-                products: data?.products ?? [],
-                categories: data?.categories ?? [],
-                offers,
-                offerProducts,
-                banners: data?.banners ?? [],
-                brandCards: data?.brandCards ?? [],
-                flashDeals,
-                bundles: data?.bundles ?? [],
-                tiers: data?.tiers ?? [],
-                clearanceRules: data?.clearanceRules ?? [],
-              }}
-            />
+      <div className="w-full">
+        {isLoading ? (
+          <div className="mx-auto max-w-[var(--page-max,1536px)] space-y-4 px-4 pt-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 rounded-3xl" />
+            ))}
           </div>
+        ) : (
+          <>
+            {/* Mobile template */}
+            <div className="lg:hidden mx-auto max-w-xl px-2 py-2">
+              <HomeSections
+                sections={data?.homeSections ?? []}
+                priceOf={priceOf}
+                data={{
+                  products: data?.products ?? [],
+                  categories: data?.categories ?? [],
+                  offers,
+                  offerProducts,
+                  banners: data?.banners ?? [],
+                  brandCards: data?.brandCards ?? [],
+                  flashDeals,
+                  bundles: data?.bundles ?? [],
+                  tiers: data?.tiers ?? [],
+                  clearanceRules: data?.clearanceRules ?? [],
+                }}
+              />
+            </div>
 
-          {/* Desktop template */}
-          <div className="hidden lg:block">
-            <DesktopHome
-              priceOf={priceOf}
-              data={{
-                products: data?.products ?? [],
-                categories: data?.categories ?? [],
-                banners: (data?.banners ?? []) as never,
-                brandCards: data?.brandCards ?? [],
-                flashDeals,
-                bundles: data?.bundles ?? [],
-                homeSections: data?.homeSections ?? [],
-              }}
-            />
-          </div>
-        </>
-      )}
+            {/* Desktop template */}
+            <div className="hidden lg:block w-full">
+              <DesktopHome
+                priceOf={priceOf}
+                data={{
+                  products: data?.products ?? [],
+                  categories: data?.categories ?? [],
+                  banners: data?.banners ?? [],
+                  brandCards: data?.brandCards ?? [],
+                  flashDeals,
+                  bundles: data?.bundles ?? [],
+                  homeSections: data?.homeSections ?? [],
+                }}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </StoreLayout>
   );
 }
