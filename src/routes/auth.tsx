@@ -225,12 +225,12 @@ function AuthPage() {
     setCanResend(false);
     setShowOtpModal(true);
 
-    toast.info(
+    toast.success(
       lang === "ar"
-        ? `رمز التحقق (OTP) الخاص بك هو: ${newOtp}`
+        ? `تم إرسال رمز التحقق إلى رقم هاتفك عبر ${otpChannel === "whatsapp" ? "واتساب" : "SMS"}`
         : lang === "ku"
-        ? `کۆدی پشتڕاستکردنەوەکەت بریتییە لە: ${newOtp}`
-        : `Your verification code is: ${newOtp}`
+        ? `کۆدی پشتڕاستکردنەوە نێردرا بۆ ژمارەی مۆبایلەکەت لە ڕێگەی ${otpChannel === "whatsapp" ? "واتسئاپ" : "SMS"}`
+        : `Verification code sent to your phone via ${otpChannel.toUpperCase()}`
     );
   }
 
@@ -266,7 +266,7 @@ function AuthPage() {
   };
 
   // Resend OTP
-  function handleResendOtp() {
+  function handleResendOtp(channel = otpChannel) {
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(newOtp);
     setCountdown(60);
@@ -274,10 +274,10 @@ function AuthPage() {
     setOtpDigits(["", "", "", "", "", ""]);
     toast.success(
       lang === "ar"
-        ? `تم إرسال رمز جديد عبر ${otpChannel === "whatsapp" ? "واتساب" : "SMS"}: ${newOtp}`
+        ? `تمت إعادة إرسال رمز التحقق إلى رقمك عبر ${channel === "whatsapp" ? "واتساب" : "SMS"}`
         : lang === "ku"
-        ? `کۆدی نوێ نێردرا لە ڕێگەی ${otpChannel === "whatsapp" ? "واتسئاپ" : "SMS"}: ${newOtp}`
-        : `New OTP sent via ${otpChannel.toUpperCase()}: ${newOtp}`
+        ? `کۆدی پشتڕاستکردنەوە دووبارە نێردرا لە ڕێگەی ${channel === "whatsapp" ? "واتسئاپ" : "SMS"}`
+        : `New verification code sent via ${channel.toUpperCase()}`
     );
   }
 
@@ -678,7 +678,7 @@ function AuthPage() {
               <button
                 type="button"
                 disabled={!canResend}
-                onClick={handleResendOtp}
+                onClick={() => handleResendOtp()}
                 className="flex items-center gap-1 text-primary font-black disabled:opacity-40 disabled:cursor-not-allowed hover:underline"
               >
                 <RefreshCw className="size-3.5" />
