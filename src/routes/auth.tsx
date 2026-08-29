@@ -194,8 +194,8 @@ function AuthPage() {
     });
   }
 
-  // Trigger OTP Dispatch Modal
-  function handleInitiateAuth(e: React.FormEvent) {
+  // Trigger Login directly or OTP Dispatch Modal for Registration
+  async function handleInitiateAuth(e: React.FormEvent) {
     e.preventDefault();
     const phone = normalizePhone(form.phone);
     if (phone.length < 9) {
@@ -207,22 +207,39 @@ function AuthPage() {
       return;
     }
 
-    if (mode === "up") {
-      if (!form.fullName.trim()) {
-        toast.error(lang === "ar" ? "يرجى كتابة اسم الطبيب أو اسم العيادة" : lang === "ku" ? "تکایە ناوی پزیشک یان کلینیک بنووسە" : "Doctor or clinic name is required");
+    // Direct Login (No OTP needed for Login)
+    if (mode === "in") {
+      setBusy(true);
+      const email = `${phone}@${PHONE_DOMAIN}`;
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: form.password,
+      });
+      setBusy(false);
+      if (error) {
+        toast.error(lang === "ar" ? "بيانات الدخول غير صحيحة، يرجى التأكد من الرقم وكلمة المرور" : lang === "ku" ? "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" : "Invalid phone number or password");
         return;
       }
-      if (!form.city.trim()) {
-        toast.error(lang === "ar" ? "يرجى اختيار المحافظة أو المدينة" : lang === "ku" ? "تکایە پارێزگا یان شار دیاریبکە" : "City is required");
-        return;
-      }
-      if (Number(form.captcha) !== quiz.a + quiz.b) {
-        toast.error(lang === "ar" ? "جواب التحقق غير صحيح" : lang === "ku" ? "وەڵامی پشکنین هەڵەیە" : "Human check answer is incorrect");
-        return;
-      }
+      toast.success(lang === "ar" ? "تم تسجيل الدخول بنجاح" : lang === "ku" ? "بە سەرکەوتوویی چوویتە ژوورەوە" : "Signed in successfully");
+      navigate({ to: "/profile" });
+      return;
     }
 
-    // Generate fresh 6-digit OTP
+    // Registration Validation
+    if (!form.fullName.trim()) {
+      toast.error(lang === "ar" ? "يرجى كتابة اسم الطبيب أو اسم العيادة" : lang === "ku" ? "تکایە ناوی پزیشک یان کلینیک بنووسە" : "Doctor or clinic name is required");
+      return;
+    }
+    if (!form.city.trim()) {
+      toast.error(lang === "ar" ? "يرجى اختيار المحافظة أو المدينة" : lang === "ku" ? "تکایە پارێزگا یان شار دیاریبکە" : "City is required");
+      return;
+    }
+    if (Number(form.captcha) !== quiz.a + quiz.b) {
+      toast.error(lang === "ar" ? "جواب التحقق غير صحيح" : lang === "ku" ? "وەڵامی پشکنین هەڵەیە" : "Human check answer is incorrect");
+      return;
+    }
+
+    // Generate fresh 6-digit OTP for Registration Verification
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(newOtp);
     setOtpDigits(["", "", "", "", "", ""]);
@@ -578,11 +595,18 @@ function AuthPage() {
                 className="w-full h-11 mt-1 rounded-xl bg-[#0051cc] hover:bg-[#0041a8] text-[14.5px] font-black text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>
-                  {mode === "in"
-                    ? (lang === "ar" ? "المتابعة وتأكيد الرمز (OTP)" : lang === "ku" ? "بەردەوامبوون و وەرگرتنی کۆد" : "Continue to OTP Verification")
-                    : (lang === "ar" ? "إنشاء الحساب وتأكيد الرمز" : lang === "ku" ? "دروستکردن و وەرگرتنی کۆد" : "Create & Verify via OTP")}
+                  {busy ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>{lang === "ar" ? "جاري المعالجة..." : lang === "ku" ? "جێبەجێکردن..." : "Processing..."}</span>
+                    </span>
+                  ) : mode === "in" ? (
+                    lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In"
+                  ) : (
+                    lang === "ar" ? "تأكيد الهاتف وإنشاء الحساب (OTP)" : lang === "ku" ? "پشتڕاستکردنەوە و دروستکردنی هەژمار" : "Verify & Create Account (OTP)"
+                  )}
                 </span>
-                <ArrowRight className="size-4 rtl:rotate-180" />
+                {!busy && <ArrowRight className="size-4 rtl:rotate-180" />}
               </button>
 
               {/* Terms notice (GooshiShop style) */}
