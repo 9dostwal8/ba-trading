@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   Banknote,
+  Bell,
+  Bookmark,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -300,40 +302,56 @@ function ProductPage() {
         </nav>
 
         {/* 2-Column Split: Image on one side & Product Details on the other side */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-10 items-start">
           
           {/* Column 1 (Image & Gallery Stage - 5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-5 space-y-3 sm:space-y-4">
             
             {/* Main Product Image Card */}
-            <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-sm group">
+            <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 sm:p-6 shadow-sm group">
               
               {/* Discount Blade */}
               {percent > 0 && (
-                <span className="absolute top-4 right-4 rounded-full bg-rose-600 px-3 py-1 text-[12px] font-black text-white shadow-md z-10">
+                <span className="absolute top-4 start-4 rounded-full bg-[#007979] px-2.5 sm:px-3 py-1 text-[11px] sm:text-[12px] font-black text-white shadow-md z-10">
                   {percent}% {lang === "ar" ? "خصم" : lang === "ku" ? "داشکاندن" : "OFF"}
                 </span>
               )}
 
-              {/* Utility Floating Actions (Share, Wishlist) */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+              {/* Utility Floating Actions (Bookmark, Bell, Share, Compare) */}
+              <div className="absolute top-4 end-4 flex flex-col gap-2 z-10">
                 <button
                   type="button"
                   onClick={share}
                   aria-label={t("shareProduct")}
-                  className="flex size-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-white hover:text-primary active:scale-95"
+                  className="flex size-9 items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-primary active:scale-95"
                 >
                   <Share2 className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.success(lang === "ar" ? "تمت الإضافة للمفضلة" : lang === "ku" ? "زیادکرا بۆ دڵخوازەکان" : "Saved to wishlist")}
+                  aria-label="Wishlist"
+                  className="flex size-9 items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-primary active:scale-95"
+                >
+                  <Bookmark className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info(lang === "ar" ? "سيتم تنبيهك عند توفر عروض" : lang === "ku" ? "ئاگاداردەکرێیتەوە لە داشکاندن" : "Price alert enabled")}
+                  aria-label="Alert"
+                  className="flex size-9 items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-primary active:scale-95"
+                >
+                  <Bell className="size-4" />
                 </button>
               </div>
 
               {/* Product Photo */}
-              <div className="flex aspect-square w-full items-center justify-center">
+              <div className="flex aspect-square w-full items-center justify-center py-2">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
                     alt={pickName(product, lang)}
-                    className="max-h-[380px] w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="max-h-[300px] sm:max-h-[380px] w-full object-contain transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-7xl">🦷</div>
@@ -348,48 +366,25 @@ function ProductPage() {
               )}
             </div>
 
-            {/* Trust Guarantee Cards Strip */}
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <ShieldCheck className="size-4.5" />
+            {/* Thumbnail Preview Boxes (GooshiShop Style) */}
+            {product.image_url && (
+              <div className="flex items-center gap-2 justify-center py-1">
+                <div className="size-14 sm:size-16 rounded-xl border-2 border-primary p-1 bg-white shadow-xs cursor-pointer">
+                  <img src={product.image_url} alt="" className="size-full object-contain" />
                 </div>
-                <span className="text-[10.5px] font-black text-slate-800">{t("pdpAuthentic")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpAuthenticSub")}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Truck className="size-4.5" />
+                <div className="size-14 sm:size-16 rounded-xl border border-slate-200 p-1 bg-slate-50 opacity-60 flex items-center justify-center text-xs font-bold text-slate-400">
+                  +1
                 </div>
-                <span className="text-[10.5px] font-black text-slate-800">{t("pdpFastShip")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpFastShipSub")}</span>
               </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Layers className="size-4.5" />
-                </div>
-                <span className="text-[10.5px] font-black text-slate-800">{t("pdpWholesale")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpWholesaleSub")}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                  <MessageCircle className="size-4.5" />
-                </div>
-                <span className="text-[10.5px] font-black text-slate-800">{t("pdpSupport")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpSupportSub")}</span>
-              </div>
-            </div>
+            )}
 
           </div>
 
           {/* Column 2 (Product Details & Purchase Panel - 7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 space-y-4 sm:space-y-5">
             
             {/* Title & Header Section */}
-            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm space-y-3.5">
+            <div className="rounded-3xl border border-slate-100 bg-white p-4 sm:p-6 shadow-sm space-y-3">
               
               <div className="flex flex-wrap items-center gap-2">
                 {product.brand && (
@@ -400,21 +395,26 @@ function ProductPage() {
                 <button
                   type="button"
                   onClick={() => setIsRatingModalOpen(true)}
-                  className="ms-auto flex items-center gap-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1 text-[12px] font-black text-amber-700 transition shadow-sm active:scale-95 cursor-pointer"
+                  className="ms-auto flex items-center gap-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1 text-[11.5px] font-black text-amber-700 transition shadow-xs active:scale-95 cursor-pointer"
                   title={lang === "ar" ? "اضغط لتقييم المنتج" : lang === "ku" ? "کلیک بکە بۆ هەڵسەنگاندن" : "Click to rate product"}
                 >
-                  <Star className="size-4 fill-amber-400 text-amber-400" />
+                  <Star className="size-3.5 fill-amber-400 text-amber-400" />
                   <span>{avgRating}</span>
                   <span className="text-amber-600 font-medium">({reviewsList.length} {lang === "ar" ? "تقييم" : lang === "ku" ? "دەنگ" : "reviews"})</span>
-                  <span className="text-[11px] underline underline-offset-2 ms-1 font-bold text-amber-800">
-                    {lang === "ar" ? "قيّم الآن" : lang === "ku" ? "هەڵسەنگێنە" : "Rate"}
-                  </span>
                 </button>
               </div>
 
-              <h1 className="text-[20px] sm:text-[22px] font-black leading-tight text-slate-900">
+              {/* Primary Native Name */}
+              <h1 className="text-[17px] sm:text-[22px] font-black leading-tight text-slate-900">
                 {pickName(product, lang)}
               </h1>
+
+              {/* Secondary Subtitle / English Name / SKU (GooshiShop Style) */}
+              {(product.name_ku || product.sku) && (
+                <p className="text-[12px] sm:text-[13px] font-semibold text-slate-400">
+                  {lang === "ar" ? product.name_ku : product.name_ar} {product.sku ? `· SKU: ${product.sku}` : ""}
+                </p>
+              )}
 
               {/* Status Chips & Badges */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -589,6 +589,41 @@ function ProductPage() {
                 </div>
               </div>
 
+            </div>
+
+            {/* 4 Trust Guarantee Cards (GooshiShop Style) */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <ShieldCheck className="size-4" />
+                </div>
+                <span className="text-[11px] font-black text-slate-800">{t("pdpAuthentic")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpAuthenticSub")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <Truck className="size-4" />
+                </div>
+                <span className="text-[11px] font-black text-slate-800">{t("pdpFastShip")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpFastShipSub")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <Layers className="size-4" />
+                </div>
+                <span className="text-[11px] font-black text-slate-800">{t("pdpWholesale")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpWholesaleSub")}</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                  <MessageCircle className="size-4" />
+                </div>
+                <span className="text-[11px] font-black text-slate-800">{t("pdpSupport")}</span>
+                <span className="text-[9px] font-medium text-slate-400">{t("pdpSupportSub")}</span>
+              </div>
             </div>
 
             {/* Other Vendors for same item */}
@@ -888,12 +923,12 @@ function ProductPage() {
 
       </div>
 
-      {/* Sticky Mobile Buy Dock (Persistent 1-tap checkout on mobile screens) */}
-      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[calc(env(safe-area-inset-bottom)+8px)]">
-        <div className="flex items-center justify-between gap-3">
+      {/* Sticky Mobile Buy Dock (Persistent 1-tap checkout on mobile screens - GooshiShop Style) */}
+      <div className="fixed bottom-0 inset-x-0 z-50 lg:hidden border-t border-slate-200/90 bg-white/95 backdrop-blur-xl px-4 py-3 shadow-[0_-4px_25px_rgba(0,0,0,0.09)] pb-[calc(env(safe-area-inset-bottom)+10px)]">
+        <div className="flex items-center justify-between gap-4 max-w-lg mx-auto">
           <div className="min-w-0">
-            <span className="block text-[10.5px] font-bold text-slate-400">{t("price")}:</span>
-            <span className="block text-[15px] font-black text-primary truncate">
+            <span className="block text-[10px] font-bold text-slate-400 leading-none mb-1">{t("price")}:</span>
+            <span className="block text-[16px] font-black text-slate-900 truncate">
               {formatPrice(lineTotal, lang)}
             </span>
           </div>
@@ -904,7 +939,7 @@ function ProductPage() {
                 href={`https://wa.me/${wa}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن ${pickName(product, lang)}`)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex size-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-50 text-emerald-700 active:scale-95"
+                className="flex size-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-50 text-emerald-700 active:scale-95 shrink-0"
               >
                 <MessageCircle className="size-5" />
               </a>
@@ -927,9 +962,9 @@ function ProductPage() {
                 );
                 toast.success(t("added"));
               }}
-              className="flex-1 max-w-[200px] h-11 rounded-xl bg-primary text-[13.5px] font-black text-white shadow-md active:scale-95"
+              className="flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-white shadow-lg shadow-primary/25 active:scale-95 flex items-center justify-center gap-2"
             >
-              <ShoppingCart className="size-4 me-1.5" />
+              <ShoppingCart className="size-4.5" />
               <span>{product.stock > 0 ? t("addToCart") : t("outOfStock")}</span>
             </Button>
           </div>
