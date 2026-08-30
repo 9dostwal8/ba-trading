@@ -187,7 +187,7 @@ function ProductsPage() {
       </div>
 
       <div
-        className={`${gridClass(design)} items-stretch px-3 py-2.5`}
+        className={`${gridClass(design)} items-stretch px-3 py-2.5 pb-24 lg:pb-8`}
         style={{ gap: "var(--grid-gap)" }}
       >
         {isLoading

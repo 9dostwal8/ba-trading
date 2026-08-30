@@ -35,7 +35,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });
   const isCart = pathname === "/cart";
-  const isProductPage = pathname.startsWith("/product");
+  const isProductDetailPage = pathname.startsWith("/product/");
   const storePreview = searchStr.includes("view=store");
   const { data } = useQuery({ queryKey: ["store"], queryFn: fetchStoreData });
   const s = data?.settings;
@@ -153,7 +153,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
         <GooshiFooter />
       </div>
 
-      {!isCart && !isProductPage && (
+      {!isCart && !isProductDetailPage && (
         <nav className="fixed bottom-0 inset-x-0 z-30 w-full border-t lg:hidden border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl shadow-lg">
           <ul className="flex items-end justify-between px-2 py-1 max-w-lg mx-auto">
             <div className="flex flex-1 items-center justify-around">
