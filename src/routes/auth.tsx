@@ -415,7 +415,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#f8fafc] flex flex-col lg:flex-row items-stretch overflow-hidden font-sans selection:bg-blue-500 selection:text-white">
+    <div className="min-h-[100dvh] w-full bg-[#f8fafc] flex flex-col lg:flex-row items-stretch overflow-x-hidden font-sans selection:bg-blue-500 selection:text-white">
       
       {/* Side 1: Full-Height 3D Dental Artwork (Fills entire left half with NO scroll) */}
       <div className="hidden lg:flex w-full lg:w-[56%] h-screen relative items-center justify-center bg-[#0d1527] overflow-hidden select-none">
@@ -429,8 +429,8 @@ function AuthPage() {
       </div>
 
       {/* Side 2: Form Column (Perfect fit without scroll) */}
-      <div className="w-full lg:w-[44%] h-screen overflow-y-auto lg:overflow-hidden flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[#f8fafc]">
-        <div className="w-full max-w-[420px] rounded-3xl bg-white p-6 sm:p-7 shadow-2xl shadow-slate-200/80 border border-slate-100/90 relative">
+      <div className="w-full lg:w-[44%] min-h-[100dvh] lg:h-screen overflow-y-auto flex items-center justify-center p-3.5 sm:p-6 lg:p-8 bg-[#f8fafc]">
+        <div className="w-full max-w-[420px] rounded-3xl bg-white p-5 sm:p-7 shadow-2xl shadow-slate-200/80 border border-slate-100/90 relative my-auto">
             
             {/* Top Navigation Arrow & Welcome Title */}
             <div className="flex items-center justify-between mb-1.5">
@@ -560,7 +560,7 @@ function AuthPage() {
                         disabled={locating}
                         className="flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100 active:scale-95"
                       >
-                        <MapPin className="size-3.5 text-rose-500" />
+                        <MapPin className="size-3.5 text-[#007979]" />
                         <span className="truncate">
                           {locating
                             ? "..."

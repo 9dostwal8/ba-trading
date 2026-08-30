@@ -377,7 +377,7 @@ export function GooshiHeader() {
         </div>
 
         {/* Mobile Search Bar (Directly below Top Bar) */}
-        <div className="border-t border-slate-100 px-4 py-2 md:hidden">
+        <div className="border-t border-slate-100 px-3 py-2 md:hidden">
           <form
             onSubmit={handleSearchSubmit}
             className="flex items-center rounded-xl bg-slate-100 px-3 py-1.5 border border-slate-200/60 focus-within:border-primary focus-within:bg-white"
@@ -404,6 +404,29 @@ export function GooshiHeader() {
               <QrCode className="size-4" />
             </button>
           </form>
+        </div>
+
+        {/* Mobile Horizontal Quick Categories Chips Bar */}
+        <div className="border-t border-slate-100 bg-slate-50/70 px-3 py-1.5 md:hidden">
+          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+            <Link
+              to="/products"
+              className="shrink-0 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-800 border border-slate-200/80 shadow-xs active:scale-95"
+            >
+              <Menu className="size-3 text-primary" />
+              <span>{lang === "ar" ? "كل الأقسام" : lang === "ku" ? "هەموو بەشەکان" : "All Categories"}</span>
+            </Link>
+            {categories.slice(0, 8).map((c) => (
+              <Link
+                key={c.id}
+                to="/products"
+                search={{ cat: c.id } as never}
+                className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-slate-200/60 shadow-xs hover:border-primary hover:text-primary active:scale-95 transition"
+              >
+                {pickName(c, lang)}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Secondary Clean Navigation Bar (Mega Menu Only) */}

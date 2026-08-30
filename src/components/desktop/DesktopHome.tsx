@@ -97,11 +97,11 @@ export function DesktopHome({
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-10 px-4 py-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-6 sm:space-y-10 px-2.5 sm:px-4 py-3 sm:py-6 lg:px-8">
       
       {/* 1. Full-Width Wide Hero Banner Slider */}
       <section className="w-full">
-        <div className="relative overflow-hidden rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/7] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px]">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/8] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px]">
           {heroBanners.length > 0 ? (
             <>
               {heroBanners.map((b, idx) => (
@@ -117,13 +117,13 @@ export function DesktopHome({
 
               {/* Slider Dots */}
               {heroBanners.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 backdrop-blur-md">
+                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 backdrop-blur-md">
                   {heroBanners.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setCurrentSlide(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === currentSlide ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
+                      className={`h-1.5 sm:h-2 rounded-full transition-all ${
+                        i === currentSlide ? "w-5 sm:w-6 bg-white" : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/80"
                       }`}
                       aria-label={`Slide ${i + 1}`}
                     />
@@ -136,13 +136,13 @@ export function DesktopHome({
                 <>
                   <button
                     onClick={() => setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
                     <ChevronRight className="size-5" />
                   </button>
                   <button
                     onClick={() => setCurrentSlide((prev) => (prev + 1) % heroBanners.length)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
                     <ChevronLeft className="size-5" />
                   </button>
@@ -159,36 +159,36 @@ export function DesktopHome({
 
       {/* 2. "عروض سريعة ومميزة" (Incredible Deals Carousel - GooshiShop Style) */}
       {dealProducts.length > 0 && (
-        <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#007979] via-[#008f8f] to-[#006666] p-4 sm:p-5 text-white shadow-xl">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-center">
+        <section className="overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#007979] via-[#008f8f] to-[#006666] p-3 sm:p-5 text-white shadow-xl">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-12 lg:items-center">
             
             {/* Countdown Box & Title on the side */}
-            <div className="flex flex-row items-center justify-between lg:flex-col lg:items-center lg:justify-center lg:col-span-2 text-center gap-3">
+            <div className="flex flex-row items-center justify-between lg:flex-col lg:items-center lg:justify-center lg:col-span-2 text-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 lg:flex-col">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-                  <Zap className="size-7 text-amber-300 fill-amber-300" />
+                <div className="flex size-9 sm:size-12 items-center justify-center rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-md">
+                  <Zap className="size-5 sm:size-7 text-amber-300 fill-amber-300" />
                 </div>
-                <div>
-                  <h2 className="text-[17px] font-black leading-tight">
+                <div className="text-start lg:text-center">
+                  <h2 className="text-[15px] sm:text-[17px] font-black leading-tight">
                     {lang === "ar" ? "عروض سريعة" : lang === "ku" ? "ئۆفەری خێرا" : "Flash Deals"}
                   </h2>
-                  <p className="text-[11px] font-semibold text-teal-100 hidden lg:block mt-1">
+                  <p className="text-[10px] sm:text-[11px] font-semibold text-teal-100 hidden sm:block mt-1">
                     {lang === "ar" ? "خصومات خاصة لفترة محدودة" : lang === "ku" ? "داشکاندنی کاتی سنووردار" : "Limited Time Offers"}
                   </p>
                 </div>
               </div>
 
               {/* Timer Digits */}
-              <div className="flex items-center gap-1 font-mono text-[13px] font-black" dir="ltr">
-                <span className="rounded-lg bg-white/20 px-2 py-1 backdrop-blur-md">
+              <div className="flex items-center gap-1 font-mono text-[11.5px] sm:text-[13px] font-black" dir="ltr">
+                <span className="rounded-md sm:rounded-lg bg-white/20 px-1.5 sm:px-2 py-0.5 sm:py-1 backdrop-blur-md">
                   {String(timeLeft.hours).padStart(2, "0")}
                 </span>
                 <span>:</span>
-                <span className="rounded-lg bg-white/20 px-2 py-1 backdrop-blur-md">
+                <span className="rounded-md sm:rounded-lg bg-white/20 px-1.5 sm:px-2 py-0.5 sm:py-1 backdrop-blur-md">
                   {String(timeLeft.minutes).padStart(2, "0")}
                 </span>
                 <span>:</span>
-                <span className="rounded-lg bg-white/20 px-2 py-1 backdrop-blur-md">
+                <span className="rounded-md sm:rounded-lg bg-white/20 px-1.5 sm:px-2 py-0.5 sm:py-1 backdrop-blur-md">
                   {String(timeLeft.seconds).padStart(2, "0")}
                 </span>
               </div>
@@ -204,7 +204,7 @@ export function DesktopHome({
 
             {/* Horizontal Product Rail */}
             <div className="lg:col-span-10">
-              <div className="no-scrollbar flex snap-x gap-3.5 overflow-x-auto pb-2">
+              <div className="no-scrollbar flex snap-x gap-2.5 sm:gap-3.5 overflow-x-auto pb-1.5">
                 {dealProducts.map(({ deal, product }) => {
                   const currentPrice = priceOf(product.id, product.price);
                   const old = currentPrice < product.price ? product.price : product.compare_price;
@@ -215,12 +215,12 @@ export function DesktopHome({
                       key={deal.id}
                       to="/product/$id"
                       params={{ id: product.id }}
-                      className="group flex w-[170px] shrink-0 snap-start flex-col rounded-2xl bg-white p-3 text-slate-800 shadow-md transition-all hover:scale-105"
+                      className="group flex w-[140px] sm:w-[170px] shrink-0 snap-start flex-col rounded-xl sm:rounded-2xl bg-white p-2.5 sm:p-3 text-slate-800 shadow-md transition-all hover:scale-105"
                     >
                       {/* Product Image & Discount Badge */}
-                      <div className="relative mb-2 flex h-32 w-full items-center justify-center rounded-xl bg-slate-50 p-2">
+                      <div className="relative mb-2 flex h-24 sm:h-32 w-full items-center justify-center rounded-lg sm:rounded-xl bg-slate-50 p-1.5 sm:p-2">
                         {discountPercent > 0 && (
-                          <span className="absolute top-2 right-2 rounded-full bg-[#007979] px-2 py-0.5 text-[11px] font-black text-white shadow-sm">
+                          <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 rounded-full bg-[#007979] px-1.5 sm:px-2 py-0.5 text-[9.5px] sm:text-[11px] font-black text-white shadow-sm">
                             {discountPercent}%
                           </span>
                         )}
@@ -231,23 +231,23 @@ export function DesktopHome({
                             className="h-full w-full object-contain transition-transform group-hover:scale-110"
                           />
                         ) : (
-                          <span className="text-4xl">🦷</span>
+                          <span className="text-3xl sm:text-4xl">🦷</span>
                         )}
                       </div>
 
                       {/* Product Title */}
-                      <h4 className="line-clamp-2 min-h-[34px] text-[12px] font-bold leading-tight text-slate-800 group-hover:text-primary transition-colors">
+                      <h4 className="line-clamp-2 min-h-[30px] sm:min-h-[34px] text-[11px] sm:text-[12px] font-bold leading-tight text-slate-800 group-hover:text-primary transition-colors">
                         {pickName(product, lang)}
                       </h4>
 
                       {/* Prices */}
-                      <div className="mt-auto pt-2">
+                      <div className="mt-auto pt-1.5 sm:pt-2">
                         {old && (
-                          <p className="text-[11px] font-bold text-slate-400 line-through">
+                          <p className="text-[9.5px] sm:text-[11px] font-bold text-slate-400 line-through">
                             {formatPrice(Number(old), lang)}
                           </p>
                         )}
-                        <p className="text-[13.5px] font-black text-[#007979]">
+                        <p className="text-[12px] sm:text-[13.5px] font-black text-[#007979]">
                           {formatPrice(currentPrice, lang)}
                         </p>
                       </div>
@@ -260,24 +260,24 @@ export function DesktopHome({
         </section>
       )}
 
-      {/* 3. Circular Category Grid (GooshiShop Style) */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 3. Circular Category Grid (Touch-friendly on mobile) */}
+      <section className="space-y-3 sm:space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-primary" />
-            <h3 className="text-[18px] font-black text-slate-800">
+            <h3 className="text-[15px] sm:text-[18px] font-black text-slate-800">
               {lang === "ar" ? "أقسام وتصنيفات المتجر" : lang === "ku" ? "هاوپۆلەکانی فرۆشگا" : "Categories"}
             </h3>
           </div>
           <Link
             to="/products"
-            className="text-[12.5px] font-bold text-primary hover:underline"
+            className="text-[11.5px] sm:text-[12.5px] font-bold text-primary hover:underline"
           >
             {lang === "ar" ? "عرض جميع الأقسام" : lang === "ku" ? "بینینی هەموو بەشەکان" : "View All"}
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+        <div className="grid grid-cols-4 gap-2 sm:gap-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
           {data.categories.map((c) => {
             const Icon = categoryIcon(c.icon);
             const hasValidImage = c.image_url && !c.image_url.startsWith("/__l5e");
@@ -286,11 +286,11 @@ export function DesktopHome({
                 key={c.id}
                 to="/products"
                 search={{ cat: c.id } as never}
-                className="group flex flex-col items-center gap-2.5 rounded-2xl bg-white p-3 text-center transition-all hover:shadow-lg border border-slate-100/80 hover:-translate-y-1"
+                className="group flex flex-col items-center gap-1.5 sm:gap-2.5 rounded-xl sm:rounded-2xl bg-white p-2 sm:p-3 text-center transition-all hover:shadow-lg border border-slate-100/80 hover:-translate-y-1"
               >
                 <div
                   style={tintStyle(c.hue, c.chroma)}
-                  className="flex size-16 items-center justify-center rounded-2xl p-2.5 transition-transform group-hover:scale-110 shadow-sm border border-slate-100/60"
+                  className="flex size-12 sm:size-16 items-center justify-center rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 transition-transform group-hover:scale-110 shadow-sm border border-slate-100/60"
                 >
                   {hasValidImage ? (
                     <img
@@ -310,13 +310,13 @@ export function DesktopHome({
                     style={{ display: hasValidImage ? "none" : "flex" }}
                   >
                     <Icon
-                      className="size-7"
+                      className="size-5 sm:size-7"
                       strokeWidth={2}
                       style={{ color: "var(--tint-strong)" }}
                     />
                   </div>
                 </div>
-                <span className="line-clamp-2 text-[12px] font-extrabold text-slate-700 group-hover:text-primary transition-colors">
+                <span className="line-clamp-2 text-[10.5px] sm:text-[12px] font-extrabold text-slate-700 group-hover:text-primary transition-colors">
                   {pickName(c, lang)}
                 </span>
               </Link>

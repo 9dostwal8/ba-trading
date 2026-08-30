@@ -262,7 +262,7 @@ function ProductPage() {
     <StoreLayout>
       <PageBlocks page="product" />
 
-      <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] px-4 py-4 lg:px-8 lg:py-6">
+      <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] px-3 sm:px-4 py-3 sm:py-6 lg:px-8 pb-28 lg:pb-8">
         
         {/* Breadcrumb Navigation (GooshiShop Style) */}
         <nav className="mb-5 flex flex-wrap items-center gap-2 text-[12px] font-bold text-slate-400">
@@ -886,6 +886,54 @@ function ProductPage() {
           </div>
         )}
 
+      </div>
+
+      {/* Sticky Mobile Buy Dock (Persistent 1-tap checkout on mobile screens) */}
+      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-[calc(env(safe-area-inset-bottom)+8px)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-[10.5px] font-bold text-slate-400">{t("price")}:</span>
+            <span className="block text-[15px] font-black text-primary truncate">
+              {formatPrice(lineTotal, lang)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            {wa && (
+              <a
+                href={`https://wa.me/${wa}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن ${pickName(product, lang)}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex size-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-50 text-emerald-700 active:scale-95"
+              >
+                <MessageCircle className="size-5" />
+              </a>
+            )}
+
+            <Button
+              size="lg"
+              disabled={product.stock <= 0}
+              onClick={() => {
+                cart.add(
+                  {
+                    id: product.id,
+                    name_ar: product.name_ar,
+                    name_ku: product.name_ku,
+                    price: cartUnit,
+                    image_url: product.image_url,
+                    vendor_id: product.vendor_id ?? null,
+                  },
+                  qty,
+                );
+                toast.success(t("added"));
+              }}
+              className="flex-1 max-w-[200px] h-11 rounded-xl bg-primary text-[13.5px] font-black text-white shadow-md active:scale-95"
+            >
+              <ShoppingCart className="size-4 me-1.5" />
+              <span>{product.stock > 0 ? t("addToCart") : t("outOfStock")}</span>
+            </Button>
+          </div>
+        </div>
       </div>
 
       <PageBlocks page="product" position="bottom" />

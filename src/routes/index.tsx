@@ -64,51 +64,35 @@ function Home() {
 
   return (
     <StoreLayout>
-      <div className="w-full">
+      <div className="w-full pb-20 lg:pb-8">
         {isLoading ? (
-          <div className="mx-auto max-w-[var(--page-max,1536px)] space-y-4 px-4 pt-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-3xl" />
-            ))}
+          <div className="mx-auto max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-4 px-3 py-4 sm:px-6">
+            <Skeleton className="h-44 sm:h-64 lg:h-96 w-full rounded-3xl" />
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-2xl" />
+              ))}
+            </div>
+            <Skeleton className="h-56 w-full rounded-3xl" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-2xl" />
+              ))}
+            </div>
           </div>
         ) : (
-          <>
-            {/* Mobile template */}
-            <div className="lg:hidden mx-auto max-w-xl px-2 py-2">
-              <HomeSections
-                sections={data?.homeSections ?? []}
-                priceOf={priceOf}
-                data={{
-                  products: data?.products ?? [],
-                  categories: data?.categories ?? [],
-                  offers,
-                  offerProducts,
-                  banners: data?.banners ?? [],
-                  brandCards: data?.brandCards ?? [],
-                  flashDeals,
-                  bundles: data?.bundles ?? [],
-                  tiers: data?.tiers ?? [],
-                  clearanceRules: data?.clearanceRules ?? [],
-                }}
-              />
-            </div>
-
-            {/* Desktop template */}
-            <div className="hidden lg:block w-full">
-              <DesktopHome
-                priceOf={priceOf}
-                data={{
-                  products: data?.products ?? [],
-                  categories: data?.categories ?? [],
-                  banners: data?.banners ?? [],
-                  brandCards: data?.brandCards ?? [],
-                  flashDeals,
-                  bundles: data?.bundles ?? [],
-                  homeSections: data?.homeSections ?? [],
-                }}
-              />
-            </div>
-          </>
+          <DesktopHome
+            priceOf={priceOf}
+            data={{
+              products: data?.products ?? [],
+              categories: data?.categories ?? [],
+              banners: data?.banners ?? [],
+              brandCards: data?.brandCards ?? [],
+              flashDeals,
+              bundles: data?.bundles ?? [],
+              homeSections: data?.homeSections ?? [],
+            }}
+          />
         )}
       </div>
     </StoreLayout>
