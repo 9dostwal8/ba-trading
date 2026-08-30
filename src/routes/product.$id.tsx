@@ -591,41 +591,6 @@ function ProductPage() {
 
             </div>
 
-            {/* 4 Trust Guarantee Cards (Hidden on Mobile, Visible on Desktop) */}
-            <div className="hidden lg:grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <ShieldCheck className="size-4" />
-                </div>
-                <span className="text-[11px] font-black text-slate-800">{t("pdpAuthentic")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpAuthenticSub")}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Truck className="size-4" />
-                </div>
-                <span className="text-[11px] font-black text-slate-800">{t("pdpFastShip")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpFastShipSub")}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Layers className="size-4" />
-                </div>
-                <span className="text-[11px] font-black text-slate-800">{t("pdpWholesale")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpWholesaleSub")}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                  <MessageCircle className="size-4" />
-                </div>
-                <span className="text-[11px] font-black text-slate-800">{t("pdpSupport")}</span>
-                <span className="text-[9px] font-medium text-slate-400">{t("pdpSupportSub")}</span>
-              </div>
-            </div>
-
             {/* Other Vendors for same item */}
             {sameItem.length > 1 && (
               <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-3">

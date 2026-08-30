@@ -74,10 +74,10 @@ export function themeVars(input: ThemeInput): Record<string, string> {
     "--popover": ok(1, 0, h),
     "--popover-foreground": ok(0.28, 0.012, h),
 
-    "--primary": ok(0.6, c, h),
-    "--primary-foreground": ok(1, 0, h),
-    "--primary-deep": ok(0.46, c * 0.95, h),
-    "--ring": ok(0.6, c, h),
+    "--primary": "#007979",
+    "--primary-foreground": "#ffffff",
+    "--primary-deep": "#005e5e",
+    "--ring": "#007979",
 
     "--secondary": ok(0.963, 0.008, h),
     "--secondary-foreground": ok(0.36, 0.016, h),
@@ -111,12 +111,12 @@ export function themeVars(input: ThemeInput): Record<string, string> {
 
     "--sidebar": ok(1, 0, h),
     "--sidebar-foreground": ok(0.28, 0.012, h),
-    "--sidebar-primary": ok(0.6, c, h),
+    "--sidebar-primary": "#007979",
     "--sidebar-primary-foreground": ok(1, 0, h),
     "--sidebar-accent": ok(0.955, 0.022, h),
     "--sidebar-accent-foreground": ok(0.45, c * 0.9, h),
     "--sidebar-border": ok(0.9, 0.008, h),
-    "--sidebar-ring": ok(0.6, c, h),
+    "--sidebar-ring": "#007979",
 
     "--gradient-hero": `linear-gradient(135deg, ${ok(0.48, c * 0.95, h)}, ${ok(0.6, c, h)} 60%, ${ok(0.66, c * 0.95, wrap(h + 14))})`,
     "--gradient-deal": `linear-gradient(135deg, ${ok(0.84, ac, ah)}, ${ok(0.9, ac * 0.9, wrap(ah + 8))})`,
