@@ -545,7 +545,7 @@ function ProductPage() {
                     </button>
                   </div>
 
-                  {/* Add to Cart Primary Button */}
+                  {/* Add to Cart Primary Button (Desktop only, mobile uses sticky bottom dock) */}
                   <Button
                     size="lg"
                     disabled={product.stock <= 0}
@@ -563,7 +563,7 @@ function ProductPage() {
                       );
                       toast.success(t("added"));
                     }}
-                    className="flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98]"
+                    className="hidden lg:flex flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98]"
                   >
                     <ShoppingCart className="size-5 me-2" />
                     <span>
@@ -573,16 +573,16 @@ function ProductPage() {
                     </span>
                   </Button>
 
-                  {/* WhatsApp Inquiry Button */}
+                  {/* WhatsApp Inquiry Button (Desktop only, mobile has it in sticky dock) */}
                   {wa && (
                     <a
                       href={`https://wa.me/${wa}?text=${encodeURIComponent(`مرحباً، أود الاستفسار عن ${pickName(product, lang)}`)}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 text-[13px] font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-95"
+                      className="hidden lg:flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 text-[13px] font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-95"
                     >
                       <MessageCircle className="size-4.5" />
-                      <span className="hidden sm:inline">{t("askOnWhatsapp")}</span>
+                      <span>{t("askOnWhatsapp")}</span>
                     </a>
                   )}
 
