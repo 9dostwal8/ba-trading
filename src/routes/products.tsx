@@ -9,9 +9,11 @@ import {
   Percent,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Truck,
   Wallet,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { StoreLayout } from "@/components/StoreLayout";
@@ -133,133 +135,280 @@ function ProductsPage() {
     { key: "outlet", label: lang === "ar" ? "أوتلت مخفض" : lang === "ku" ? "ئۆتڵێت" : "Outlet", icon: PackageOpen },
   ];
 
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
   const activeCategory = data?.categories?.find((c) => c.id === cat);
+  const hasActiveFilters = Boolean(cat || selectedBrand || onlyInStock || sort !== "all");
+
+  const clearAllFilters = () => {
+    navigate({ search: {} });
+    setSelectedBrand(null);
+    setOnlyInStock(false);
+    setSort("all");
+  };
 
   return (
     <StoreLayout>
       <PageBlocks page="products" />
 
-      {/* Streamlined Store Banner & Category Quick Bar */}
+      {/* Ultra-Clean Single 1-Line Header & Filter Control Bar */}
       <div className="bg-white border-b border-slate-100 px-3.5 py-3 shadow-xs">
-        
-        {/* Title & Product Count */}
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <h1 className="text-[14.5px] sm:text-[16px] font-black text-slate-900">
-              {activeCategory ? (lang === "ar" ? activeCategory.name_ar : activeCategory.name_ku) : (lang === "ar" ? "فرۆشگای پێداویستی ددان" : lang === "ku" ? "فرۆشگای پێداویستی ددان" : "Dental Store")}
+        <div className="flex items-center justify-between gap-3">
+          
+          {/* Left: Category Title & Count */}
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-[14.5px] sm:text-[16px] font-black text-slate-900 truncate">
+              {activeCategory
+                ? (lang === "ar" ? activeCategory.name_ar : activeCategory.name_ku)
+                : (lang === "ar" ? "فرۆشگای پێداویستی ددان" : lang === "ku" ? "فرۆشگای پێداویستی ددان" : "Dental Store")}
             </h1>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-600">
+            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-600">
               {products.length}
             </span>
           </div>
 
-          {/* In-Stock Toggle Switch */}
-          <button
-            type="button"
-            onClick={() => setOnlyInStock(!onlyInStock)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black transition-all border shadow-xs active:scale-95",
-              onlyInStock
-                ? "bg-[#007979] text-white border-[#007979]"
-                : "bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100"
-            )}
-          >
-            <span className={cn("size-2 rounded-full", onlyInStock ? "bg-white" : "bg-emerald-500")} />
-            <span>{lang === "ar" ? "المتوفر فقط" : lang === "ku" ? "تەنها بەردەست" : "In Stock"}</span>
-          </button>
-        </div>
-
-        {/* Single Swipeable Category Rail */}
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => navigate({ search: {} })}
-            className={cn(
-              "shrink-0 flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11.5px] font-black transition-all shadow-xs active:scale-95",
-              !cat
-                ? "bg-[#007979] text-white shadow-teal-700/20"
-                : "bg-slate-100/80 text-slate-700 hover:bg-slate-200 border border-slate-200/60"
-            )}
-          >
-            <Layers className="size-3.5" />
-            <span>{lang === "ar" ? "كل الأقسام" : lang === "ku" ? "هەموو بەشەکان" : "All Categories"}</span>
-          </button>
-
-          {(data?.categories ?? []).map((c) => {
-            const active = cat === c.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => navigate({ search: active ? {} : { cat: c.id } })}
-                className={cn(
-                  "shrink-0 rounded-xl px-3 py-1.5 text-[11.5px] font-extrabold transition-all shadow-xs active:scale-95",
-                  active
-                    ? "bg-[#007979] text-white shadow-teal-700/20"
-                    : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80"
-                )}
-              >
-                {lang === "ar" ? c.name_ar : c.name_ku}
-              </button>
-            );
-          })}
-        </div>
-
-      </div>
-
-      {/* Modern Filter & Sort Toolbar */}
-      <div className="bg-slate-50/90 border-b border-slate-200/60 px-3 py-2">
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-          {sortChips.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setSort(c.key)}
-              className={cn(
-                "shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition-all active:scale-95",
-                sort === c.key
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-100"
-              )}
-            >
-              <c.icon className="size-3" strokeWidth={2.5} />
-              <span>{c.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Brand Filter Chips if available */}
-        {availableBrands.length > 0 && (
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pt-1.5 border-t border-slate-200/50 mt-1.5">
-            <span className="text-[10px] font-bold text-slate-400 shrink-0">
-              {lang === "ar" ? "الماركة:" : lang === "ku" ? "براند:" : "Brand:"}
-            </span>
+          {/* Right: Filter & Sort Button */}
+          <div className="flex items-center gap-2">
+            {/* Quick In-Stock Switch */}
             <button
               type="button"
-              onClick={() => setSelectedBrand(null)}
+              onClick={() => setOnlyInStock(!onlyInStock)}
               className={cn(
-                "shrink-0 rounded-md px-2 py-0.5 text-[10.5px] font-black transition-colors",
-                !selectedBrand ? "bg-[#007979]/15 text-[#007979]" : "text-slate-500 hover:text-slate-800"
+                "hidden sm:flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11.5px] font-black transition-all border shadow-xs active:scale-95",
+                onlyInStock
+                  ? "bg-[#007979] text-white border-[#007979]"
+                  : "bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100"
               )}
             >
-              {lang === "ar" ? "الكل" : lang === "ku" ? "هەموو" : "All"}
+              <span className={cn("size-2 rounded-full", onlyInStock ? "bg-white" : "bg-emerald-500")} />
+              <span>{lang === "ar" ? "المتوفر فقط" : lang === "ku" ? "تەنها بەردەست" : "In Stock"}</span>
             </button>
-            {availableBrands.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setSelectedBrand(selectedBrand === b ? null : b)}
-                className={cn(
-                  "shrink-0 rounded-md px-2 py-0.5 text-[10.5px] font-black transition-colors",
-                  selectedBrand === b ? "bg-[#007979] text-white shadow-xs" : "bg-white text-slate-700 border border-slate-200/60 hover:bg-slate-100"
-                )}
-              >
-                {b}
-              </button>
-            ))}
+
+            {/* Filter Drawer Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-black transition-all shadow-xs active:scale-95 border",
+                hasActiveFilters
+                  ? "bg-[#007979] text-white border-[#007979] shadow-teal-700/20"
+                  : "bg-slate-100/90 text-slate-800 border-slate-200/70 hover:bg-slate-200"
+              )}
+            >
+              <SlidersHorizontal className="size-3.5" />
+              <span>{lang === "ar" ? "فلتەر و ڕیزبەندی" : lang === "ku" ? "فلتەر و ڕیزبەندی" : "Filter & Sort"}</span>
+              {hasActiveFilters && (
+                <span className="flex size-2 rounded-full bg-amber-400" />
+              )}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Active Filter Chips Summary (Shows ONLY if a filter is active) */}
+        {hasActiveFilters && (
+          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pt-2.5 mt-2 border-t border-slate-100">
+            {cat && activeCategory && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-200/80 px-2 py-0.5 text-[11px] font-bold text-[#007979]">
+                <span>{lang === "ar" ? activeCategory.name_ar : activeCategory.name_ku}</span>
+                <button type="button" onClick={() => navigate({ search: {} })} className="hover:opacity-75">
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            {selectedBrand && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-200/80 px-2 py-0.5 text-[11px] font-bold text-[#007979]">
+                <span>{selectedBrand}</span>
+                <button type="button" onClick={() => setSelectedBrand(null)} className="hover:opacity-75">
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            {onlyInStock && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-200/80 px-2 py-0.5 text-[11px] font-bold text-[#007979]">
+                <span>{lang === "ar" ? "متوفر" : lang === "ku" ? "بەردەست" : "In Stock"}</span>
+                <button type="button" onClick={() => setOnlyInStock(false)} className="hover:opacity-75">
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            {sort !== "all" && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-700">
+                <span>{sortChips.find((s) => s.key === sort)?.label}</span>
+                <button type="button" onClick={() => setSort("all")} className="hover:opacity-75">
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-[11px] font-extrabold text-rose-600 hover:underline ms-auto shrink-0 px-1"
+            >
+              {lang === "ar" ? "مسح الكل" : lang === "ku" ? "سڕینەوەی هەمووی" : "Clear All"}
+            </button>
           </div>
         )}
       </div>
+
+      {/* Slide-Up Filter & Sort Bottom Sheet / Modal */}
+      {isFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-white p-5 shadow-2xl space-y-5 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="size-5 text-[#007979]" />
+                <h3 className="text-[16px] font-black text-slate-900">
+                  {lang === "ar" ? "فلتەر و ڕیزبەندی" : lang === "ku" ? "فلتەر و ڕیزبەندی" : "Filter & Sort"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Sort Options */}
+            <div className="space-y-2">
+              <h4 className="text-[12.5px] font-black text-slate-500">
+                {lang === "ar" ? "ترتيب حسب" : lang === "ku" ? "ڕیزبەندی بەپێی" : "Sort By"}
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {sortChips.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setSort(c.key)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl p-2.5 text-[12px] font-extrabold transition-all border text-start",
+                      sort === c.key
+                        ? "bg-[#007979] text-white border-[#007979] shadow-sm"
+                        : "bg-slate-50/80 text-slate-700 border-slate-200/60 hover:bg-slate-100"
+                    )}
+                  >
+                    <c.icon className="size-4 shrink-0" />
+                    <span className="truncate">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories Selector */}
+            <div className="space-y-2">
+              <h4 className="text-[12.5px] font-black text-slate-500">
+                {lang === "ar" ? "الأقسام" : lang === "ku" ? "بەشەکان" : "Categories"}
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => navigate({ search: {} })}
+                  className={cn(
+                    "rounded-xl px-3 py-1.5 text-[11.5px] font-extrabold border transition-all",
+                    !cat
+                      ? "bg-[#007979] text-white border-[#007979]"
+                      : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100"
+                  )}
+                >
+                  {lang === "ar" ? "كل الأقسام" : lang === "ku" ? "هەموو بەشەکان" : "All"}
+                </button>
+                {(data?.categories ?? []).map((c) => {
+                  const active = cat === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => navigate({ search: active ? {} : { cat: c.id } })}
+                      className={cn(
+                        "rounded-xl px-3 py-1.5 text-[11.5px] font-extrabold border transition-all",
+                        active
+                          ? "bg-[#007979] text-white border-[#007979]"
+                          : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100"
+                      )}
+                    >
+                      {lang === "ar" ? c.name_ar : c.name_ku}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Brands Selector */}
+            {availableBrands.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-[12.5px] font-black text-slate-500">
+                  {lang === "ar" ? "الماركات" : lang === "ku" ? "براندەکان" : "Brands"}
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBrand(null)}
+                    className={cn(
+                      "rounded-xl px-3 py-1.5 text-[11.5px] font-extrabold border transition-all",
+                      !selectedBrand
+                        ? "bg-[#007979] text-white border-[#007979]"
+                        : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100"
+                    )}
+                  >
+                    {lang === "ar" ? "كل الماركات" : lang === "ku" ? "هەموو براندەکان" : "All"}
+                  </button>
+                  {availableBrands.map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setSelectedBrand(selectedBrand === b ? null : b)}
+                      className={cn(
+                        "rounded-xl px-3 py-1.5 text-[11.5px] font-extrabold border transition-all",
+                        selectedBrand === b
+                          ? "bg-[#007979] text-white border-[#007979]"
+                          : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100"
+                      )}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* In-Stock Switch in Modal */}
+            <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 border border-slate-200/80">
+              <span className="text-[13px] font-extrabold text-slate-800">
+                {lang === "ar" ? "إظهار المنتجات المتوفرة فقط" : lang === "ku" ? "تەنها بەرهەمە بەردەستەکان" : "Show In-Stock Only"}
+              </span>
+              <input
+                type="checkbox"
+                checked={onlyInStock}
+                onChange={(e) => setOnlyInStock(e.target.checked)}
+                className="size-5 rounded text-[#007979] focus:ring-[#007979]"
+              />
+            </div>
+
+            {/* Apply & Close Button */}
+            <div className="pt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="w-1/3 h-11 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-bold text-slate-600 hover:bg-slate-100"
+              >
+                {lang === "ar" ? "إعادة تعيين" : lang === "ku" ? "سڕینەوە" : "Reset"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="flex-1 h-11 rounded-xl bg-[#007979] text-[13.5px] font-black text-white shadow-md active:scale-95"
+              >
+                {lang === "ar" ? `عرض (${products.length}) منتج` : lang === "ku" ? `پیشاندانی (${products.length}) بەرهەم` : `Show (${products.length}) Products`}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <div className="px-3 pt-2.5">
         <BannerSlot slot="products_top" />
