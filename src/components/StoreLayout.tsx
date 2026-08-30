@@ -154,7 +154,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
       </div>
 
       {!isCart && !isProductDetailPage && (
-        <nav className="fixed bottom-0 inset-x-0 z-30 w-full border-t lg:hidden border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl shadow-lg">
+        <nav className="fixed bottom-0 inset-x-0 z-40 w-full border-t lg:hidden border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl shadow-lg">
           <ul className="flex items-end justify-between px-2 py-1 max-w-lg mx-auto">
             <div className="flex flex-1 items-center justify-around">
               {leftItems.map((item) => {
