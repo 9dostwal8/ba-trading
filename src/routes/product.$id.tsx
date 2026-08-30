@@ -367,12 +367,12 @@ function ProductPage() {
 
               {/* Thumbnail Preview Boxes (GooshiShop Style - Placed inside card at bottom) */}
               {product.image_url && (
-                <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center gap-2.5 justify-center">
-                  <div className="size-13 sm:size-15 rounded-xl border-2 border-primary p-1 bg-white shadow-xs cursor-pointer hover:scale-105 transition-transform">
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 justify-center">
+                  <div className="size-12 sm:size-14 rounded-xl border-2 border-primary p-1 bg-white shadow-xs cursor-pointer">
                     <img src={product.image_url} alt="" className="size-full object-contain" />
                   </div>
-                  <div className="size-13 sm:size-15 rounded-xl border border-slate-200/80 p-1 bg-slate-50 opacity-60 flex items-center justify-center text-[11px] font-extrabold text-slate-400">
-                    +1
+                  <div className="size-12 sm:size-14 rounded-xl border border-slate-200 p-1 bg-slate-50 flex items-center justify-center text-[11px] font-bold text-slate-400">
+                    1+
                   </div>
                 </div>
               )}
