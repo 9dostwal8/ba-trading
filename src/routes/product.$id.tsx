@@ -591,8 +591,8 @@ function ProductPage() {
 
             </div>
 
-            {/* 4 Trust Guarantee Cards (GooshiShop Style) */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
+            {/* 4 Trust Guarantee Cards (Hidden on Mobile, Visible on Desktop) */}
+            <div className="hidden lg:grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
               <div className="flex flex-col items-center gap-1 rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-xs">
                 <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <ShieldCheck className="size-4" />
