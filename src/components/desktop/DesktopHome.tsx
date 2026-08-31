@@ -75,16 +75,16 @@ export function DesktopHome({
     setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
   };
 
-  // Auto-play hero slider (pauses when touched/hovered)
+  // Auto-play hero slider (pauses on user interaction)
   useEffect(() => {
     if (heroBanners.length <= 1 || isPaused) return;
     const interval = setInterval(() => {
-      nextSlide();
-    }, 5000);
+      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+    }, 4500);
     return () => clearInterval(interval);
   }, [heroBanners.length, isPaused]);
 
-  // Touch Swipe Handlers for Mobile
+  // Touch Swipe Handlers for Mobile (Guaranteed Responsive)
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsPaused(true);
     if (e.targetTouches[0]) {
@@ -102,16 +102,15 @@ export function DesktopHome({
   const handleTouchEnd = () => {
     setIsPaused(false);
     if (touchStartX === null || touchEndX === null) return;
-    const distance = touchStartX - touchEndX;
-    const isRtl = lang === "ar" || lang === "ku";
-    const minSwipeDistance = 40;
+    const diff = touchStartX - touchEndX;
+    const minSwipe = 30;
 
-    if (distance > minSwipeDistance) {
-      // Swiped finger left -> Next Slide
-      nextSlide();
-    } else if (distance < -minSwipeDistance) {
-      // Swiped finger right -> Previous Slide
-      prevSlide();
+    if (diff > minSwipe) {
+      // Swiped Left -> Advance to next slide
+      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+    } else if (diff < -minSwipe) {
+      // Swiped Right -> Go to previous slide
+      setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
     }
 
     setTouchStartX(null);
@@ -158,11 +157,11 @@ export function DesktopHome({
           onTouchEnd={handleTouchEnd}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group h-[180px] xs:h-[210px] sm:h-[270px] md:h-[330px] lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[2/1] sm:aspect-[2.35/1] md:aspect-[2.5/1] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {heroBanners.length > 0 ? (
             <>
-              {/* Slides Track — Locked to LTR so translateX is mathematically consistent on all mobile devices */}
+              {/* Slides Track — Locked to LTR so translateX works reliably on all mobile browsers */}
               <div
                 dir="ltr"
                 className="flex h-full w-full transition-transform duration-500 ease-out"
@@ -171,18 +170,19 @@ export function DesktopHome({
                 }}
               >
                 {heroBanners.map((b) => (
-                  <div key={b.id} className="min-w-full h-full shrink-0 relative overflow-hidden">
-                    <AdCard ad={b} className="h-full w-full object-cover pointer-events-auto" />
+                  <div key={b.id} className="min-w-full h-full shrink-0 relative overflow-hidden bg-slate-50">
+                    <AdCard ad={b} className="h-full w-full object-cover sm:object-cover pointer-events-auto" />
                   </div>
                 ))}
               </div>
 
               {/* Slider Dots */}
               {heroBanners.length > 1 && (
-                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 backdrop-blur-md">
+                <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md">
                   {heroBanners.map((_, i) => (
                     <button
                       key={i}
+                      type="button"
                       onClick={() => setCurrentSlide(i)}
                       className={`h-1.5 sm:h-2 rounded-full transition-all ${
                         i === currentSlide ? "w-5 sm:w-6 bg-white" : "w-1.5 sm:w-2 bg-white/50 hover:bg-white/80"
