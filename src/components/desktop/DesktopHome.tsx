@@ -15,7 +15,7 @@ import {
   Truck,
   Zap,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdCard, type AdCardData } from "@/components/banners/AdCard";
 import { ProductCard } from "@/components/ProductCard";
 import { formatPrice, pick, pickName, useI18n } from "@/lib/i18n";
@@ -62,10 +62,12 @@ export function DesktopHome({
     ...data.banners.filter((b) => b.image_url && !b.image_url.includes("assets-v1")),
   ];
   const heroBanners = highResBanners.slice(0, 5);
+
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchEndX, setTouchEndX] = useState<number | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartXRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
@@ -75,46 +77,60 @@ export function DesktopHome({
     setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
   };
 
-  // Auto-play hero slider (pauses on user interaction)
+  // Auto-play hero slider (pauses when touched/dragging)
   useEffect(() => {
-    if (heroBanners.length <= 1 || isPaused) return;
+    if (heroBanners.length <= 1 || isDragging) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+      nextSlide();
     }, 4500);
     return () => clearInterval(interval);
-  }, [heroBanners.length, isPaused]);
+  }, [heroBanners.length, isDragging]);
 
-  // Touch Swipe Handlers for Mobile (Guaranteed Responsive)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsPaused(true);
-    if (e.targetTouches[0]) {
-      setTouchStartX(e.targetTouches[0].clientX);
-    }
-    setTouchEndX(null);
+  // Touch Swipe & Drag Handlers for Mobile (1:1 direct finger drag)
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!e.targetTouches[0]) return;
+    touchStartXRef.current = e.targetTouches[0].clientX;
+    isDraggingRef.current = true;
+    setIsDragging(true);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.targetTouches[0]) {
-      setTouchEndX(e.targetTouches[0].clientX);
-    }
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current || !e.targetTouches[0]) return;
+    const currentX = e.targetTouches[0].clientX;
+    const diff = currentX - touchStartXRef.current;
+    setDragOffset(diff);
   };
 
-  const handleTouchEnd = () => {
-    setIsPaused(false);
-    if (touchStartX === null || touchEndX === null) return;
-    const diff = touchStartX - touchEndX;
-    const minSwipe = 30;
+  const onTouchEnd = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
 
-    if (diff > minSwipe) {
-      // Swiped Left -> Advance to next slide
-      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
-    } else if (diff < -minSwipe) {
-      // Swiped Right -> Go to previous slide
-      setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
+    if (dragOffset < -35) {
+      // Swiped finger left -> Next Slide
+      nextSlide();
+    } else if (dragOffset > 35) {
+      // Swiped finger right -> Previous Slide
+      prevSlide();
     }
+    setDragOffset(0);
+  };
 
-    setTouchStartX(null);
-    setTouchEndX(null);
+  // Mouse Drag Handlers for Desktop
+  const onMouseDown = (e: React.MouseEvent) => {
+    touchStartXRef.current = e.clientX;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const diff = e.clientX - touchStartXRef.current;
+    setDragOffset(diff);
+  };
+
+  const onMouseUp = () => {
+    onTouchEnd();
   };
 
   const byId = (id?: string | null) => data.products.find((p) => p.id === id);
@@ -149,29 +165,31 @@ export function DesktopHome({
   return (
     <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-6 sm:space-y-10 px-2.5 sm:px-4 py-3 sm:py-6 lg:px-8">
       
-      {/* 1. Full-Width Wide Hero Banner Slider with Touch Swipe */}
+      {/* 1. Full-Width Wide Hero Banner Slider with Real-time Touch Drag */}
       <section className="w-full">
         <div
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
           className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[2/1] sm:aspect-[2.35/1] md:aspect-[2.5/1] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {heroBanners.length > 0 ? (
             <>
-              {/* Slides Track — Locked to LTR so translateX works reliably on all mobile browsers */}
+              {/* Slides Track — Locked to LTR with real-time responsive finger dragging */}
               <div
                 dir="ltr"
-                className="flex h-full w-full transition-transform duration-500 ease-out"
+                className={`flex h-full w-full ${isDragging ? "transition-none" : "transition-transform duration-500 ease-out"}`}
                 style={{
-                  transform: `translateX(-${currentSlide * 100}%)`,
+                  transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
                 }}
               >
                 {heroBanners.map((b) => (
                   <div key={b.id} className="min-w-full h-full shrink-0 relative overflow-hidden bg-slate-50">
-                    <AdCard ad={b} className="h-full w-full object-cover sm:object-cover pointer-events-auto" />
+                    <AdCard ad={b} className="h-full w-full pointer-events-auto" />
                   </div>
                 ))}
               </div>
