@@ -65,6 +65,7 @@ import { AdminNotify } from "@/components/admin/AdminNotify";
 import { AdminWhatsapp } from "@/components/admin/AdminWhatsapp";
 import { AdminShipping } from "@/components/admin/AdminShipping";
 import { AdminCostTracker } from "@/components/admin/AdminCostTracker";
+import { AdminHeader } from "@/components/admin/AdminHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { formatPrice, useI18n } from "@/lib/i18n";
@@ -373,7 +374,8 @@ function AdminPage() {
   // 3. User is logged in, but not an admin role in Supabase
   if (isAdmin === false) {
     return (
-      <StoreLayout>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <AdminHeader />
         <div className="mx-auto max-w-md px-4 py-20 text-center">
           <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-600">
             <ShieldAlert className="size-8" />
@@ -399,7 +401,7 @@ function AdminPage() {
             </Button>
           </div>
         </div>
-      </StoreLayout>
+      </div>
     );
   }
 
@@ -493,47 +495,50 @@ function AdminPage() {
   ];
 
   return (
-    <StoreLayout>
-      <PanelShell
-        title={L.title[lang]}
-        subtitle={`${L.revenue[lang]}: ${formatPrice(stats?.revenue ?? 0, lang)}`}
-        kpis={[
-          { label: L.newOrders[lang], value: String(stats?.newOrders ?? 0) },
-          { label: L.productsCount[lang], value: String(stats?.products ?? 0) },
-          { label: L.activeOffers[lang], value: String(stats?.offers ?? 0) },
-          { label: L.revenue[lang], value: formatPrice(stats?.revenue ?? 0, lang) },
-        ]}
-        groups={groups}
-        active={active}
-        onOpen={setActive}
-        onClose={() => setActive(null)}
-      >
-        {active === "orders" && <AdminOrders />}
-        {active === "clearance" && <AdminClearance />}
-        {active === "vendors" && <AdminVendors />}
-        {active === "shipping" && <AdminShipping />}
-        {active === "accounting" && <AdminAccounting />}
-        {active === "costs" && <AdminCostTracker />}
-        {active === "wallet" && <AdminRewards />}
-        {active === "products" && <AdminProducts />}
-        {active === "categories" && <AdminCategories />}
-        {active === "promo" && <PromoStudio />}
-        {active === "fees" && <AdminMarketing />}
-        {active === "offers" && <AdminOffers />}
-        {active === "deals" && <AdminDeals />}
-        {active === "bundles" && <AdminBundles />}
-        {active === "tiers" && <AdminTiers />}
-        {active === "coupons" && <AdminCoupons />}
-        {active === "home" && <AdminHome />}
-        {active === "brands" && <AdminBrands />}
-        {active === "banners" && <AdminBanners />}
-        {active === "usp" && <AdminUsp />}
-        {active === "theme" && <AdminDesign />}
-        {active === "settings" && <AdminSettings />}
-        {active === "texts" && <AdminTexts />}
-        {active === "notify" && <AdminNotify />}
-        {active === "whatsapp" && <AdminWhatsapp />}
-      </PanelShell>
-    </StoreLayout>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <AdminHeader />
+      <div className="flex-1">
+        <PanelShell
+          title={L.title[lang]}
+          subtitle={`${L.revenue[lang]}: ${formatPrice(stats?.revenue ?? 0, lang)}`}
+          kpis={[
+            { label: L.newOrders[lang], value: String(stats?.newOrders ?? 0) },
+            { label: L.productsCount[lang], value: String(stats?.products ?? 0) },
+            { label: L.activeOffers[lang], value: String(stats?.offers ?? 0) },
+            { label: L.revenue[lang], value: formatPrice(stats?.revenue ?? 0, lang) },
+          ]}
+          groups={groups}
+          active={active}
+          onOpen={setActive}
+          onClose={() => setActive(null)}
+        >
+          {active === "orders" && <AdminOrders />}
+          {active === "clearance" && <AdminClearance />}
+          {active === "vendors" && <AdminVendors />}
+          {active === "shipping" && <AdminShipping />}
+          {active === "accounting" && <AdminAccounting />}
+          {active === "costs" && <AdminCostTracker />}
+          {active === "wallet" && <AdminRewards />}
+          {active === "products" && <AdminProducts />}
+          {active === "categories" && <AdminCategories />}
+          {active === "promo" && <PromoStudio />}
+          {active === "fees" && <AdminMarketing />}
+          {active === "offers" && <AdminOffers />}
+          {active === "deals" && <AdminDeals />}
+          {active === "bundles" && <AdminBundles />}
+          {active === "tiers" && <AdminTiers />}
+          {active === "coupons" && <AdminCoupons />}
+          {active === "home" && <AdminHome />}
+          {active === "brands" && <AdminBrands />}
+          {active === "banners" && <AdminBanners />}
+          {active === "usp" && <AdminUsp />}
+          {active === "theme" && <AdminDesign />}
+          {active === "settings" && <AdminSettings />}
+          {active === "texts" && <AdminTexts />}
+          {active === "notify" && <AdminNotify />}
+          {active === "whatsapp" && <AdminWhatsapp />}
+        </PanelShell>
+      </div>
+    </div>
   );
 }
