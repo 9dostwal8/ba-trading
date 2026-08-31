@@ -107,13 +107,11 @@ export function DesktopHome({
     const minSwipeDistance = 40;
 
     if (distance > minSwipeDistance) {
-      // Swiped Left
-      if (isRtl) prevSlide();
-      else nextSlide();
+      // Swiped finger left -> Next Slide
+      nextSlide();
     } else if (distance < -minSwipeDistance) {
-      // Swiped Right
-      if (isRtl) nextSlide();
-      else prevSlide();
+      // Swiped finger right -> Previous Slide
+      prevSlide();
     }
 
     setTouchStartX(null);
@@ -160,19 +158,20 @@ export function DesktopHome({
           onTouchEnd={handleTouchEnd}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/9] sm:aspect-[21/9] md:aspect-[2.4/1] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group h-[180px] xs:h-[210px] sm:h-[270px] md:h-[330px] lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {heroBanners.length > 0 ? (
             <>
-              {/* Slides Track */}
+              {/* Slides Track — Locked to LTR so translateX is mathematically consistent on all mobile devices */}
               <div
+                dir="ltr"
                 className="flex h-full w-full transition-transform duration-500 ease-out"
                 style={{
-                  transform: `translateX(${(lang === "ar" || lang === "ku" ? 1 : -1) * currentSlide * 100}%)`,
+                  transform: `translateX(-${currentSlide * 100}%)`,
                 }}
               >
                 {heroBanners.map((b) => (
-                  <div key={b.id} className="min-w-full h-full shrink-0">
+                  <div key={b.id} className="min-w-full h-full shrink-0 relative overflow-hidden">
                     <AdCard ad={b} className="h-full w-full object-cover pointer-events-auto" />
                   </div>
                 ))}
