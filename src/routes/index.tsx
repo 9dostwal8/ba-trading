@@ -1,12 +1,7 @@
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { StoreLayout } from "@/components/StoreLayout";
-import { HomeSections } from "@/components/HomeSections";
 import { DesktopHome } from "@/components/desktop/DesktopHome";
-import { RewardBar } from "@/components/home/RewardBar";
-import { VendorJoinCta } from "@/components/home/VendorJoinCta";
-import { StaffHome } from "@/components/staff/StaffHome";
-import { useCanOrder } from "@/hooks/useCanOrder";
 import { effectivePrice, fetchStoreData } from "@/lib/store";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,9 +30,6 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { data, isLoading } = useQuery({ queryKey: ["store"], queryFn: fetchStoreData });
-  const { isStaff, isAdmin, ready } = useCanOrder();
-  const search = useRouterState({ select: (st) => st.location.searchStr });
-  const previewingStore = search.includes("view=store");
 
   const offers = data?.offers ?? [];
   const offerProducts = data?.offerProducts ?? [];
@@ -53,14 +45,6 @@ function Home() {
       data?.clearanceRules ?? [],
     );
   };
-
-  if (ready && isStaff && !previewingStore) {
-    return (
-      <StoreLayout>
-        <StaffHome isAdmin={isAdmin} panelTo={isAdmin ? "/admin" : "/brand"} />
-      </StoreLayout>
-    );
-  }
 
   return (
     <StoreLayout>
