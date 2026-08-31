@@ -78,6 +78,7 @@ function normalizePhone(input: string) {
 }
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   validateSearch: (s: Record<string, unknown>): { tab?: string } =>
     typeof s["tab"] === "string" ? { tab: s["tab"] } : {},
   head: () => ({
@@ -172,21 +173,24 @@ function AdminPage() {
     queryKey: ["admin-stats"],
     enabled: isAdmin === true,
     queryFn: async () => {
-      const [orders, products, offers] = await Promise.all([
-        supabase.from("orders").select("total, status"),
-        supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true),
-      ]);
-      if (orders.error) throw orders.error;
-      const rows = orders.data ?? [];
-      return {
-        revenue: rows
-          .filter((o) => o.status !== "cancelled")
-          .reduce((s, o) => s + Number(o.total), 0),
-        newOrders: rows.filter((o) => o.status === "new").length,
-        products: products.count ?? 0,
-        offers: offers.count ?? 0,
-      };
+      try {
+        const [orders, products, offers] = await Promise.all([
+          supabase.from("orders").select("total, status"),
+          supabase.from("products").select("id", { count: "exact", head: true }),
+          supabase.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true),
+        ]);
+        const rows = orders.data ?? [];
+        return {
+          revenue: rows
+            .filter((o) => o.status !== "cancelled")
+            .reduce((s, o) => s + Number(o.total), 0),
+          newOrders: rows.filter((o) => o.status === "new").length,
+          products: products.count ?? 0,
+          offers: offers.count ?? 0,
+        };
+      } catch {
+        return { revenue: 0, newOrders: 0, products: 0, offers: 0 };
+      }
     },
   });
 

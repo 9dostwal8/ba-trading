@@ -28,18 +28,23 @@ export function AdminHeader() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch admin profile
+  // Fetch admin profile safely
   const { data: profile } = useQuery({
     queryKey: ["admin-profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", user.id)
-        .maybeSingle();
-      return data;
+      try {
+        if (!user?.id) return null;
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("full_name, phone")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (error) return null;
+        return data;
+      } catch {
+        return null;
+      }
     },
   });
 
