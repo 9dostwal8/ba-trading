@@ -15,7 +15,7 @@ import {
   Truck,
   Zap,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { AdCard, type AdCardData } from "@/components/banners/AdCard";
 import { ProductCard } from "@/components/ProductCard";
 import { formatPrice, pick, pickName, useI18n } from "@/lib/i18n";
@@ -64,73 +64,38 @@ export function DesktopHome({
   const heroBanners = highResBanners.slice(0, 5);
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const touchStartXRef = useRef<number>(0);
-  const isDraggingRef = useRef<boolean>(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
-  };
-
-  // Auto-play hero slider (pauses when touched/dragging)
+  // Auto-play hero slider
   useEffect(() => {
-    if (heroBanners.length <= 1 || isDragging) return;
+    if (heroBanners.length <= 1) return;
     const interval = setInterval(() => {
-      nextSlide();
-    }, 4500);
+      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [heroBanners.length, isDragging]);
+  }, [heroBanners.length]);
 
-  // Touch Swipe & Drag Handlers for Mobile (1:1 direct finger drag)
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!e.targetTouches[0]) return;
-    touchStartXRef.current = e.targetTouches[0].clientX;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingRef.current || !e.targetTouches[0]) return;
-    const currentX = e.targetTouches[0].clientX;
-    const diff = currentX - touchStartXRef.current;
-    setDragOffset(diff);
-  };
-
-  const onTouchEnd = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    setIsDragging(false);
-
-    if (dragOffset < -35) {
-      // Swiped finger left -> Next Slide
-      nextSlide();
-    } else if (dragOffset > 35) {
-      // Swiped finger right -> Previous Slide
-      prevSlide();
+  // Touch Swipe for Mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.targetTouches[0]) {
+      setTouchStartX(e.targetTouches[0].clientX);
     }
-    setDragOffset(0);
   };
 
-  // Mouse Drag Handlers for Desktop
-  const onMouseDown = (e: React.MouseEvent) => {
-    touchStartXRef.current = e.clientX;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
-    const diff = e.clientX - touchStartXRef.current;
-    setDragOffset(diff);
-  };
-
-  const onMouseUp = () => {
-    onTouchEnd();
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || !e.changedTouches[0]) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // Swiped Left
+        setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+      } else {
+        // Swiped Right
+        setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
+      }
+    }
+    setTouchStartX(null);
   };
 
   const byId = (id?: string | null) => data.products.find((p) => p.id === id);
@@ -165,38 +130,29 @@ export function DesktopHome({
   return (
     <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-6 sm:space-y-10 px-2.5 sm:px-4 py-3 sm:py-6 lg:px-8">
       
-      {/* 1. Full-Width Wide Hero Banner Slider with Real-time Touch Drag */}
+      {/* 1. Full-Width Wide Hero Banner Slider */}
       <section className="w-full">
         <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[2/1] sm:aspect-[2.35/1] md:aspect-[2.5/1] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/8] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px]"
         >
           {heroBanners.length > 0 ? (
             <>
-              {/* Slides Track — Locked to LTR with real-time responsive finger dragging */}
-              <div
-                dir="ltr"
-                className={`flex h-full w-full ${isDragging ? "transition-none" : "transition-transform duration-500 ease-out"}`}
-                style={{
-                  transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
-                }}
-              >
-                {heroBanners.map((b) => (
-                  <div key={b.id} className="min-w-full h-full shrink-0 relative overflow-hidden bg-slate-50">
-                    <AdCard ad={b} className="h-full w-full pointer-events-auto" />
-                  </div>
-                ))}
-              </div>
+              {heroBanners.map((b, idx) => (
+                <div
+                  key={b.id}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                    idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+                  }`}
+                >
+                  <AdCard ad={b} className="h-full w-full object-cover" />
+                </div>
+              ))}
 
               {/* Slider Dots */}
               {heroBanners.length > 1 && (
-                <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md">
+                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 backdrop-blur-md">
                   {heroBanners.map((_, i) => (
                     <button
                       key={i}
@@ -216,19 +172,17 @@ export function DesktopHome({
                 <>
                   <button
                     type="button"
-                    onClick={prevSlide}
-                    aria-label="Previous"
-                    className="absolute start-2 sm:start-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    onClick={() => setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length)}
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
-                    {lang === "ar" || lang === "ku" ? <ChevronRight className="size-5" /> : <ChevronLeft className="size-5" />}
+                    <ChevronRight className="size-5" />
                   </button>
                   <button
                     type="button"
-                    onClick={nextSlide}
-                    aria-label="Next"
-                    className="absolute end-2 sm:end-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    onClick={() => setCurrentSlide((prev) => (prev + 1) % heroBanners.length)}
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
-                    {lang === "ar" || lang === "ku" ? <ChevronLeft className="size-5" /> : <ChevronRight className="size-5" />}
+                    <ChevronLeft className="size-5" />
                   </button>
                 </>
               )}
