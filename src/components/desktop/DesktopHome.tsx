@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
+  Hourglass,
   PackageOpen,
   ShieldCheck,
   Sparkles,
@@ -21,6 +22,7 @@ import { formatPrice, pick, pickName, useI18n } from "@/lib/i18n";
 import type { Bundle, Category, FlashDeal, HomeSection, Product } from "@/lib/store";
 import { type BrandCard, brandLogo } from "@/lib/brands";
 import { categoryIcon, tintStyle } from "@/lib/category-icons";
+import { monthsLeft } from "@/lib/clearance";
 
 type Data = {
   products: Product[];
@@ -128,6 +130,10 @@ export function DesktopHome({
   const featured = data.products.filter((p) => p.is_featured).slice(0, 10);
   const newest = data.products.slice(0, 10);
   const bundles = data.bundles.slice(0, 4);
+  const expiringProducts = data.products
+    .filter((p) => (p.clearance_kind === "near_expiry" || Boolean(p.expiry_date)) && p.expiry_date)
+    .sort((a, b) => (monthsLeft(a.expiry_date) ?? 99) - (monthsLeft(b.expiry_date) ?? 99))
+    .slice(0, 10);
 
   // Countdown for Flash Deals
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 35, seconds: 20 });
@@ -317,6 +323,112 @@ export function DesktopHome({
                 })}
               </div>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* 2.5 "بەرهەمی نزیک لە بەسەرچوون" (Expiring Soon Clearance Section - Beautiful Modern Style) */}
+      {expiringProducts.length > 0 && (
+        <section className="overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-500/[0.07] via-orange-500/[0.04] to-rose-500/[0.06] p-3.5 sm:p-5 shadow-xs">
+          
+          {/* Header Bar */}
+          <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-amber-200/50">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md shadow-amber-500/25">
+                <Hourglass className="size-4.5 sm:size-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[14.5px] sm:text-[17px] font-black text-slate-900">
+                    {lang === "ar" ? "منتجات قاربت على الانتهاء (تصفية)" : lang === "ku" ? "بەرهەمی نزیک لە بەسەرچوون" : "Expiring Soon Clearance"}
+                  </h3>
+                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-800">
+                    {expiringProducts.length} {lang === "ar" ? "عروض" : lang === "ku" ? "ئۆفەر" : "Deals"}
+                  </span>
+                </div>
+                <p className="text-[10.5px] sm:text-[12px] font-semibold text-amber-900/70 mt-0.5">
+                  {lang === "ar" ? "أدوات أصلية ومضمونة بأسعار تصفية خاصة" : lang === "ku" ? "کەرەستەی ئەسڵی و دروست بە نرخی ڕاماڵین و داشکاندن" : "100% Genuine items at deep clearance discounts"}
+                </p>
+              </div>
+            </div>
+
+            {/* View All Link */}
+            <Link
+              to="/expiring"
+              className="shrink-0 flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-[11.5px] sm:text-[12.5px] font-black text-amber-800 border border-amber-200/80 shadow-xs hover:bg-amber-50 active:scale-95 transition"
+            >
+              <span>{lang === "ar" ? "عرض الكل" : lang === "ku" ? "هەمووی ببینە" : "View All"}</span>
+              {lang === "ar" || lang === "ku" ? <ChevronLeft className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            </Link>
+          </div>
+
+          {/* Expiring Products Rail */}
+          <div className="no-scrollbar -mx-2 sm:-mx-3 flex gap-2.5 sm:gap-3.5 overflow-x-auto px-2 sm:px-3 pb-1">
+            {expiringProducts.map((p) => {
+              const currentPrice = priceOf(p.id, p.price, 1);
+              const oldPrice = p.compare_price ? Number(p.compare_price) : (p.price > currentPrice ? p.price : null);
+              const mLeft = monthsLeft(p.expiry_date);
+              const discountPercent = oldPrice ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100) : 0;
+
+              return (
+                <Link
+                  key={p.id}
+                  to="/product/$id"
+                  params={{ id: p.id }}
+                  className="group relative flex w-[150px] sm:w-[190px] shrink-0 flex-col rounded-2xl border border-amber-200/80 bg-white p-2.5 sm:p-3 shadow-xs hover:border-amber-400 hover:shadow-md transition-all active:scale-[0.98]"
+                >
+                  {/* Expiry Shelf Life Tag & Discount */}
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    {mLeft !== null && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-100/90 px-1.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-extrabold text-amber-900">
+                        <CalendarClock className="size-3" />
+                        <span>{mLeft} {lang === "ar" ? "أشهر" : lang === "ku" ? "مانگ" : "Mos"}</span>
+                      </span>
+                    )}
+                    {discountPercent > 0 && (
+                      <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-black text-white ms-auto shadow-2xs">
+                        {discountPercent}%
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Product Image */}
+                  <div className="relative mb-2 flex h-24 sm:h-32 w-full items-center justify-center rounded-xl bg-slate-50 p-2">
+                    {p.image_url ? (
+                      <img
+                        src={p.image_url}
+                        alt={pickName(p, lang)}
+                        className="h-full w-full object-contain transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <span className="text-3xl sm:text-4xl">🦷</span>
+                    )}
+                  </div>
+
+                  {/* Brand & Title */}
+                  {p.brand && (
+                    <span className="text-[9.5px] sm:text-[10.5px] font-extrabold text-slate-400 truncate">
+                      {p.brand}
+                    </span>
+                  )}
+                  <h4 className="line-clamp-2 min-h-[30px] sm:min-h-[34px] text-[11px] sm:text-[12px] font-bold leading-tight text-slate-800 group-hover:text-primary transition-colors">
+                    {pickName(p, lang)}
+                  </h4>
+
+                  {/* Price Block */}
+                  <div className="mt-auto pt-2 border-t border-slate-100/80">
+                    {oldPrice && (
+                      <p className="text-[9.5px] sm:text-[10.5px] font-bold text-slate-400 line-through">
+                        {formatPrice(oldPrice, lang)}
+                      </p>
+                    )}
+                    <p className="text-[12px] sm:text-[13.5px] font-black text-amber-700">
+                      {formatPrice(currentPrice, lang)}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
