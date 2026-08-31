@@ -353,23 +353,14 @@ export function GooshiHeader() {
               </Link>
             )}
 
-            {/* Mobile Search Button (Replaces profile button on mobile) */}
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById("mobile-header-search-input");
-                if (el) {
-                  el.focus();
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
-                } else {
-                  navigate({ to: "/products" });
-                }
-              }}
+            {/* Mobile Search Button -> Navigates to dedicated Search Page */}
+            <Link
+              to="/search"
               aria-label="Search"
               className="md:hidden inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
             >
               <Search className="size-4.5 text-slate-600" />
-            </button>
+            </Link>
 
             {/* Shopping Cart Pill Button — Shown only when logged in */}
             {canOrder && (
@@ -392,37 +383,6 @@ export function GooshiHeader() {
               </Link>
             )}
           </div>
-        </div>
-
-        {/* Mobile Search Bar (Directly below Top Bar) */}
-        <div className="border-t border-slate-100 px-3 py-2 md:hidden">
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex items-center rounded-xl bg-slate-100 px-3 py-1.5 border border-slate-200/60 focus-within:border-primary focus-within:bg-white"
-          >
-            <Search className="size-4 text-slate-400" />
-            <input
-              id="mobile-header-search-input"
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                lang === "ar"
-                  ? "ابحث عن منتج أو ماركة..."
-                  : lang === "ku"
-                  ? "گەڕان لە بەرهەمەکان..."
-                  : "Search products or brands..."
-              }
-              className="h-8 w-full bg-transparent px-2 text-[12.5px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => qrFileRef.current?.click()}
-              className="text-slate-400 hover:text-primary"
-            >
-              <QrCode className="size-4" />
-            </button>
-          </form>
         </div>
 
         {/* Secondary Clean Navigation Bar (Mega Menu Only) */}

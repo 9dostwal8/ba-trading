@@ -27,6 +27,7 @@ import { Route as OutletRouteImport } from './routes/outlet'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -132,6 +133,11 @@ const RewardsRoute = RewardsRouteImport.update({
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
   path: '/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VendorSignupRoute = VendorSignupRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/rewards': typeof RewardsRoute
   '/scan': typeof ScanRoute
+  '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/rewards': typeof RewardsRoute
   '/scan': typeof ScanRoute
+  '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/rewards': typeof RewardsRoute
   '/scan': typeof ScanRoute
+  '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -354,6 +363,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/rewards'
     | '/scan'
+    | '/search'
     | '/vendor-signup'
     | '/vendors'
     | '/admin'
@@ -390,6 +400,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/rewards'
     | '/scan'
+    | '/search'
     | '/vendor-signup'
     | '/vendors'
     | '/admin'
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/rewards'
     | '/scan'
+    | '/search'
     | '/vendor-signup'
     | '/vendors'
     | '/_authenticated/admin'
@@ -465,6 +477,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   RewardsRoute: typeof RewardsRoute
   ScanRoute: typeof ScanRoute
+  SearchRoute: typeof SearchRoute
   VendorSignupRoute: typeof VendorSignupRoute
   VendorsRoute: typeof VendorsRoute
   BundleIdRoute: typeof BundleIdRoute
@@ -600,6 +613,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/scan'
       preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendor-signup': {
@@ -773,6 +793,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   RewardsRoute: RewardsRoute,
   ScanRoute: ScanRoute,
+  SearchRoute: SearchRoute,
   VendorSignupRoute: VendorSignupRoute,
   VendorsRoute: VendorsRoute,
   BundleIdRoute: BundleIdRoute,
