@@ -338,14 +338,9 @@ export function DesktopHome({
                 <Hourglass className="size-4.5 sm:size-5 animate-pulse" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-[14.5px] sm:text-[17px] font-black text-slate-900">
-                    {lang === "ar" ? "منتجات قاربت على الانتهاء (تصفية)" : lang === "ku" ? "بەرهەمی نزیک لە بەسەرچوون" : "Expiring Soon Clearance"}
-                  </h3>
-                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-800">
-                    {expiringProducts.length} {lang === "ar" ? "عروض" : lang === "ku" ? "ئۆفەر" : "Deals"}
-                  </span>
-                </div>
+                <h3 className="text-[14.5px] sm:text-[17px] font-black text-slate-900">
+                  {lang === "ar" ? "منتجات قاربت على الانتهاء (تصفية)" : lang === "ku" ? "بەرهەمی نزیک لە بەسەرچوون" : "Expiring Soon Clearance"}
+                </h3>
                 <p className="text-[10.5px] sm:text-[12px] font-semibold text-amber-900/70 mt-0.5">
                   {lang === "ar" ? "أدوات أصلية ومضمونة بأسعار تصفية خاصة" : lang === "ku" ? "کەرەستەی ئەسڵی و دروست بە نرخی ڕاماڵین و داشکاندن" : "100% Genuine items at deep clearance discounts"}
                 </p>
