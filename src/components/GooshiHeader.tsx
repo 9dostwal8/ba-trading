@@ -330,28 +330,46 @@ export function GooshiHeader() {
             {/* Notification Bell */}
             <NotificationBell />
 
-            {/* User Account / Profile Button */}
+            {/* User Account / Profile Button (Desktop only — on mobile it is in the bottom bar) */}
             {isStaff ? (
               <Link
                 to={panelTo}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-3.5 text-[12.5px] font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-95"
+                className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-3.5 text-[12.5px] font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-95"
               >
                 <LayoutDashboard className="size-4" />
-                <span className="hidden sm:inline">
+                <span>
                   {lang === "ar" ? "لوحة الإدارة" : lang === "ku" ? "داشبۆرد" : "Dashboard"}
                 </span>
               </Link>
             ) : (
               <Link
                 to="/profile"
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3 sm:px-3.5 text-[12.5px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 shadow-sm"
+                className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3 sm:px-3.5 text-[12.5px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 shadow-sm"
               >
                 <User className="size-4 text-slate-600" />
-                <span className="hidden sm:inline">
+                <span>
                   {canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
                 </span>
               </Link>
             )}
+
+            {/* Mobile Search Button (Replaces profile button on mobile) */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("mobile-header-search-input");
+                if (el) {
+                  el.focus();
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                } else {
+                  navigate({ to: "/products" });
+                }
+              }}
+              aria-label="Search"
+              className="md:hidden inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+            >
+              <Search className="size-4.5 text-slate-600" />
+            </button>
 
             {/* Shopping Cart Pill Button — Shown only when logged in */}
             {canOrder && (
@@ -384,6 +402,7 @@ export function GooshiHeader() {
           >
             <Search className="size-4 text-slate-400" />
             <input
+              id="mobile-header-search-input"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
