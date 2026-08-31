@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as BundlesRouteImport } from './routes/bundles'
@@ -30,7 +31,6 @@ import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as VendorSignupRouteImport } from './routes/vendor-signup'
 import { Route as VendorsRouteImport } from './routes/vendors'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/brand'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -53,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -150,11 +155,6 @@ const VendorsRoute = VendorsRouteImport.update({
   path: '/vendors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedBrandRoute = AuthenticatedBrandRouteImport.update({
   id: '/brand',
   path: '/brand',
@@ -232,6 +232,7 @@ const AuthenticatedProfileWalletStatementRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -251,7 +252,6 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/brand': typeof AuthenticatedBrandRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -269,6 +269,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -288,7 +289,6 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/brand': typeof AuthenticatedBrandRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -308,6 +308,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -327,7 +328,6 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/vendor-signup': typeof VendorSignupRoute
   '/vendors': typeof VendorsRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/brand': typeof AuthenticatedBrandRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -347,6 +347,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -366,7 +367,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/vendor-signup'
     | '/vendors'
-    | '/admin'
     | '/brand'
     | '/orders'
     | '/profile'
@@ -384,6 +384,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -403,7 +404,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/vendor-signup'
     | '/vendors'
-    | '/admin'
     | '/brand'
     | '/orders'
     | '/profile'
@@ -422,6 +422,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -441,7 +442,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/vendor-signup'
     | '/vendors'
-    | '/_authenticated/admin'
     | '/_authenticated/brand'
     | '/_authenticated/orders'
     | '/_authenticated/profile'
@@ -461,6 +461,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BrandsRoute: typeof BrandsRoute
   BundlesRoute: typeof BundlesRoute
@@ -501,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -636,13 +644,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/brand': {
       id: '/_authenticated/brand'
       path: '/brand'
@@ -745,7 +746,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBrandRoute: typeof AuthenticatedBrandRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -758,7 +758,6 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBrandRoute: AuthenticatedBrandRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -777,6 +776,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BrandsRoute: BrandsRoute,
   BundlesRoute: BundlesRoute,
