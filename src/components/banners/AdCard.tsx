@@ -37,7 +37,7 @@ export function AdCard({ ad, className = "" }: { ad: AdCardData; className?: str
                 (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
               }
             }}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
           />
         ) : null}
         <div

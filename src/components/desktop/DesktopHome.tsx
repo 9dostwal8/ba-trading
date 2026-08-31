@@ -160,7 +160,7 @@ export function DesktopHome({
           onTouchEnd={handleTouchEnd}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/8] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/9] sm:aspect-[21/9] md:aspect-[2.4/1] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {heroBanners.length > 0 ? (
             <>
