@@ -61,15 +61,62 @@ export function DesktopHome({
   ];
   const heroBanners = highResBanners.slice(0, 5);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Auto-play hero slider
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length);
+  };
+
+  // Auto-play hero slider (pauses when touched/hovered)
   useEffect(() => {
-    if (heroBanners.length <= 1) return;
+    if (heroBanners.length <= 1 || isPaused) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroBanners.length);
+      nextSlide();
     }, 5000);
     return () => clearInterval(interval);
-  }, [heroBanners.length]);
+  }, [heroBanners.length, isPaused]);
+
+  // Touch Swipe Handlers for Mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsPaused(true);
+    if (e.targetTouches[0]) {
+      setTouchStartX(e.targetTouches[0].clientX);
+    }
+    setTouchEndX(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.targetTouches[0]) {
+      setTouchEndX(e.targetTouches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPaused(false);
+    if (touchStartX === null || touchEndX === null) return;
+    const distance = touchStartX - touchEndX;
+    const isRtl = lang === "ar" || lang === "ku";
+    const minSwipeDistance = 40;
+
+    if (distance > minSwipeDistance) {
+      // Swiped Left
+      if (isRtl) prevSlide();
+      else nextSlide();
+    } else if (distance < -minSwipeDistance) {
+      // Swiped Right
+      if (isRtl) nextSlide();
+      else prevSlide();
+    }
+
+    setTouchStartX(null);
+    setTouchEndX(null);
+  };
 
   const byId = (id?: string | null) => data.products.find((p) => p.id === id);
 
@@ -99,25 +146,35 @@ export function DesktopHome({
   return (
     <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] space-y-6 sm:space-y-10 px-2.5 sm:px-4 py-3 sm:py-6 lg:px-8">
       
-      {/* 1. Full-Width Wide Hero Banner Slider */}
+      {/* 1. Full-Width Wide Hero Banner Slider with Touch Swipe */}
       <section className="w-full">
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/8] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px]">
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-sm w-full group aspect-[16/8] sm:aspect-[21/8] lg:aspect-auto lg:h-[380px] xl:h-[420px] select-none cursor-grab active:cursor-grabbing touch-pan-y"
+        >
           {heroBanners.length > 0 ? (
             <>
-              {heroBanners.map((b, idx) => (
-                <div
-                  key={b.id}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                    idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-                  }`}
-                >
-                  <AdCard ad={b} className="h-full w-full object-cover" />
-                </div>
-              ))}
+              {/* Slides Track */}
+              <div
+                className="flex h-full w-full transition-transform duration-500 ease-out"
+                style={{
+                  transform: `translateX(${(lang === "ar" || lang === "ku" ? 1 : -1) * currentSlide * 100}%)`,
+                }}
+              >
+                {heroBanners.map((b) => (
+                  <div key={b.id} className="min-w-full h-full shrink-0">
+                    <AdCard ad={b} className="h-full w-full object-cover pointer-events-auto" />
+                  </div>
+                ))}
+              </div>
 
               {/* Slider Dots */}
               {heroBanners.length > 1 && (
-                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 backdrop-blur-md">
+                <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 backdrop-blur-md">
                   {heroBanners.map((_, i) => (
                     <button
                       key={i}
@@ -135,16 +192,20 @@ export function DesktopHome({
               {heroBanners.length > 1 && (
                 <>
                   <button
-                    onClick={() => setCurrentSlide((prev) => (prev - 1 + heroBanners.length) % heroBanners.length)}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    type="button"
+                    onClick={prevSlide}
+                    aria-label="Previous"
+                    className="absolute start-2 sm:start-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
-                    <ChevronRight className="size-5" />
+                    {lang === "ar" || lang === "ku" ? <ChevronRight className="size-5" /> : <ChevronLeft className="size-5" />}
                   </button>
                   <button
-                    onClick={() => setCurrentSlide((prev) => (prev + 1) % heroBanners.length)}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
+                    type="button"
+                    onClick={nextSlide}
+                    aria-label="Next"
+                    className="absolute end-2 sm:end-4 top-1/2 -translate-y-1/2 z-20 hidden sm:flex size-10 items-center justify-center rounded-full bg-white/85 text-slate-800 shadow-md backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white active:scale-95"
                   >
-                    <ChevronLeft className="size-5" />
+                    {lang === "ar" || lang === "ku" ? <ChevronLeft className="size-5" /> : <ChevronRight className="size-5" />}
                   </button>
                 </>
               )}
