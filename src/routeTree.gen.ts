@@ -36,6 +36,10 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSavingsRouteImport } from './routes/_authenticated/savings'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminShippingRouteImport } from './routes/admin/shipping'
+import { Route as AdminVendorsRouteImport } from './routes/admin/vendors'
 import { Route as BundleIdRouteImport } from './routes/bundle.$id'
 import { Route as PaymentOrderIdRouteImport } from './routes/payment.$orderId'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -181,6 +185,26 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/admin/orders',
+  path: '/admin/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminShippingRoute = AdminShippingRouteImport.update({
+  id: '/admin/shipping',
+  path: '/admin/shipping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVendorsRoute = AdminVendorsRouteImport.update({
+  id: '/admin/vendors',
+  path: '/admin/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BundleIdRoute = BundleIdRouteImport.update({
   id: '/bundle/$id',
   path: '/bundle/$id',
@@ -262,6 +286,10 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -300,6 +328,10 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -340,6 +372,10 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/savings': typeof AuthenticatedSavingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -380,6 +416,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/savings'
     | '/admin/dashboard'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/shipping'
+    | '/admin/vendors'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
@@ -418,6 +458,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/savings'
     | '/admin/dashboard'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/shipping'
+    | '/admin/vendors'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
@@ -457,6 +501,10 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/savings'
     | '/admin/dashboard'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/shipping'
+    | '/admin/vendors'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
@@ -493,6 +541,10 @@ export interface RootRouteChildren {
   VendorSignupRoute: typeof VendorSignupRoute
   VendorsRoute: typeof VendorsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminShippingRoute: typeof AdminShippingRoute
+  AdminVendorsRoute: typeof AdminVendorsRoute
   BundleIdRoute: typeof BundleIdRoute
   PaymentOrderIdRoute: typeof PaymentOrderIdRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -692,6 +744,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/admin/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/shipping': {
+      id: '/admin/shipping'
+      path: '/admin/shipping'
+      fullPath: '/admin/shipping'
+      preLoaderRoute: typeof AdminShippingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/vendors': {
+      id: '/admin/vendors'
+      path: '/admin/vendors'
+      fullPath: '/admin/vendors'
+      preLoaderRoute: typeof AdminVendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bundle/$id': {
       id: '/bundle/$id'
       path: '/bundle/$id'
@@ -816,6 +896,10 @@ const rootRouteChildren: RootRouteChildren = {
   VendorSignupRoute: VendorSignupRoute,
   VendorsRoute: VendorsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminProductsRoute: AdminProductsRoute,
+  AdminShippingRoute: AdminShippingRoute,
+  AdminVendorsRoute: AdminVendorsRoute,
   BundleIdRoute: BundleIdRoute,
   PaymentOrderIdRoute: PaymentOrderIdRoute,
   ProductIdRoute: ProductIdRoute,

@@ -127,6 +127,28 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   const { lang } = useI18n();
   const [active, setActive] = useState<string | null>(initialTab ?? null);
 
+  const handleOpenTab = (key: string) => {
+    setActive(key);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", key);
+      window.history.replaceState(null, "", url.toString());
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleCloseTab = () => {
+    setActive(null);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      window.history.replaceState(null, "", url.toString());
+    } catch {
+      // fallback
+    }
+  };
+
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
@@ -254,7 +276,8 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
           ]}
           groups={groups}
           active={active}
-          onOpen={setActive}
+          onOpen={handleOpenTab}
+          onClose={handleCloseTab}
         >
           <Suspense
             fallback={
