@@ -391,33 +391,14 @@ function AdminPage() {
           </div>
 
           {/* Right Column: 3D Visual Hero Panel (5 cols) */}
-          <div className="lg:col-span-5 relative overflow-hidden rounded-[2rem] bg-gradient-to-tr from-purple-950 via-indigo-900 to-violet-950 p-8 lg:p-12 flex flex-col justify-end text-white min-h-[420px] lg:min-h-full shadow-inner">
+          <div className="lg:col-span-5 relative overflow-hidden rounded-[2rem] bg-gradient-to-tr from-purple-950 via-indigo-900 to-violet-950 flex flex-col justify-end text-white min-h-[420px] lg:min-h-full shadow-inner">
             
             {/* Background 3D Graphic Asset */}
             <img
               src="/login-hero-3d.png"
               alt="3D Hero"
-              className="absolute inset-0 size-full object-cover object-center opacity-90 transition-scale duration-700 hover:scale-105 pointer-events-none"
+              className="absolute inset-0 size-full object-cover object-center transition-scale duration-700 hover:scale-105 pointer-events-none"
             />
-            
-            {/* Gradient Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-purple-950/95 via-purple-900/40 to-transparent pointer-events-none" />
-
-            {/* Hero Quote Overlay */}
-            <div className="relative z-10 space-y-3">
-              <h2 className="text-2xl sm:text-3xl font-bold leading-snug tracking-tight text-white drop-shadow-lg">
-                {lang === "ar"
-                  ? "أهلاً بك مجدداً! قم بتسجيل الدخول للوصول إلى لوحة التحكم وإدارة كافة العمليات."
-                  : lang === "ku"
-                    ? "بەخێربێنەوە! بۆ دەستگەیشتن بە پانێڵی بەڕێوەبردن و بەڕێوەبردنی کارەکان بچۆژوورەوە."
-                    : "Welcome back! Sign in to access your dashboard, manage leads, and continue progress."}
-              </h2>
-              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-purple-200/80">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>BA Trading Security System</span>
-              </div>
-            </div>
-
           </div>
 
         </div>
