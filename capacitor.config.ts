@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   // Fallback shell; the app loads the live site from server.url below.
   webDir: "android-www",
   server: {
-    url: "https://kurdion.lovable.app",
+    url: "https://ba-trading.vercel.app",
     cleartext: false,
     androidScheme: "https",
   },

@@ -81,7 +81,7 @@ export async function fetchVendorOrderCounts() {
 /** Text encoded in a vendor QR code: a deep link that also works in a browser. */
 export function vendorQrValue(vendor: Pick<Vendor, "slug">) {
   const origin =
-    typeof window === "undefined" ? "https://offerdent.lovable.app" : window.location.origin;
+    typeof window === "undefined" ? "https://ba-trading.vercel.app" : window.location.origin;
   return `${origin}/vendor/${vendor.slug}`;
 }
 
