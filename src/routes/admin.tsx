@@ -34,41 +34,42 @@ import {
   KeyRound,
   CheckCircle2,
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { lazy, Suspense, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StoreLayout } from "@/components/StoreLayout";
 import { PanelShell } from "@/components/panel/PanelShell";
-import { PromoStudio } from "@/components/promo/PromoStudio";
-import { AdminBanners } from "@/components/admin/AdminBanners";
-import { AdminClearance } from "@/components/admin/AdminClearance";
-import { AdminBrands } from "@/components/admin/AdminBrands";
-import { AdminBundles } from "@/components/admin/AdminBundles";
-import { AdminTiers } from "@/components/admin/AdminTiers";
-import { AdminDeals } from "@/components/admin/AdminDeals";
-import { AdminCategories } from "@/components/admin/AdminCategories";
-import { AdminCoupons } from "@/components/admin/AdminCoupons";
-import { AdminHome } from "@/components/admin/AdminHome";
-import { AdminOffers } from "@/components/admin/AdminOffers";
-import { AdminOrders } from "@/components/admin/AdminOrders";
-import { AdminProducts } from "@/components/admin/AdminProducts";
-import { AdminSettings } from "@/components/admin/AdminSettings";
-import { AdminDesign } from "@/components/admin/AdminDesign";
-import { AdminTexts } from "@/components/admin/AdminTexts";
-import { AdminUsp } from "@/components/admin/AdminUsp";
-import { AdminVendors } from "@/components/admin/AdminVendors";
-import { AdminMarketing } from "@/components/admin/AdminMarketing";
-import { AdminAccounting } from "@/components/admin/AdminAccounting";
-import { AdminRewards } from "@/components/admin/AdminRewards";
-import { AdminNotify } from "@/components/admin/AdminNotify";
-import { AdminWhatsapp } from "@/components/admin/AdminWhatsapp";
-import { AdminShipping } from "@/components/admin/AdminShipping";
-import { AdminCostTracker } from "@/components/admin/AdminCostTracker";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { formatPrice, useI18n } from "@/lib/i18n";
+
+const PromoStudio = lazy(() => import("@/components/promo/PromoStudio").then((m) => ({ default: m.PromoStudio })));
+const AdminBanners = lazy(() => import("@/components/admin/AdminBanners").then((m) => ({ default: m.AdminBanners })));
+const AdminClearance = lazy(() => import("@/components/admin/AdminClearance").then((m) => ({ default: m.AdminClearance })));
+const AdminBrands = lazy(() => import("@/components/admin/AdminBrands").then((m) => ({ default: m.AdminBrands })));
+const AdminBundles = lazy(() => import("@/components/admin/AdminBundles").then((m) => ({ default: m.AdminBundles })));
+const AdminTiers = lazy(() => import("@/components/admin/AdminTiers").then((m) => ({ default: m.AdminTiers })));
+const AdminDeals = lazy(() => import("@/components/admin/AdminDeals").then((m) => ({ default: m.AdminDeals })));
+const AdminCategories = lazy(() => import("@/components/admin/AdminCategories").then((m) => ({ default: m.AdminCategories })));
+const AdminCoupons = lazy(() => import("@/components/admin/AdminCoupons").then((m) => ({ default: m.AdminCoupons })));
+const AdminHome = lazy(() => import("@/components/admin/AdminHome").then((m) => ({ default: m.AdminHome })));
+const AdminOffers = lazy(() => import("@/components/admin/AdminOffers").then((m) => ({ default: m.AdminOffers })));
+const AdminOrders = lazy(() => import("@/components/admin/AdminOrders").then((m) => ({ default: m.AdminOrders })));
+const AdminProducts = lazy(() => import("@/components/admin/AdminProducts").then((m) => ({ default: m.AdminProducts })));
+const AdminSettings = lazy(() => import("@/components/admin/AdminSettings").then((m) => ({ default: m.AdminSettings })));
+const AdminDesign = lazy(() => import("@/components/admin/AdminDesign").then((m) => ({ default: m.AdminDesign })));
+const AdminTexts = lazy(() => import("@/components/admin/AdminTexts").then((m) => ({ default: m.AdminTexts })));
+const AdminUsp = lazy(() => import("@/components/admin/AdminUsp").then((m) => ({ default: m.AdminUsp })));
+const AdminVendors = lazy(() => import("@/components/admin/AdminVendors").then((m) => ({ default: m.AdminVendors })));
+const AdminMarketing = lazy(() => import("@/components/admin/AdminMarketing").then((m) => ({ default: m.AdminMarketing })));
+const AdminAccounting = lazy(() => import("@/components/admin/AdminAccounting").then((m) => ({ default: m.AdminAccounting })));
+const AdminRewards = lazy(() => import("@/components/admin/AdminRewards").then((m) => ({ default: m.AdminRewards })));
+const AdminNotify = lazy(() => import("@/components/admin/AdminNotify").then((m) => ({ default: m.AdminNotify })));
+const AdminWhatsapp = lazy(() => import("@/components/admin/AdminWhatsapp").then((m) => ({ default: m.AdminWhatsapp })));
+const AdminShipping = lazy(() => import("@/components/admin/AdminShipping").then((m) => ({ default: m.AdminShipping })));
+const AdminCostTracker = lazy(() => import("@/components/admin/AdminCostTracker").then((m) => ({ default: m.AdminCostTracker })));
 
 const PHONE_DOMAIN = "batrading.com";
 
@@ -514,33 +515,40 @@ function AdminPage() {
           groups={groups}
           active={active}
           onOpen={setActive}
-          onClose={() => setActive(null)}
         >
-          {active === "orders" && <AdminOrders />}
-          {active === "clearance" && <AdminClearance />}
-          {active === "vendors" && <AdminVendors />}
-          {active === "shipping" && <AdminShipping />}
-          {active === "accounting" && <AdminAccounting />}
-          {active === "costs" && <AdminCostTracker />}
-          {active === "wallet" && <AdminRewards />}
-          {active === "products" && <AdminProducts />}
-          {active === "categories" && <AdminCategories />}
-          {active === "promo" && <PromoStudio />}
-          {active === "fees" && <AdminMarketing />}
-          {active === "offers" && <AdminOffers />}
-          {active === "deals" && <AdminDeals />}
-          {active === "bundles" && <AdminBundles />}
-          {active === "tiers" && <AdminTiers />}
-          {active === "coupons" && <AdminCoupons />}
-          {active === "home" && <AdminHome />}
-          {active === "brands" && <AdminBrands />}
-          {active === "banners" && <AdminBanners />}
-          {active === "usp" && <AdminUsp />}
-          {active === "theme" && <AdminDesign />}
-          {active === "settings" && <AdminSettings />}
-          {active === "texts" && <AdminTexts />}
-          {active === "notify" && <AdminNotify />}
-          {active === "whatsapp" && <AdminWhatsapp />}
+          <Suspense
+            fallback={
+              <div className="flex h-64 w-full items-center justify-center py-12">
+                <Loader2 className="size-8 animate-spin text-primary" />
+              </div>
+            }
+          >
+            {active === "orders" && <AdminOrders />}
+            {active === "clearance" && <AdminClearance />}
+            {active === "vendors" && <AdminVendors />}
+            {active === "shipping" && <AdminShipping />}
+            {active === "accounting" && <AdminAccounting />}
+            {active === "costs" && <AdminCostTracker />}
+            {active === "wallet" && <AdminRewards />}
+            {active === "products" && <AdminProducts />}
+            {active === "categories" && <AdminCategories />}
+            {active === "promo" && <PromoStudio />}
+            {active === "fees" && <AdminMarketing />}
+            {active === "offers" && <AdminOffers />}
+            {active === "deals" && <AdminDeals />}
+            {active === "bundles" && <AdminBundles />}
+            {active === "tiers" && <AdminTiers />}
+            {active === "coupons" && <AdminCoupons />}
+            {active === "home" && <AdminHome />}
+            {active === "brands" && <AdminBrands />}
+            {active === "banners" && <AdminBanners />}
+            {active === "usp" && <AdminUsp />}
+            {active === "theme" && <AdminDesign />}
+            {active === "settings" && <AdminSettings />}
+            {active === "texts" && <AdminTexts />}
+            {active === "notify" && <AdminNotify />}
+            {active === "whatsapp" && <AdminWhatsapp />}
+          </Suspense>
         </PanelShell>
       </div>
     </div>

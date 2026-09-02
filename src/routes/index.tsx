@@ -29,7 +29,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { data, isLoading } = useQuery({ queryKey: ["store"], queryFn: fetchStoreData });
+  const { data, isLoading } = useQuery({
+    queryKey: ["store"],
+    queryFn: fetchStoreData,
+    staleTime: 1000 * 60 * 5, // Cache store data for 5 minutes
+    gcTime: 1000 * 60 * 15, // Retain in garbage collection for 15 minutes
+  });
 
   const offers = data?.offers ?? [];
   const offerProducts = data?.offerProducts ?? [];
