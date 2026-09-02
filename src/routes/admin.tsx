@@ -270,131 +270,143 @@ function AdminPage() {
     );
   }
 
-  // 2. Unauthenticated -> Dedicated Executive Admin Login Portal
+  // 2. Unauthenticated -> Dedicated Executive Admin Login Portal (Split-Screen 3D Design)
   if (!user) {
     return (
-      <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-6 text-slate-100 font-sans">
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 text-slate-900 dark:text-slate-100 font-sans">
         
-        {/* Ambient Animated Background Glow Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-gradient-to-tr from-[#005c5c]/30 via-teal-500/20 to-emerald-500/10 blur-[140px] pointer-events-none animate-pulse" />
-        <div className="absolute bottom-10 right-10 size-80 rounded-full bg-teal-900/20 blur-[100px] pointer-events-none" />
-        <div className="absolute top-10 left-10 size-72 rounded-full bg-cyan-900/20 blur-[90px] pointer-events-none" />
-
-        {/* Subtle Tech Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0d2729_1px,transparent_1px),linear-gradient(to_bottom,#0d2729_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-40 pointer-events-none" />
-
-        <div className="relative z-10 w-full max-w-md">
+        {/* Main Outer Container */}
+        <div className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[2.5rem] p-3 sm:p-4 shadow-2xl border border-slate-200/80 dark:border-slate-800/80 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 min-h-[620px] items-stretch">
           
-          {/* Main Glassmorphic Card */}
-          <div className="relative overflow-hidden rounded-3xl border border-teal-500/30 bg-slate-900/75 p-7 sm:p-9 shadow-[0_0_80px_rgba(0,121,121,0.22)] backdrop-blur-2xl transition-all duration-300">
-            
-            {/* Top Glowing Edge Strip */}
-            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-80" />
-
-            {/* Header & Security Badge */}
-            <div className="text-center mb-8 relative">
-              <div className="relative mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#007979] via-teal-500 to-emerald-400 text-white shadow-[0_0_35px_rgba(0,200,170,0.4)] group transition-transform duration-300 hover:scale-105">
-                <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-                <ShieldCheck className="size-10 relative z-10 drop-shadow-md" strokeWidth={2.2} />
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-sm">
-                {lang === "ar" ? "بوابة الإدارة المركزية" : lang === "ku" ? "دەروازەی بەڕێوەبەرایەتی" : "Executive Admin Portal"}
-              </h1>
+          {/* Left Column: Form Section (7 cols) */}
+          <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+            <div>
               
-              <div className="mt-2.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-950/70 border border-teal-500/30 text-[11.5px] font-bold text-teal-300 shadow-inner">
-                <span className="relative flex size-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full size-2 bg-teal-400"></span>
-                </span>
-                <span>{lang === "ar" ? "تسجيل الدخول المخصص لمدراء النظام" : lang === "ku" ? "چوونەژوورەوەی تایبەت بە بەڕێوەبەرانی سیستم" : "Authorized Management Access Only"}</span>
+              {/* Brand Logo Icon */}
+              <div className="mb-6 inline-flex size-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-purple-500/30">
+                <ShieldCheck className="size-7 stroke-[2.2]" />
               </div>
+
+              {/* Title & Subtitle */}
+              <div className="mb-8 text-start">
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  {lang === "ar" ? "أهلاً بك مجدداً" : lang === "ku" ? "بەخێربێنەوە" : "Welcome Back"}
+                </h1>
+                <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {lang === "ar" ? "قم بتسجيل الدخول للوصول إلى لوحة التحكم" : lang === "ku" ? "چوونەژوورەوە بۆ هەژمارەکەت بۆ بەردەوامبوون" : "Sign in to your account to continue"}
+                </p>
+              </div>
+
+              {/* Login Form */}
+              <form onSubmit={handleAdminLogin} className="space-y-5">
+                
+                {/* Phone / Email Input */}
+                <div className="space-y-2 text-start">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ps-1">
+                    {lang === "ar" ? "رقم الهاتف أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Admin Phone / Email"}
+                  </label>
+                  <div className="relative group">
+                    <Input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="0770XXXXXXX / admin@batrading.iq"
+                      className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 px-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 transition-all"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="space-y-2 text-start">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ps-1">
+                    {lang === "ar" ? "كلمة المرور السرية" : lang === "ku" ? "وشەی نهێنی" : "Password"}
+                  </label>
+                  <div className="relative group">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-12 rounded-2xl border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 pe-11 ps-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="size-4.5 text-purple-600" /> : <Eye className="size-4.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full h-12 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white font-extrabold text-sm shadow-xl shadow-purple-600/25 hover:shadow-purple-600/35 hover:scale-[1.005] active:scale-[0.995] transition-all duration-200 mt-4"
+                >
+                  {loginLoading ? (
+                    <div className="flex items-center justify-center gap-2.5">
+                      <div className="size-4.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <span className="tracking-wide">{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Authenticating..."}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Lock className="size-4.5" />
+                      <span className="tracking-wide">{lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In to Account"}</span>
+                    </div>
+                  )}
+                </Button>
+              </form>
             </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleAdminLogin} className="space-y-5">
-              
-              {/* Phone / Email Input */}
-              <div className="space-y-2 text-start">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 ps-0.5">
-                  {lang === "ar" ? "رقم الهاتف أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Admin Phone / Email"}
-                </label>
-                <div className="relative group">
-                  <div className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-400 transition-colors">
-                    <User className="size-4.5" />
-                  </div>
-                  <Input
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="0770XXXXXXX / admin@batrading.iq"
-                    className="h-12 rounded-xl border-slate-700/80 bg-slate-950/70 ps-10 pe-4 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 focus:shadow-[0_0_20px_rgba(0,200,170,0.15)] transition-all"
-                    required
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-2 text-start">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 ps-0.5">
-                  {lang === "ar" ? "كلمة المرور السرية" : lang === "ku" ? "وشەی نهێنی" : "Password"}
-                </label>
-                <div className="relative group">
-                  <div className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-400 transition-colors">
-                    <KeyRound className="size-4.5" />
-                  </div>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-12 rounded-xl border-slate-700/80 bg-slate-950/70 ps-10 pe-11 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 focus:shadow-[0_0_20px_rgba(0,200,170,0.15)] transition-all"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="size-4.5 text-teal-400" /> : <Eye className="size-4.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loginLoading}
-                className="relative overflow-hidden w-full h-12 rounded-xl bg-gradient-to-r from-[#007979] via-teal-500 to-emerald-400 text-white font-black text-sm shadow-[0_0_30px_rgba(0,200,170,0.3)] hover:shadow-[0_0_40px_rgba(0,200,170,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 mt-3"
-              >
-                {loginLoading ? (
-                  <div className="flex items-center justify-center gap-2.5">
-                    <div className="size-4.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span className="tracking-wide">{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Authenticating..."}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Lock className="size-4.5" />
-                    <span className="tracking-wide">{lang === "ar" ? "تسجيل الدخول للوحة التحكم" : lang === "ku" ? "چوونەژوورەوەی پانێڵ" : "Sign In to Dashboard"}</span>
-                  </div>
-                )}
-              </Button>
-            </form>
-
             {/* Footer / Back to Store */}
-            <div className="mt-8 pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-              <Link to="/" className="group flex items-center gap-1.5 hover:text-teal-300 transition-colors font-bold">
+            <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+              <Link to="/" className="group flex items-center gap-1.5 hover:text-purple-600 transition-colors font-bold">
                 <span className="group-hover:-translate-x-1 transition-transform">←</span>
                 <span>{lang === "ar" ? "العودة إلى المتجر" : lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : "Return to Store"}</span>
               </Link>
-              <span className="flex items-center gap-1.5 text-slate-400 font-medium bg-slate-950/50 px-2.5 py-1 rounded-md border border-slate-800">
-                <CheckCircle2 className="size-3.5 text-teal-400" />
-                <span>256-bit Encrypted</span>
+              <span className="flex items-center gap-1.5 font-medium text-slate-400">
+                <CheckCircle2 className="size-3.5 text-emerald-500" />
+                <span>SSL Encrypted</span>
               </span>
             </div>
 
           </div>
+
+          {/* Right Column: 3D Visual Hero Panel (5 cols) */}
+          <div className="lg:col-span-5 relative overflow-hidden rounded-[2rem] bg-gradient-to-tr from-purple-950 via-indigo-900 to-violet-950 p-8 lg:p-12 flex flex-col justify-end text-white min-h-[420px] lg:min-h-full shadow-inner">
+            
+            {/* Background 3D Graphic Asset */}
+            <img
+              src="/login-hero-3d.png"
+              alt="3D Hero"
+              className="absolute inset-0 size-full object-cover object-center opacity-90 transition-scale duration-700 hover:scale-105 pointer-events-none"
+            />
+            
+            {/* Gradient Dark Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-purple-950/95 via-purple-900/40 to-transparent pointer-events-none" />
+
+            {/* Hero Quote Overlay */}
+            <div className="relative z-10 space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-bold leading-snug tracking-tight text-white drop-shadow-lg">
+                {lang === "ar"
+                  ? "أهلاً بك مجدداً! قم بتسجيل الدخول للوصول إلى لوحة التحكم وإدارة كافة العمليات."
+                  : lang === "ku"
+                    ? "بەخێربێنەوە! بۆ دەستگەیشتن بە پانێڵی بەڕێوەبردن و بەڕێوەبردنی کارەکان بچۆژوورەوە."
+                    : "Welcome back! Sign in to access your dashboard, manage leads, and continue progress."}
+              </h2>
+              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-purple-200/80">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>BA Trading Security System</span>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
     );
