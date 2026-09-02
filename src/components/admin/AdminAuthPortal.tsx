@@ -14,7 +14,11 @@ function normalizePhone(input: string) {
   return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
 }
 
-export function AdminAuthPortal() {
+interface AdminAuthPortalProps {
+  onSuccess?: () => void;
+}
+
+export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
   const { lang } = useI18n();
   const queryClient = useQueryClient();
 
@@ -60,7 +64,11 @@ export function AdminAuthPortal() {
               : "Login successful!"
         );
         queryClient.invalidateQueries();
-        window.location.reload();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          window.location.reload();
+        }
       }
     } catch (err: any) {
       const msg = err?.message || "";
