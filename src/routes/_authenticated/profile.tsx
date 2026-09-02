@@ -134,7 +134,7 @@ function ProfilePage() {
             </p>
             <div className="divide-y divide-border/50">
               {vendor && <RowLink to="/brand" icon={Store} label={t("brandPortal")} />}
-              {isAdmin && <RowLink to="/admin" icon={Shield} label={t("dashboard")} />}
+              {isAdmin && <RowLink to="/admin/dashboard" icon={Shield} label={t("dashboard")} />}
             </div>
           </div>
         )}
@@ -234,7 +234,7 @@ function RowLink({
   hint,
   badge,
 }: {
-  to: "/orders" | "/brand" | "/admin" | "/profile/edit" | "/profile/wallet" | "/profile/addresses";
+  to: "/orders" | "/brand" | "/admin" | "/admin/dashboard" | "/profile/edit" | "/profile/wallet" | "/profile/addresses";
   icon: ComponentType<{ className?: string }>;
   label: string;
   hint?: string;

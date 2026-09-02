@@ -1,17 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ShieldAlert, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { AdminAuthPortal } from "@/components/admin/AdminAuthPortal";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/dashboard")({
   ssr: false,
   validateSearch: (s: Record<string, unknown>): { tab?: string } =>
     typeof s["tab"] === "string" ? { tab: s["tab"] } : {},
@@ -23,16 +22,23 @@ export const Route = createFileRoute("/admin")({
       { property: "og:description", content: "إدارة المتجر بالكامل." },
     ],
   }),
-  component: AdminPage,
+  component: AdminDashboardPage,
 });
 
-function AdminPage() {
+function AdminDashboardPage() {
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
   const { tab } = Route.useSearch();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/admin", replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleClaim = async () => {
     setClaiming(true);
@@ -68,6 +74,7 @@ function AdminPage() {
     await supabase.auth.signOut();
     queryClient.invalidateQueries();
     toast.info(lang === "ar" ? "تم تسجيل الخروج" : lang === "ku" ? "چوویتەدەرەوە" : "Signed out");
+    navigate({ to: "/admin", replace: true });
   };
 
   // 1. Loading State
@@ -76,15 +83,15 @@ function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="size-10 rounded-full border-2 border-[#007979] border-t-transparent animate-spin" />
-          <span className="text-sm font-bold text-slate-400">Loading Admin Portal...</span>
+          <span className="text-sm font-bold text-slate-400">Loading Dashboard...</span>
         </div>
       </div>
     );
   }
 
-  // 2. Unauthenticated -> Split-Screen Executive Auth Portal
+  // 2. Unauthenticated -> Redirected to /admin via useEffect, fallback UI
   if (!user) {
-    return <AdminAuthPortal />;
+    return null;
   }
 
   // 3. User logged in, but not an admin
@@ -103,7 +110,7 @@ function AdminPage() {
             {lang === "ar"
               ? `أنت مسجل الدخول بالحساب (${user.email || user.phone})، ولكن هذا الحساب ليس لديه صلاحية مدير.`
               : lang === "ku"
-                ? `چوویتەژوورەوە بە هەژماری (${user.email || user.phone})، بەڵام دەسەڵاتی بەڕێوەبەرت نییە.`
+                ? `چوویتەژوورەوە بە هەژماري (${user.email || user.phone})، بەڵام دەسەڵاتی بەڕێوەبەرت نییە.`
                 : `Logged in as (${user.email || user.phone}), but this account is not registered as Admin.`}
           </p>
 
@@ -126,7 +133,7 @@ function AdminPage() {
               {lang === "ar"
                 ? "تسجيل الخروج والتبديل لحساب المدير"
                 : lang === "ku"
-                  ? "چوونەدەرەوە و گۆڕین بۆ هەژماری بەڕێوەبەر"
+                  ? "چوونەدەرەوە و گۆڕین بۆ هەژماري بەڕێوەبەر"
                   : "Sign Out & Switch Account"}
             </Button>
           </div>

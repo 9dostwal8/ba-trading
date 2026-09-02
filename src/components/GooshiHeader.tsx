@@ -31,7 +31,7 @@ import { toast } from "sonner";
 export function GooshiHeader() {
   const { t, lang, setLang } = useI18n();
   const { isStaff, isAdmin, canOrder } = useCanOrder();
-  const panelTo = (isAdmin ? "/admin" : "/brand") as "/admin" | "/brand";
+  const panelTo = (isAdmin ? "/admin/dashboard" : "/brand") as "/admin/dashboard" | "/brand";
   const cart = useCart();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });

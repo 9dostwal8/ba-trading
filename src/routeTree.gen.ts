@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as BundlesRouteImport } from './routes/bundles'
@@ -35,6 +34,8 @@ import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSavingsRouteImport } from './routes/_authenticated/savings'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as BundleIdRouteImport } from './routes/bundle.$id'
 import { Route as PaymentOrderIdRouteImport } from './routes/payment.$orderId'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -53,11 +54,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -175,6 +171,16 @@ const AuthenticatedSavingsRoute = AuthenticatedSavingsRouteImport.update({
   path: '/savings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BundleIdRoute = BundleIdRouteImport.update({
   id: '/bundle/$id',
   path: '/bundle/$id',
@@ -232,7 +238,6 @@ const AuthenticatedProfileWalletStatementRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -256,10 +261,12 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
@@ -269,7 +276,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -293,10 +299,12 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
@@ -308,7 +316,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -332,10 +339,12 @@ export interface FileRoutesById {
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/savings': typeof AuthenticatedSavingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/_authenticated/orders_/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/profile_/addresses': typeof AuthenticatedProfileAddressesRoute
   '/_authenticated/profile_/edit': typeof AuthenticatedProfileEditRoute
@@ -347,7 +356,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -371,10 +379,12 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/savings'
+    | '/admin/dashboard'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin/'
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
@@ -384,7 +394,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -408,10 +417,12 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/savings'
+    | '/admin/dashboard'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin'
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
@@ -422,7 +433,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -446,10 +456,12 @@ export interface FileRouteTypes {
     | '/_authenticated/orders'
     | '/_authenticated/profile'
     | '/_authenticated/savings'
+    | '/admin/dashboard'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin/'
     | '/_authenticated/orders_/$id'
     | '/_authenticated/profile_/addresses'
     | '/_authenticated/profile_/edit'
@@ -461,7 +473,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BrandsRoute: typeof BrandsRoute
   BundlesRoute: typeof BundlesRoute
@@ -481,10 +492,12 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   VendorSignupRoute: typeof VendorSignupRoute
   VendorsRoute: typeof VendorsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   BundleIdRoute: typeof BundleIdRoute
   PaymentOrderIdRoute: typeof PaymentOrderIdRoute
   ProductIdRoute: typeof ProductIdRoute
   VendorSlugRoute: typeof VendorSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicQiWebhookRoute: typeof ApiPublicQiWebhookRoute
 }
 
@@ -502,13 +515,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -672,6 +678,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bundle/$id': {
       id: '/bundle/$id'
       path: '/bundle/$id'
@@ -776,7 +796,6 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BrandsRoute: BrandsRoute,
   BundlesRoute: BundlesRoute,
@@ -796,10 +815,12 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   VendorSignupRoute: VendorSignupRoute,
   VendorsRoute: VendorsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   BundleIdRoute: BundleIdRoute,
   PaymentOrderIdRoute: PaymentOrderIdRoute,
   ProductIdRoute: ProductIdRoute,
   VendorSlugRoute: VendorSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPublicQiWebhookRoute: ApiPublicQiWebhookRoute,
 }
 export const routeTree = rootRouteImport
