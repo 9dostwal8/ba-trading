@@ -60,6 +60,7 @@ export function AdminAuthPortal() {
               : "Login successful!"
         );
         queryClient.invalidateQueries();
+        window.location.reload();
       }
     } catch (err: any) {
       const msg = err?.message || "";
