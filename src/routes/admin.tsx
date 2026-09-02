@@ -33,6 +33,7 @@ import {
   ShieldAlert,
   KeyRound,
   CheckCircle2,
+  User,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -272,43 +273,62 @@ function AdminPage() {
   // 2. Unauthenticated -> Dedicated Executive Admin Login Portal
   if (!user) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-950 via-[#031d1d] to-slate-900 p-4 sm:p-6 text-slate-100">
-        <div className="w-full max-w-md">
-          
-          {/* Card Container */}
-          <div className="relative overflow-hidden rounded-3xl border border-teal-500/20 bg-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-            
-            {/* Top Glow Accent */}
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-48 rounded-full bg-[#007979]/30 blur-3xl pointer-events-none" />
+      <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-6 text-slate-100 font-sans">
+        
+        {/* Ambient Animated Background Glow Orbs */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-gradient-to-tr from-[#005c5c]/30 via-teal-500/20 to-emerald-500/10 blur-[140px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-10 right-10 size-80 rounded-full bg-teal-900/20 blur-[100px] pointer-events-none" />
+        <div className="absolute top-10 left-10 size-72 rounded-full bg-cyan-900/20 blur-[90px] pointer-events-none" />
 
-            {/* Header / Security Shield */}
-            <div className="text-center mb-6 relative z-10">
-              <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#007979] to-teal-400 text-white shadow-lg shadow-teal-500/30">
-                <ShieldCheck className="size-8" />
+        {/* Subtle Tech Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0d2729_1px,transparent_1px),linear-gradient(to_bottom,#0d2729_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-40 pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-md">
+          
+          {/* Main Glassmorphic Card */}
+          <div className="relative overflow-hidden rounded-3xl border border-teal-500/30 bg-slate-900/75 p-7 sm:p-9 shadow-[0_0_80px_rgba(0,121,121,0.22)] backdrop-blur-2xl transition-all duration-300">
+            
+            {/* Top Glowing Edge Strip */}
+            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-80" />
+
+            {/* Header & Security Badge */}
+            <div className="text-center mb-8 relative">
+              <div className="relative mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#007979] via-teal-500 to-emerald-400 text-white shadow-[0_0_35px_rgba(0,200,170,0.4)] group transition-transform duration-300 hover:scale-105">
+                <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ShieldCheck className="size-10 relative z-10 drop-shadow-md" strokeWidth={2.2} />
               </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                {lang === "ar" ? "بوابة الإدارة المركزية" : lang === "ku" ? "دەروازەی بەڕێوەبەرایەتی" : "Admin Security Portal"}
+
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-sm">
+                {lang === "ar" ? "بوابة الإدارة المركزية" : lang === "ku" ? "دەروازەی بەڕێوەبەرایەتی" : "Executive Admin Portal"}
               </h1>
-              <p className="text-xs sm:text-sm font-semibold text-teal-200/70 mt-1">
-                {lang === "ar" ? "تسجيل الدخول المخصص لمدراء النظام" : lang === "ku" ? "چوونەژوورەوەی تایبەت بە بەڕێوەبەرانی سیستم" : "Authorized Management Access Only"}
-              </p>
+              
+              <div className="mt-2.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-950/70 border border-teal-500/30 text-[11.5px] font-bold text-teal-300 shadow-inner">
+                <span className="relative flex size-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-2 bg-teal-400"></span>
+                </span>
+                <span>{lang === "ar" ? "تسجيل الدخول المخصص لمدراء النظام" : lang === "ku" ? "چوونەژوورەوەی تایبەت بە بەڕێوەبەرانی سیستم" : "Authorized Management Access Only"}</span>
+              </div>
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleAdminLogin} className="space-y-4 relative z-10">
+            <form onSubmit={handleAdminLogin} className="space-y-5">
               
               {/* Phone / Email Input */}
-              <div className="space-y-1.5 text-start">
-                <label className="text-xs font-bold text-slate-300">
+              <div className="space-y-2 text-start">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 ps-0.5">
                   {lang === "ar" ? "رقم الهاتف أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Admin Phone / Email"}
                 </label>
-                <div className="relative">
+                <div className="relative group">
+                  <div className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-400 transition-colors">
+                    <User className="size-4.5" />
+                  </div>
                   <Input
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="0770XXXXXXX / admin@batrading.iq"
-                    className="h-11 rounded-xl border-slate-700 bg-slate-800/80 px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
+                    className="h-12 rounded-xl border-slate-700/80 bg-slate-950/70 ps-10 pe-4 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 focus:shadow-[0_0_20px_rgba(0,200,170,0.15)] transition-all"
                     required
                     autoFocus
                   />
@@ -316,25 +336,28 @@ function AdminPage() {
               </div>
 
               {/* Password Input */}
-              <div className="space-y-1.5 text-start">
-                <label className="text-xs font-bold text-slate-300">
+              <div className="space-y-2 text-start">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 ps-0.5">
                   {lang === "ar" ? "كلمة المرور السرية" : lang === "ku" ? "وشەی نهێنی" : "Password"}
                 </label>
-                <div className="relative">
+                <div className="relative group">
+                  <div className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-400 transition-colors">
+                    <KeyRound className="size-4.5" />
+                  </div>
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="h-11 rounded-xl border-slate-700 bg-slate-800/80 pe-10 ps-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
+                    className="h-12 rounded-xl border-slate-700/80 bg-slate-950/70 ps-10 pe-11 text-sm text-white placeholder:text-slate-500 focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 focus:shadow-[0_0_20px_rgba(0,200,170,0.15)] transition-all"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
+                    className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                    {showPassword ? <EyeOff className="size-4.5 text-teal-400" /> : <Eye className="size-4.5" />}
                   </button>
                 </div>
               </div>
@@ -343,30 +366,31 @@ function AdminPage() {
               <Button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-[#007979] to-teal-500 text-white font-black text-sm shadow-lg shadow-teal-500/25 hover:from-[#006666] hover:to-teal-600 active:scale-[0.99] transition mt-2"
+                className="relative overflow-hidden w-full h-12 rounded-xl bg-gradient-to-r from-[#007979] via-teal-500 to-emerald-400 text-white font-black text-sm shadow-[0_0_30px_rgba(0,200,170,0.3)] hover:shadow-[0_0_40px_rgba(0,200,170,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 mt-3"
               >
                 {loginLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span>{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Verifying..."}</span>
+                  <div className="flex items-center justify-center gap-2.5">
+                    <div className="size-4.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <span className="tracking-wide">{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Authenticating..."}</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
-                    <Lock className="size-4" />
-                    <span>{lang === "ar" ? "دخول لوحة التحكم" : lang === "ku" ? "چوونەژوورەوەی پانێڵ" : "Sign In to Dashboard"}</span>
+                    <Lock className="size-4.5" />
+                    <span className="tracking-wide">{lang === "ar" ? "تسجيل الدخول للوحة التحكم" : lang === "ku" ? "چوونەژوورەوەی پانێڵ" : "Sign In to Dashboard"}</span>
                   </div>
                 )}
               </Button>
             </form>
 
             {/* Footer / Back to Store */}
-            <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-              <Link to="/" className="flex items-center gap-1 hover:text-teal-400 transition font-bold">
-                <span>{lang === "ar" ? "← العودة إلى المتجر" : lang === "ku" ? "← گەڕانەوە بۆ فرۆشگا" : "← Return to Store"}</span>
+            <div className="mt-8 pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <Link to="/" className="group flex items-center gap-1.5 hover:text-teal-300 transition-colors font-bold">
+                <span className="group-hover:-translate-x-1 transition-transform">←</span>
+                <span>{lang === "ar" ? "العودة إلى المتجر" : lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : "Return to Store"}</span>
               </Link>
-              <span className="flex items-center gap-1 text-slate-500">
-                <CheckCircle2 className="size-3.5 text-teal-500" />
-                <span>SSL Encrypted</span>
+              <span className="flex items-center gap-1.5 text-slate-400 font-medium bg-slate-950/50 px-2.5 py-1 rounded-md border border-slate-800">
+                <CheckCircle2 className="size-3.5 text-teal-400" />
+                <span>256-bit Encrypted</span>
               </span>
             </div>
 
