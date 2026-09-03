@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Globe,
   LogOut,
-  Settings,
   ShieldCheck,
   User,
   UserCheck,
@@ -186,16 +185,7 @@ export function AdminHeader() {
                 className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50 hover:text-slate-900"
               >
                 <User className="size-4 text-[#007979]" />
-                <span>{lang === "ar" ? "ملف المدير والأمان (2FA)" : lang === "ku" ? "پرۆفایلی بەڕێوەبەر (2FA)" : "Admin Profile & 2FA"}</span>
-              </DropdownMenuItem>
-
-              {/* Store Settings Quick Link */}
-              <DropdownMenuItem
-                onClick={() => navigate({ to: "/admin", search: { tab: "settings" } })}
-                className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50 hover:text-slate-900"
-              >
-                <Settings className="size-4 text-slate-500" />
-                <span>{lang === "ar" ? "إعدادات المتجر" : lang === "ku" ? "ڕێکخستنەکانی کۆگا" : "Store Settings"}</span>
+                <span>{lang === "ar" ? "الملف الشخصي" : lang === "ku" ? "پڕۆفایل" : "Profile"}</span>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="my-1 bg-slate-100" />
