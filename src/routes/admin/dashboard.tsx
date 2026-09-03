@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ShieldAlert, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -32,43 +32,12 @@ function AdminDashboardPage() {
   const { tab } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [claiming, setClaiming] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate({ to: "/admin", replace: true });
     }
   }, [user, authLoading, navigate]);
-
-  const handleClaim = async () => {
-    setClaiming(true);
-    try {
-      const { data, error } = await supabase.rpc("claim_admin");
-      if (error) throw error;
-      if (data) {
-        toast.success(
-          lang === "ar"
-            ? "تم تفعيل صلاحيات المدير بنجاح!"
-            : lang === "ku"
-              ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!"
-              : "Admin rights claimed successfully!"
-        );
-        window.location.reload();
-      } else {
-        toast.error(
-          lang === "ar"
-            ? "يوجد مدير مسجل مسبقاً في النظام"
-            : lang === "ku"
-              ? "بەڕێوەبەرێکی تر لە پێشدا تۆمارکراوە"
-              : "An admin already exists"
-        );
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Error claiming admin");
-    } finally {
-      setClaiming(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -115,26 +84,18 @@ function AdminDashboardPage() {
           </p>
 
           <div className="space-y-2.5">
-            <Button
-              onClick={handleClaim}
-              disabled={claiming}
-              className="w-full font-bold bg-[#007979] hover:bg-[#006666] text-white"
-            >
-              {claiming
-                ? "..."
-                : lang === "ar"
-                  ? "تفعيل حساب المدير الأول (Claim Admin)"
-                  : lang === "ku"
-                    ? "چالاککردنی بەڕێوەبەری یەکەم"
-                    : "Claim First Admin Account"}
-            </Button>
-            <Button onClick={handleLogout} variant="outline" className="w-full font-bold">
+            <Button onClick={handleLogout} className="w-full font-bold bg-[#007979] hover:bg-[#006666] text-white">
               <LogOut className="size-4 me-1.5" />
               {lang === "ar"
                 ? "تسجيل الخروج والتبديل لحساب المدير"
                 : lang === "ku"
                   ? "چوونەدەرەوە و گۆڕین بۆ هەژماري بەڕێوەبەر"
                   : "Sign Out & Switch Account"}
+            </Button>
+            <Button asChild variant="outline" className="w-full font-bold">
+              <Link to="/">
+                {lang === "ar" ? "العودة إلى المتجر الرئيسي" : lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : "Return to Store"}
+              </Link>
             </Button>
           </div>
         </div>

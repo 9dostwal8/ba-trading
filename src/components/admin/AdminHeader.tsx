@@ -182,11 +182,11 @@ export function AdminHeader() {
 
               {/* Profile Button */}
               <DropdownMenuItem
-                onClick={() => navigate({ to: "/profile" })}
+                onClick={() => navigate({ to: "/admin/profile" })}
                 className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50 hover:text-slate-900"
               >
-                <User className="size-4 text-slate-500" />
-                <span>{lang === "ar" ? "الملف الشخصي" : lang === "ku" ? "پرۆفایل / هەژمارەکەم" : "My Profile"}</span>
+                <User className="size-4 text-[#007979]" />
+                <span>{lang === "ar" ? "ملف المدير والأمان (2FA)" : lang === "ku" ? "پرۆفایلی بەڕێوەبەر (2FA)" : "Admin Profile & 2FA"}</span>
               </DropdownMenuItem>
 
               {/* Store Settings Quick Link */}

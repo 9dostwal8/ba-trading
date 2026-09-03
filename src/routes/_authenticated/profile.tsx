@@ -14,7 +14,7 @@ import {
   UserRound,
   ShieldCheck,
 } from "lucide-react";
-import { useState, type ComponentType } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import { StoreLayout } from "@/components/StoreLayout";
 import { PageBlocks } from "@/components/blocks/PageBlocks";
 import { TwoFactorModal } from "@/components/profile/TwoFactorModal";
@@ -83,6 +83,13 @@ function ProfilePage() {
     queryKey: ["profile", user?.id],
     queryFn: async () => (await supabase.from("profiles").select("*").maybeSingle()).data,
   });
+
+  // Automatically route Admins to dedicated Admin Profile
+  useEffect(() => {
+    if (user && isAdmin === true) {
+      navigate({ to: "/admin/profile", replace: true });
+    }
+  }, [user, isAdmin, navigate]);
 
   const { data: addresses } = useQuery({
     queryKey: ["addresses", user?.id],
