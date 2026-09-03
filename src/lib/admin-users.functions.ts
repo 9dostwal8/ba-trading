@@ -107,3 +107,55 @@ export const updateCurrentAdminEmail = createServerFn({ method: "POST" })
     return { success: true, email };
   });
 
+/** Secure Owner Activation: Ensure Dosty's account is verified and has admin role */
+export const claimSuperAdminForDosty = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch user details from auth.users
+    const { data: userData, error: userErr } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    if (userErr || !userData?.user) throw new Error("User not found");
+
+    const user = userData.user;
+    const email = (user.email || "").toLowerCase();
+    const phone = (user.phone || "").replace(/\D/g, "");
+    const name = ((user.user_metadata?.["full_name"] || "") as string).toLowerCase();
+
+    // Check if user is Dosty
+    const isDosty =
+      email.includes("dosty") ||
+      email.includes("7702269722") ||
+      phone.includes("7702269722") ||
+      name.includes("dosty");
+
+    if (!isDosty) {
+      throw new Error("Unauthorized");
+    }
+
+    // 1. Update email to dosty.wal98@gmail.com and confirm
+    await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      email: "dosty.wal98@gmail.com",
+      email_confirm: true,
+      user_metadata: {
+        ...user.user_metadata,
+        full_name: "Dosty Rebwar",
+        phone: "07702269722",
+      },
+    });
+
+    // 2. Insert admin role into user_roles
+    await supabaseAdmin.from("user_roles").upsert(
+      { user_id: context.userId, role: "admin" },
+      { onConflict: "user_id,role" }
+    );
+
+    // 3. Update profile
+    await supabaseAdmin.from("profiles").upsert(
+      { id: context.userId, full_name: "Dosty Rebwar", phone: "07702269722" },
+      { onConflict: "id" }
+    );
+
+    return { success: true };
+  });
+

@@ -30,15 +30,36 @@ export function useIsAdmin(userId: string | undefined) {
       return;
     }
     let active = true;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active) setIsAdmin(!!data);
-      });
+
+    const checkAdmin = async () => {
+      try {
+        // 1. Check RPC has_role (SECURITY DEFINER)
+        const { data: rpcAdmin } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "admin",
+        });
+
+        if (rpcAdmin === true) {
+          if (active) setIsAdmin(true);
+          return;
+        }
+
+        // 2. Fallback to user_roles table
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (active) setIsAdmin(!!roleRow);
+      } catch (err) {
+        console.warn("useIsAdmin check error:", err);
+        if (active) setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
     return () => {
       active = false;
     };

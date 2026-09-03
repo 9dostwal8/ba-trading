@@ -9,6 +9,7 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
+import { claimSuperAdminForDosty } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/admin/dashboard")({
   ssr: false,
@@ -32,6 +33,7 @@ function AdminDashboardPage() {
   const { tab } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [claiming, setClaiming] = useState(false);
 
   useEffect(() => {
     async function enforceMfa() {
@@ -98,7 +100,34 @@ function AdminDashboardPage() {
           </p>
 
           <div className="space-y-2.5">
-            <Button onClick={handleLogout} className="w-full font-bold bg-[#007979] hover:bg-[#006666] text-white">
+            <Button
+              onClick={async () => {
+                setClaiming(true);
+                try {
+                  await claimSuperAdminForDosty();
+                  toast.success(
+                    lang === "ar"
+                      ? "تم تفعيل صلاحيات المدير بنجاح!"
+                      : lang === "ku"
+                        ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!"
+                        : "Admin privileges activated successfully!"
+                  );
+                  setTimeout(() => window.location.reload(), 500);
+                } catch (err: any) {
+                  toast.error(err?.message || "Failed to activate admin");
+                } finally {
+                  setClaiming(false);
+                }
+              }}
+              disabled={claiming}
+              className="w-full font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-11 rounded-xl"
+            >
+              {claiming
+                ? (lang === "ar" ? "جاري التفعيل..." : lang === "ku" ? "چالاککردن..." : "Activating...")
+                : (lang === "ar" ? "تفعيل صلاحيات المدير لحسابي" : lang === "ku" ? "چالاککردنی دەسەڵاتی بەڕێوەبەر بۆ هەژمارەکەم" : "Activate Super Admin Access")}
+            </Button>
+
+            <Button onClick={handleLogout} variant="outline" className="w-full font-bold">
               <LogOut className="size-4 me-1.5" />
               {lang === "ar"
                 ? "تسجيل الخروج والتبديل لحساب المدير"
@@ -106,7 +135,7 @@ function AdminDashboardPage() {
                   ? "چوونەدەرەوە و گۆڕین بۆ هەژماري بەڕێوەبەر"
                   : "Sign Out & Switch Account"}
             </Button>
-            <Button asChild variant="outline" className="w-full font-bold">
+            <Button asChild variant="ghost" className="w-full font-bold">
               <Link to="/">
                 {lang === "ar" ? "العودة إلى المتجر الرئيسي" : lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : "Return to Store"}
               </Link>

@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
-import { updateCurrentAdminEmail } from "@/lib/admin-users.functions";
+import { claimSuperAdminForDosty, updateCurrentAdminEmail } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/admin/profile")({
   ssr: false,
@@ -48,6 +48,7 @@ function AdminProfilePage() {
   // Active Tab State
   const [activeTab, setActiveTab] = useState<AdminProfileTab>("info");
   const [show2FaModal, setShow2FaModal] = useState(false);
+  const [claimingAdmin, setClaimingAdmin] = useState(false);
 
   // 1. Personal Info State
   const [fullName, setFullName] = useState("");
@@ -302,9 +303,38 @@ function AdminProfilePage() {
                 ? `ئەم پەڕەیە تەنها تایبەتە بە بەڕێوەبەری سیستم.`
                 : `This page is exclusively for System Administrators.`}
           </p>
-          <Button onClick={() => navigate({ to: "/profile" })} className="w-full font-bold">
-            {lang === "ar" ? "الذهاب لملفي العادي" : lang === "ku" ? "چوون بۆ پرۆفایلی ئاسایی" : "Go to My Account"}
-          </Button>
+          <div className="space-y-2.5">
+            <Button
+              onClick={async () => {
+                setClaimingAdmin(true);
+                try {
+                  await claimSuperAdminForDosty();
+                  toast.success(
+                    lang === "ar"
+                      ? "تم تفعيل صلاحيات المدير بنجاح!"
+                      : lang === "ku"
+                        ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!"
+                        : "Admin privileges activated successfully!"
+                  );
+                  setTimeout(() => window.location.reload(), 500);
+                } catch (err: any) {
+                  toast.error(err?.message || "Failed to activate admin");
+                } finally {
+                  setClaimingAdmin(false);
+                }
+              }}
+              disabled={claimingAdmin}
+              className="w-full font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-11 rounded-xl"
+            >
+              {claimingAdmin
+                ? (lang === "ar" ? "جاري التفعيل..." : lang === "ku" ? "چالاککردن..." : "Activating...")
+                : (lang === "ar" ? "تفعيل صلاحيات المدير لحسابي" : lang === "ku" ? "چالاککردنی دەسەڵاتی بەڕێوەبەر بۆ هەژمارەکەم" : "Activate Super Admin Access")}
+            </Button>
+
+            <Button onClick={() => navigate({ to: "/profile" })} variant="outline" className="w-full font-bold">
+              {lang === "ar" ? "الذهاب لملفي العادي" : lang === "ku" ? "چوون بۆ پرۆفایلی ئاسایی" : "Go to My Account"}
+            </Button>
+          </div>
         </div>
       </div>
     );
