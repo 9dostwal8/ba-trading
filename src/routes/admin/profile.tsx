@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   Save,
-  ShieldAlert,
   ShieldCheck,
   User,
   UserCheck,
@@ -21,9 +20,9 @@ import { TwoFactorModal } from "@/components/profile/TwoFactorModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
-import { claimSuperAdminForDosty, updateCurrentAdminEmail } from "@/lib/admin-users.functions";
+import { updateCurrentAdminEmail } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/admin/profile")({
   ssr: false,
@@ -41,14 +40,12 @@ type AdminProfileTab = "info" | "security" | "email";
 function AdminProfilePage() {
   const { lang } = useI18n();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = useIsAdmin(user?.id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // Active Tab State
   const [activeTab, setActiveTab] = useState<AdminProfileTab>("info");
   const [show2FaModal, setShow2FaModal] = useState(false);
-  const [claimingAdmin, setClaimingAdmin] = useState(false);
 
   // 1. Personal Info State
   const [fullName, setFullName] = useState("");
@@ -279,62 +276,6 @@ function AdminProfilePage() {
         <div className="flex flex-col items-center gap-3">
           <div className="size-10 rounded-full border-2 border-[#007979] border-t-transparent animate-spin" />
           <span className="text-sm font-bold text-slate-400">Loading Profile...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Non-admin guard
-  if (isAdmin === false) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <AdminHeader />
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-600">
-            <ShieldAlert className="size-8" />
-          </div>
-          <h2 className="mb-2 text-lg font-bold text-foreground">
-            {lang === "ar" ? "صلاحيات غير كافية" : lang === "ku" ? "دەسەڵاتی کەم" : "Insufficient Privileges"}
-          </h2>
-          <p className="mb-6 text-sm text-muted-foreground">
-            {lang === "ar"
-              ? `هذا الملف مخصص لمدير النظام فقط.`
-              : lang === "ku"
-                ? `ئەم پەڕەیە تەنها تایبەتە بە بەڕێوەبەری سیستم.`
-                : `This page is exclusively for System Administrators.`}
-          </p>
-          <div className="space-y-2.5">
-            <Button
-              onClick={async () => {
-                setClaimingAdmin(true);
-                try {
-                  await claimSuperAdminForDosty();
-                  toast.success(
-                    lang === "ar"
-                      ? "تم تفعيل صلاحيات المدير بنجاح!"
-                      : lang === "ku"
-                        ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!"
-                        : "Admin privileges activated successfully!"
-                  );
-                  setTimeout(() => window.location.reload(), 500);
-                } catch (err: any) {
-                  toast.error(err?.message || "Failed to activate admin");
-                } finally {
-                  setClaimingAdmin(false);
-                }
-              }}
-              disabled={claimingAdmin}
-              className="w-full font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-11 rounded-xl"
-            >
-              {claimingAdmin
-                ? (lang === "ar" ? "جاري التفعيل..." : lang === "ku" ? "چالاککردن..." : "Activating...")
-                : (lang === "ar" ? "تفعيل صلاحيات المدير لحسابي" : lang === "ku" ? "چالاککردنی دەسەڵاتی بەڕێوەبەر بۆ هەژمارەکەم" : "Activate Super Admin Access")}
-            </Button>
-
-            <Button onClick={() => navigate({ to: "/profile" })} variant="outline" className="w-full font-bold">
-              {lang === "ar" ? "الذهاب لملفي العادي" : lang === "ku" ? "چوون بۆ پرۆفایلی ئاسایی" : "Go to My Account"}
-            </Button>
-          </div>
         </div>
       </div>
     );
