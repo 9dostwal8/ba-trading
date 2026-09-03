@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as BundlesRouteImport } from './routes/bundles'
@@ -35,6 +34,33 @@ import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSavingsRouteImport } from './routes/_authenticated/savings'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAccountingRouteImport } from './routes/admin/accounting'
+import { Route as AdminBannersRouteImport } from './routes/admin/banners'
+import { Route as AdminBrandsRouteImport } from './routes/admin/brands'
+import { Route as AdminBundlesRouteImport } from './routes/admin/bundles'
+import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminClearanceRouteImport } from './routes/admin/clearance'
+import { Route as AdminCostsRouteImport } from './routes/admin/costs'
+import { Route as AdminCouponsRouteImport } from './routes/admin/coupons'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminDealsRouteImport } from './routes/admin/deals'
+import { Route as AdminFeesRouteImport } from './routes/admin/fees'
+import { Route as AdminHomeRouteImport } from './routes/admin/home'
+import { Route as AdminNotifyRouteImport } from './routes/admin/notify'
+import { Route as AdminOffersRouteImport } from './routes/admin/offers'
+import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminPromoRouteImport } from './routes/admin/promo'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminShippingRouteImport } from './routes/admin/shipping'
+import { Route as AdminTextsRouteImport } from './routes/admin/texts'
+import { Route as AdminThemeRouteImport } from './routes/admin/theme'
+import { Route as AdminTiersRouteImport } from './routes/admin/tiers'
+import { Route as AdminUspRouteImport } from './routes/admin/usp'
+import { Route as AdminVendorsRouteImport } from './routes/admin/vendors'
+import { Route as AdminWalletRouteImport } from './routes/admin/wallet'
+import { Route as AdminWhatsappRouteImport } from './routes/admin/whatsapp'
 import { Route as BundleIdRouteImport } from './routes/bundle.$id'
 import { Route as PaymentOrderIdRouteImport } from './routes/payment.$orderId'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -53,11 +79,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -175,6 +196,141 @@ const AuthenticatedSavingsRoute = AuthenticatedSavingsRouteImport.update({
   path: '/savings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAccountingRoute = AdminAccountingRouteImport.update({
+  id: '/admin/accounting',
+  path: '/admin/accounting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/admin/banners',
+  path: '/admin/banners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBrandsRoute = AdminBrandsRouteImport.update({
+  id: '/admin/brands',
+  path: '/admin/brands',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBundlesRoute = AdminBundlesRouteImport.update({
+  id: '/admin/bundles',
+  path: '/admin/bundles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/admin/categories',
+  path: '/admin/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminClearanceRoute = AdminClearanceRouteImport.update({
+  id: '/admin/clearance',
+  path: '/admin/clearance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCostsRoute = AdminCostsRouteImport.update({
+  id: '/admin/costs',
+  path: '/admin/costs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCouponsRoute = AdminCouponsRouteImport.update({
+  id: '/admin/coupons',
+  path: '/admin/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDealsRoute = AdminDealsRouteImport.update({
+  id: '/admin/deals',
+  path: '/admin/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeesRoute = AdminFeesRouteImport.update({
+  id: '/admin/fees',
+  path: '/admin/fees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminHomeRoute = AdminHomeRouteImport.update({
+  id: '/admin/home',
+  path: '/admin/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminNotifyRoute = AdminNotifyRouteImport.update({
+  id: '/admin/notify',
+  path: '/admin/notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOffersRoute = AdminOffersRouteImport.update({
+  id: '/admin/offers',
+  path: '/admin/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/admin/orders',
+  path: '/admin/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPromoRoute = AdminPromoRouteImport.update({
+  id: '/admin/promo',
+  path: '/admin/promo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminShippingRoute = AdminShippingRouteImport.update({
+  id: '/admin/shipping',
+  path: '/admin/shipping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTextsRoute = AdminTextsRouteImport.update({
+  id: '/admin/texts',
+  path: '/admin/texts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/admin/theme',
+  path: '/admin/theme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTiersRoute = AdminTiersRouteImport.update({
+  id: '/admin/tiers',
+  path: '/admin/tiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUspRoute = AdminUspRouteImport.update({
+  id: '/admin/usp',
+  path: '/admin/usp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVendorsRoute = AdminVendorsRouteImport.update({
+  id: '/admin/vendors',
+  path: '/admin/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWalletRoute = AdminWalletRouteImport.update({
+  id: '/admin/wallet',
+  path: '/admin/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
+  id: '/admin/whatsapp',
+  path: '/admin/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BundleIdRoute = BundleIdRouteImport.update({
   id: '/bundle/$id',
   path: '/bundle/$id',
@@ -232,7 +388,6 @@ const AuthenticatedProfileWalletStatementRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -256,10 +411,37 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
+  '/admin/accounting': typeof AdminAccountingRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/bundles': typeof AdminBundlesRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/clearance': typeof AdminClearanceRoute
+  '/admin/costs': typeof AdminCostsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/deals': typeof AdminDealsRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/home': typeof AdminHomeRoute
+  '/admin/notify': typeof AdminNotifyRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/promo': typeof AdminPromoRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/texts': typeof AdminTextsRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/tiers': typeof AdminTiersRoute
+  '/admin/usp': typeof AdminUspRoute
+  '/admin/vendors': typeof AdminVendorsRoute
+  '/admin/wallet': typeof AdminWalletRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
@@ -269,7 +451,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -293,10 +474,37 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/savings': typeof AuthenticatedSavingsRoute
+  '/admin/accounting': typeof AdminAccountingRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/bundles': typeof AdminBundlesRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/clearance': typeof AdminClearanceRoute
+  '/admin/costs': typeof AdminCostsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/deals': typeof AdminDealsRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/home': typeof AdminHomeRoute
+  '/admin/notify': typeof AdminNotifyRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/promo': typeof AdminPromoRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/texts': typeof AdminTextsRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/tiers': typeof AdminTiersRoute
+  '/admin/usp': typeof AdminUspRoute
+  '/admin/vendors': typeof AdminVendorsRoute
+  '/admin/wallet': typeof AdminWalletRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
@@ -308,7 +516,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/brands': typeof BrandsRoute
   '/bundles': typeof BundlesRoute
@@ -332,10 +539,37 @@ export interface FileRoutesById {
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/savings': typeof AuthenticatedSavingsRoute
+  '/admin/accounting': typeof AdminAccountingRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/brands': typeof AdminBrandsRoute
+  '/admin/bundles': typeof AdminBundlesRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/clearance': typeof AdminClearanceRoute
+  '/admin/costs': typeof AdminCostsRoute
+  '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/deals': typeof AdminDealsRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/home': typeof AdminHomeRoute
+  '/admin/notify': typeof AdminNotifyRoute
+  '/admin/offers': typeof AdminOffersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/promo': typeof AdminPromoRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shipping': typeof AdminShippingRoute
+  '/admin/texts': typeof AdminTextsRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/tiers': typeof AdminTiersRoute
+  '/admin/usp': typeof AdminUspRoute
+  '/admin/vendors': typeof AdminVendorsRoute
+  '/admin/wallet': typeof AdminWalletRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/bundle/$id': typeof BundleIdRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/product/$id': typeof ProductIdRoute
   '/vendor/$slug': typeof VendorSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/_authenticated/orders_/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/profile_/addresses': typeof AuthenticatedProfileAddressesRoute
   '/_authenticated/profile_/edit': typeof AuthenticatedProfileEditRoute
@@ -347,7 +581,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -371,10 +604,37 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/savings'
+    | '/admin/accounting'
+    | '/admin/banners'
+    | '/admin/brands'
+    | '/admin/bundles'
+    | '/admin/categories'
+    | '/admin/clearance'
+    | '/admin/costs'
+    | '/admin/coupons'
+    | '/admin/dashboard'
+    | '/admin/deals'
+    | '/admin/fees'
+    | '/admin/home'
+    | '/admin/notify'
+    | '/admin/offers'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/promo'
+    | '/admin/settings'
+    | '/admin/shipping'
+    | '/admin/texts'
+    | '/admin/theme'
+    | '/admin/tiers'
+    | '/admin/usp'
+    | '/admin/vendors'
+    | '/admin/wallet'
+    | '/admin/whatsapp'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin/'
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
@@ -384,7 +644,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -408,10 +667,37 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/savings'
+    | '/admin/accounting'
+    | '/admin/banners'
+    | '/admin/brands'
+    | '/admin/bundles'
+    | '/admin/categories'
+    | '/admin/clearance'
+    | '/admin/costs'
+    | '/admin/coupons'
+    | '/admin/dashboard'
+    | '/admin/deals'
+    | '/admin/fees'
+    | '/admin/home'
+    | '/admin/notify'
+    | '/admin/offers'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/promo'
+    | '/admin/settings'
+    | '/admin/shipping'
+    | '/admin/texts'
+    | '/admin/theme'
+    | '/admin/tiers'
+    | '/admin/usp'
+    | '/admin/vendors'
+    | '/admin/wallet'
+    | '/admin/whatsapp'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin'
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
@@ -422,7 +708,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/admin'
     | '/auth'
     | '/brands'
     | '/bundles'
@@ -446,10 +731,37 @@ export interface FileRouteTypes {
     | '/_authenticated/orders'
     | '/_authenticated/profile'
     | '/_authenticated/savings'
+    | '/admin/accounting'
+    | '/admin/banners'
+    | '/admin/brands'
+    | '/admin/bundles'
+    | '/admin/categories'
+    | '/admin/clearance'
+    | '/admin/costs'
+    | '/admin/coupons'
+    | '/admin/dashboard'
+    | '/admin/deals'
+    | '/admin/fees'
+    | '/admin/home'
+    | '/admin/notify'
+    | '/admin/offers'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/promo'
+    | '/admin/settings'
+    | '/admin/shipping'
+    | '/admin/texts'
+    | '/admin/theme'
+    | '/admin/tiers'
+    | '/admin/usp'
+    | '/admin/vendors'
+    | '/admin/wallet'
+    | '/admin/whatsapp'
     | '/bundle/$id'
     | '/payment/$orderId'
     | '/product/$id'
     | '/vendor/$slug'
+    | '/admin/'
     | '/_authenticated/orders_/$id'
     | '/_authenticated/profile_/addresses'
     | '/_authenticated/profile_/edit'
@@ -461,7 +773,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BrandsRoute: typeof BrandsRoute
   BundlesRoute: typeof BundlesRoute
@@ -481,10 +792,37 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   VendorSignupRoute: typeof VendorSignupRoute
   VendorsRoute: typeof VendorsRoute
+  AdminAccountingRoute: typeof AdminAccountingRoute
+  AdminBannersRoute: typeof AdminBannersRoute
+  AdminBrandsRoute: typeof AdminBrandsRoute
+  AdminBundlesRoute: typeof AdminBundlesRoute
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminClearanceRoute: typeof AdminClearanceRoute
+  AdminCostsRoute: typeof AdminCostsRoute
+  AdminCouponsRoute: typeof AdminCouponsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDealsRoute: typeof AdminDealsRoute
+  AdminFeesRoute: typeof AdminFeesRoute
+  AdminHomeRoute: typeof AdminHomeRoute
+  AdminNotifyRoute: typeof AdminNotifyRoute
+  AdminOffersRoute: typeof AdminOffersRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminPromoRoute: typeof AdminPromoRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminShippingRoute: typeof AdminShippingRoute
+  AdminTextsRoute: typeof AdminTextsRoute
+  AdminThemeRoute: typeof AdminThemeRoute
+  AdminTiersRoute: typeof AdminTiersRoute
+  AdminUspRoute: typeof AdminUspRoute
+  AdminVendorsRoute: typeof AdminVendorsRoute
+  AdminWalletRoute: typeof AdminWalletRoute
+  AdminWhatsappRoute: typeof AdminWhatsappRoute
   BundleIdRoute: typeof BundleIdRoute
   PaymentOrderIdRoute: typeof PaymentOrderIdRoute
   ProductIdRoute: typeof ProductIdRoute
   VendorSlugRoute: typeof VendorSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicQiWebhookRoute: typeof ApiPublicQiWebhookRoute
 }
 
@@ -502,13 +840,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -672,6 +1003,195 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/accounting': {
+      id: '/admin/accounting'
+      path: '/admin/accounting'
+      fullPath: '/admin/accounting'
+      preLoaderRoute: typeof AdminAccountingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/admin/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/brands': {
+      id: '/admin/brands'
+      path: '/admin/brands'
+      fullPath: '/admin/brands'
+      preLoaderRoute: typeof AdminBrandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/bundles': {
+      id: '/admin/bundles'
+      path: '/admin/bundles'
+      fullPath: '/admin/bundles'
+      preLoaderRoute: typeof AdminBundlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/admin/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/clearance': {
+      id: '/admin/clearance'
+      path: '/admin/clearance'
+      fullPath: '/admin/clearance'
+      preLoaderRoute: typeof AdminClearanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/costs': {
+      id: '/admin/costs'
+      path: '/admin/costs'
+      fullPath: '/admin/costs'
+      preLoaderRoute: typeof AdminCostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/coupons': {
+      id: '/admin/coupons'
+      path: '/admin/coupons'
+      fullPath: '/admin/coupons'
+      preLoaderRoute: typeof AdminCouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/deals': {
+      id: '/admin/deals'
+      path: '/admin/deals'
+      fullPath: '/admin/deals'
+      preLoaderRoute: typeof AdminDealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/fees': {
+      id: '/admin/fees'
+      path: '/admin/fees'
+      fullPath: '/admin/fees'
+      preLoaderRoute: typeof AdminFeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/home': {
+      id: '/admin/home'
+      path: '/admin/home'
+      fullPath: '/admin/home'
+      preLoaderRoute: typeof AdminHomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/notify': {
+      id: '/admin/notify'
+      path: '/admin/notify'
+      fullPath: '/admin/notify'
+      preLoaderRoute: typeof AdminNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/offers': {
+      id: '/admin/offers'
+      path: '/admin/offers'
+      fullPath: '/admin/offers'
+      preLoaderRoute: typeof AdminOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/admin/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/promo': {
+      id: '/admin/promo'
+      path: '/admin/promo'
+      fullPath: '/admin/promo'
+      preLoaderRoute: typeof AdminPromoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/shipping': {
+      id: '/admin/shipping'
+      path: '/admin/shipping'
+      fullPath: '/admin/shipping'
+      preLoaderRoute: typeof AdminShippingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/texts': {
+      id: '/admin/texts'
+      path: '/admin/texts'
+      fullPath: '/admin/texts'
+      preLoaderRoute: typeof AdminTextsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/admin/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tiers': {
+      id: '/admin/tiers'
+      path: '/admin/tiers'
+      fullPath: '/admin/tiers'
+      preLoaderRoute: typeof AdminTiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/usp': {
+      id: '/admin/usp'
+      path: '/admin/usp'
+      fullPath: '/admin/usp'
+      preLoaderRoute: typeof AdminUspRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/vendors': {
+      id: '/admin/vendors'
+      path: '/admin/vendors'
+      fullPath: '/admin/vendors'
+      preLoaderRoute: typeof AdminVendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/wallet': {
+      id: '/admin/wallet'
+      path: '/admin/wallet'
+      fullPath: '/admin/wallet'
+      preLoaderRoute: typeof AdminWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/whatsapp': {
+      id: '/admin/whatsapp'
+      path: '/admin/whatsapp'
+      fullPath: '/admin/whatsapp'
+      preLoaderRoute: typeof AdminWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bundle/$id': {
       id: '/bundle/$id'
       path: '/bundle/$id'
@@ -776,7 +1296,6 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BrandsRoute: BrandsRoute,
   BundlesRoute: BundlesRoute,
@@ -796,10 +1315,37 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   VendorSignupRoute: VendorSignupRoute,
   VendorsRoute: VendorsRoute,
+  AdminAccountingRoute: AdminAccountingRoute,
+  AdminBannersRoute: AdminBannersRoute,
+  AdminBrandsRoute: AdminBrandsRoute,
+  AdminBundlesRoute: AdminBundlesRoute,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminClearanceRoute: AdminClearanceRoute,
+  AdminCostsRoute: AdminCostsRoute,
+  AdminCouponsRoute: AdminCouponsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminDealsRoute: AdminDealsRoute,
+  AdminFeesRoute: AdminFeesRoute,
+  AdminHomeRoute: AdminHomeRoute,
+  AdminNotifyRoute: AdminNotifyRoute,
+  AdminOffersRoute: AdminOffersRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminProductsRoute: AdminProductsRoute,
+  AdminPromoRoute: AdminPromoRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminShippingRoute: AdminShippingRoute,
+  AdminTextsRoute: AdminTextsRoute,
+  AdminThemeRoute: AdminThemeRoute,
+  AdminTiersRoute: AdminTiersRoute,
+  AdminUspRoute: AdminUspRoute,
+  AdminVendorsRoute: AdminVendorsRoute,
+  AdminWalletRoute: AdminWalletRoute,
+  AdminWhatsappRoute: AdminWhatsappRoute,
   BundleIdRoute: BundleIdRoute,
   PaymentOrderIdRoute: PaymentOrderIdRoute,
   ProductIdRoute: ProductIdRoute,
   VendorSlugRoute: VendorSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPublicQiWebhookRoute: ApiPublicQiWebhookRoute,
 }
 export const routeTree = rootRouteImport

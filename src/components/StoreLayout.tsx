@@ -30,7 +30,7 @@ const rightNavItems = [
 export function StoreLayout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const { isStaff, isAdmin } = useCanOrder();
-  const panelTo = (isAdmin ? "/admin" : "/brand") as "/admin" | "/brand";
+  const panelTo = (isAdmin ? "/admin/dashboard" : "/brand") as "/admin/dashboard" | "/brand";
   const cart = useCart();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });

@@ -1,0 +1,3 @@
+id,store_name,city,address_line,phone,user_id,vendor_id,status,note,reviewed_at,created_at,updated_at
+f4bb7597-ad58-4e1c-be5a-3614fda57c05,Zana Dental Depot,Erbil,100m St,7730000123,12a6e612-65cc-4939-aa4b-7cb49d42bd14,333bb552-dea6-40df-9288-4b8591f57d06,pending,"",,2026-08-22 10:14:39.201806+00,2026-08-22 10:14:39.201806+00
+ccf0deaf-0b50-459a-a2f6-79534829d460,BA Trading,سليمانية,چوارچرا,7701500000,482cc395-10b3-403f-a565-0415a881d4b8,dcc9e02a-13d1-4fcb-a344-4a68463d0a56,approved,"",2026-08-22 10:30:05.704+00,2026-08-22 10:29:16.503046+00,2026-08-22 10:30:05.795593+00

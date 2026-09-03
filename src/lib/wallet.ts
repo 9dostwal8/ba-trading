@@ -55,6 +55,8 @@ export function generateCardCode(prefix = "DENT") {
 export function useWalletSettings() {
   return useQuery({
     queryKey: ["wallet-settings"],
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
     queryFn: async () => {
       const { data } = await supabase
         .from("store_settings")
@@ -71,6 +73,8 @@ export function useMyWallet(userId?: string, enabled = true) {
   return useQuery({
     queryKey: ["my-wallet", userId],
     enabled: Boolean(userId) && enabled,
+    staleTime: 1000 * 30,
+    gcTime: 1000 * 60 * 5,
     queryFn: async () => {
       const { data: balance, error } = await supabase.rpc("wallet_my_balance");
       if (error) throw error;

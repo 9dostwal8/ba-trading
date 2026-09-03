@@ -43,7 +43,7 @@ const L = {
 };
 
 /** Landing page shown instead of the dentist home for admins and vendors. */
-export function StaffHome({ isAdmin, panelTo }: { isAdmin: boolean; panelTo: "/admin" | "/brand" }) {
+export function StaffHome({ isAdmin, panelTo }: { isAdmin: boolean; panelTo: "/admin" | "/admin/dashboard" | "/brand" }) {
   const { lang } = useI18n() as { lang: Lang };
 
   const tiles = isAdmin

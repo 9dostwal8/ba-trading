@@ -1,0 +1,11 @@
+id,user_id,label,city,address_line,notes,latitude,longitude,is_default,created_at
+9438f2a6-c725-4f59-9073-6064f819b565,1ca0d52c-7141-46c5-b222-0a85056da521,Chwarchra,سلێمانی,GCW4+6Q6، سلێمانی، پارێزگای سلێمانی، العراق,,35.5452071,45.406778,t,2026-08-19 11:18:58.284679+00
+a5543c1d-8e79-4570-b8d5-f011b5b9610e,530bd01a-44e9-4239-ad25-83623c03c15d,Mazari Shahid Jabar,سلێمانی,"GCX2+FQP، سلێمانی، Kurdistan Region, العراق",,35.5490974,45.4022727,f,2026-08-21 19:34:30.876623+00
+20a5cb91-b1c9-4332-b1bc-31fcb986f15b,530bd01a-44e9-4239-ad25-83623c03c15d,Mazari Shahid Jabar,السليمانية,"GCX2+FQP، السليمانية، Kurdistan Region, العراق",,35.5491051,45.4022697,t,2026-08-22 03:41:49.99086+00
+0dc76fb0-c4fe-4ed4-9114-5b429b9b85cf,6222e960-a6e5-472f-a4ce-c55f4d2ec4cb,Mazari Shahid Jabar,سلێمانی,"GCX2+FQP، سلێمانی، Kurdistan Region, العراق",,35.5490426,45.4023186,t,2026-08-22 11:35:41.494695+00
+234e17af-be1b-474f-b70e-196fe86ff4f6,156e1cd8-5a4b-4291-9894-c01f5d4d3218,sulimaniah,sulimaniah,Kurdistan,,,,t,2026-08-27 17:16:17.218764+00
+9d92f8b6-2d2c-4c15-9247-c71001469ac9,14a0871e-fef0-4831-9c47-1f0c7d8be679,Bazrgani,سلێمانی,HC3Q+9G9، سلێمانی، پارێزگای سلێمانی، العراق,,35.5534891,45.438755,t,2026-08-20 07:36:34.455701+00
+3abaf8f7-8220-4c8f-b3c7-25cae2e67c7e,1ca0d52c-7141-46c5-b222-0a85056da521,Shekhan,سلێمانی,HC5R+2F3، سلێمانی، پارێزگای سلێمانی، العراق,,35.557473,45.441159,f,2026-08-19 11:59:40.198261+00
+d4422cf6-2c1d-419b-bbe4-cf16024422b0,1ca0d52c-7141-46c5-b222-0a85056da521,Bazrgani,Sulaymaniyah,"HC4R+GPR, Mawlawi St, Sulaymaniyah, Sulaymaniyah Governorate, العراق",,35.5563148,45.4418223,f,2026-08-19 12:11:16.829881+00
+4dee29bb-381c-49dc-97fe-0dbd4e439677,1ca0d52c-7141-46c5-b222-0a85056da521,Chwarchra,سلێمانی,GCW4+6Q6، سلێمانی، پارێزگای سلێمانی، العراق,,35.5452071,45.4067756,f,2026-08-19 11:19:09.209736+00
+6e91b755-4fff-439d-b141-a555001f3192,1ca0d52c-7141-46c5-b222-0a85056da521,Slsnsn,Ndnsjssn,Shsjnaka,,,,f,2026-08-20 04:59:53.289675+00
