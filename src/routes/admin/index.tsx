@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminAuthPortal } from "@/components/admin/AdminAuthPortal";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/admin/")({
@@ -21,9 +22,21 @@ function AdminIndexPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && user && isAdmin === true) {
-      navigate({ to: "/admin/dashboard", replace: true });
+    async function checkAndNavigate() {
+      if (!authLoading && user && isAdmin === true) {
+        try {
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
+            // 2FA is required and not yet verified. Stay on login page to prompt for 6-digit code!
+            return;
+          }
+        } catch (e) {
+          console.warn("AAL check:", e);
+        }
+        navigate({ to: "/admin/dashboard", replace: true });
+      }
     }
+    checkAndNavigate();
   }, [user, isAdmin, authLoading, navigate]);
 
   if (authLoading) {

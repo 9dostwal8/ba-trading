@@ -81,6 +81,25 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Security: Check if active session requires 2FA on mount
+  useEffect(() => {
+    async function checkPendingMfa() {
+      try {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
+          if (verifiedTotp) {
+            setMfaStep({ factorId: verifiedTotp.id });
+          }
+        }
+      } catch (err) {
+        console.warn("MFA on mount check:", err);
+      }
+    }
+    checkPendingMfa();
+  }, []);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -138,12 +157,17 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
       if (data.user) {
         // Check if account has 2FA (TOTP) enabled
         try {
-          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const [{ data: aal }, { data: factors }] = await Promise.all([
+            supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+            supabase.auth.mfa.listFactors(),
+          ]);
           const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
-          if (verifiedTotp) {
-            setMfaStep({ factorId: verifiedTotp.id });
-            setLoginLoading(false);
-            return;
+          if ((aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") || verifiedTotp) {
+            if (verifiedTotp) {
+              setMfaStep({ factorId: verifiedTotp.id });
+              setLoginLoading(false);
+              return;
+            }
           }
         } catch (mfaErr) {
           console.warn("MFA check:", mfaErr);

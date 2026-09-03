@@ -34,9 +34,23 @@ function AdminDashboardPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/admin", replace: true });
+    async function enforceMfa() {
+      if (!authLoading && !user) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      if (!authLoading && user) {
+        try {
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
+            navigate({ to: "/admin", replace: true });
+          }
+        } catch (err) {
+          console.warn("AAL error:", err);
+        }
+      }
     }
+    enforceMfa();
   }, [user, authLoading, navigate]);
 
   const handleLogout = async () => {
