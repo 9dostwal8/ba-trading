@@ -182,8 +182,15 @@ function AdminProfilePage() {
     }
 
     setEmailSaving(true);
+    const redirectUrl = typeof window !== "undefined"
+      ? `${window.location.origin}/admin/profile`
+      : "https://ba-trading.vercel.app/admin/profile";
+
     try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      const { error } = await supabase.auth.updateUser(
+        { email: newEmail.trim() },
+        { emailRedirectTo: redirectUrl }
+      );
       if (error) throw error;
 
       toast.success(
