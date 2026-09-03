@@ -33,3 +33,4 @@ dist-ssr
 *.tsbuildinfo
 .env.local
 .env.*.local
+dbexport/

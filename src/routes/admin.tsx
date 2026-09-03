@@ -33,8 +33,11 @@ import {
   ShieldAlert,
   KeyRound,
   CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,7 +170,52 @@ function AdminPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [claiming, setClaiming] = useState(false);
+
+  // 2FA Verification State on Login
+  const [mfaStep, setMfaStep] = useState<{ factorId: string } | null>(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+
+  // Security Hardening: Rate Limiting & CAPTCHA Challenge State
+  const MAX_FAILED_ATTEMPTS = 5;
+  const [failedAttempts, setFailedAttempts] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem("admin_failed_attempts") || "0", 10);
+  });
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // Human / Bot Verification Challenge (Cryptographic / Math)
+  const [challenge, setChallenge] = useState(() => ({
+    a: Math.floor(Math.random() * 8) + 3,
+    b: Math.floor(Math.random() * 8) + 2,
+  }));
+  const [challengeInput, setChallengeInput] = useState("");
+
+  const refreshChallenge = () => {
+    setChallenge({
+      a: Math.floor(Math.random() * 8) + 3,
+      b: Math.floor(Math.random() * 8) + 2,
+    });
+    setChallengeInput("");
+  };
+
+  // Check lockout on mount and tick countdown every second
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkLockout = () => {
+      const lockUntil = parseInt(localStorage.getItem("admin_lockout_until") || "0", 10);
+      const remaining = Math.max(0, Math.ceil((lockUntil - Date.now()) / 1000));
+      setLockoutSeconds(remaining);
+      if (remaining === 0 && lockUntil > 0) {
+        localStorage.removeItem("admin_lockout_until");
+        localStorage.setItem("admin_failed_attempts", "0");
+        setFailedAttempts(0);
+      }
+    };
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
@@ -196,12 +244,48 @@ function AdminPage() {
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Guard against active security lockout
+    if (lockoutSeconds > 0) {
+      toast.error(
+        lang === "ar"
+          ? `النظام مغلق مؤقتاً لأسباب أمنية. يرجى الانتظار ${lockoutSeconds} ثانية.`
+          : lang === "ku"
+            ? `سیستم بە شێوەیەکی کاتی قوفڵ کراوە. تکایە ${lockoutSeconds} چرکە چاوەڕێ بکە.`
+            : `Login is temporarily locked for security. Please wait ${lockoutSeconds}s.`
+      );
+      return;
+    }
+
     if (!identifier.trim() || !password) {
-      toast.error(lang === "ar" ? "يرجى كتابة رقم الهاتف / البريد وكلمة المرور" : lang === "ku" ? "تکایە ژمارەی مۆبایل یان ئیمەیڵ و وشەی نهێنی بنووسە" : "Please enter login credentials");
+      toast.error(
+        lang === "ar"
+          ? "يرجى كتابة رقم الهاتف / البريد وكلمة المرور"
+          : lang === "ku"
+            ? "تکایە ژمارەی مۆبایل یان ئیمەیڵ و وشەی نهێنی بنووسە"
+            : "Please enter login credentials"
+      );
+      return;
+    }
+
+    // 2. Validate Human Challenge
+    if (parseInt(challengeInput.trim(), 10) !== challenge.a + challenge.b) {
+      toast.error(
+        lang === "ar"
+          ? "رمز التحقق البشري غير صحيح، يرجى إعادة المحاولة"
+          : lang === "ku"
+            ? "پشکنینی مرۆڤ هەڵەیە، تکایە دووبارە تاقی بکەرەوە"
+            : "Human verification failed. Please try again."
+      );
+      refreshChallenge();
       return;
     }
 
     setLoginLoading(true);
+
+    // Artificial baseline delay (800ms) to defeat automated fast-burst brute-force
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 800));
+
     try {
       let email = identifier.trim();
       if (!email.includes("@")) {
@@ -209,46 +293,141 @@ function AdminPage() {
         email = `${raw}@${PHONE_DOMAIN}`;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const [{ data, error }] = await Promise.all([
+        supabase.auth.signInWithPassword({ email, password }),
+        minDelay,
+      ]);
 
       if (error) throw error;
 
       if (data.user) {
-        toast.success(lang === "ar" ? "تم تسجيل الدخول بنجاح!" : lang === "ku" ? "چوونەژوورەوە سەرکەوتوو بوو!" : "Login successful!");
+        // Check if account has 2FA (TOTP) enabled
+        try {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
+          if (verifiedTotp) {
+            setMfaStep({ factorId: verifiedTotp.id });
+            setLoginLoading(false);
+            return;
+          }
+        } catch (mfaErr) {
+          console.warn("MFA factors check:", mfaErr);
+        }
+
+        // Success without 2FA: clear lockout and failure records
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("admin_failed_attempts");
+          localStorage.removeItem("admin_lockout_until");
+        }
+        setFailedAttempts(0);
+        setLockoutSeconds(0);
+        toast.success(
+          lang === "ar"
+            ? "تم تسجيل الدخول بنجاح!"
+            : lang === "ku"
+              ? "چوونەژوورەوە سەرکەوتوو بوو!"
+              : "Login successful!"
+        );
         queryClient.invalidateQueries();
       }
-    } catch (err: any) {
-      const msg = err?.message || "";
-      if (/invalid login credentials/i.test(msg)) {
-        toast.error(lang === "ar" ? "بيانات الدخول غير صحيحة" : lang === "ku" ? "زانیاری چوونەژوورەوە هەڵەیە" : "Invalid login credentials");
+    } catch {
+      // Record failed attempt and compute progressive backoff
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      refreshChallenge();
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("admin_failed_attempts", String(newAttempts));
+      }
+
+      if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+        // Severe Lockout: 5 minutes (300 seconds)
+        const lockUntil = Date.now() + 300 * 1000;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("admin_lockout_until", String(lockUntil));
+        }
+        setLockoutSeconds(300);
+        toast.error(
+          lang === "ar"
+            ? "تم قفل الدخول لمدة 5 دقائق لتكرار المحاولات الخاطئة."
+            : lang === "ku"
+              ? "چوونەژوورەوە بۆ ماوەی 5 خولەک قوفڵ کرا بەهۆی هەڵەی بەردەوام."
+              : "Too many failed attempts. Login locked for 5 minutes."
+        );
+      } else if (newAttempts >= 3) {
+        // Cooldown Lockout: 30 seconds
+        const lockUntil = Date.now() + 30 * 1000;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("admin_lockout_until", String(lockUntil));
+        }
+        setLockoutSeconds(30);
+        toast.error(
+          lang === "ar"
+            ? `بيانات الدخول غير صحيحة. تم تفعيل قفل حماية لمدة 30 ثانية (المحاولة ${newAttempts} من ${MAX_FAILED_ATTEMPTS})`
+            : lang === "ku"
+              ? `زانیاری هەڵەیە. قوفڵی پاراستن بۆ 30 چرکە چالاک کرا (هەوڵی ${newAttempts} لە ${MAX_FAILED_ATTEMPTS})`
+              : `Invalid credentials. 30s security cooldown enabled (Attempt ${newAttempts} of ${MAX_FAILED_ATTEMPTS})`
+        );
       } else {
-        toast.error(msg || "Failed to sign in");
+        toast.error(
+          lang === "ar"
+            ? `بيانات الدخول غير صحيحة (المتبقي ${MAX_FAILED_ATTEMPTS - newAttempts} محاولات قبل القفل)`
+            : lang === "ku"
+              ? `زانیاری هەڵەیە (${MAX_FAILED_ATTEMPTS - newAttempts} هەوڵ ماوە پێش قوفڵ)`
+              : `Invalid credentials (${MAX_FAILED_ATTEMPTS - newAttempts} attempts remaining before lockout)`
+        );
       }
     } finally {
       setLoginLoading(false);
     }
   };
 
-  const handleClaim = async () => {
-    setClaiming(true);
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaStep || totpCode.trim().length < 6) return;
+
+    setMfaVerifying(true);
     try {
-      const { data, error } = await supabase.rpc("claim_admin");
-      if (error) throw error;
-      if (data) {
-        toast.success(lang === "ar" ? "تم تفعيل صلاحيات المدير بنجاح!" : lang === "ku" ? "دەسەڵاتی بەڕێوەبەر بە سەرکەوتوویی چالاک کرا!" : "Admin rights claimed successfully!");
-        window.location.reload();
-      } else {
-        toast.error(lang === "ar" ? "يوجد مدير مسجل مسبقاً في النظام" : lang === "ku" ? "بەڕێوەبەرێکی تر لە پێشدا تۆمارکراوە" : "An admin already exists");
+      const challenge = await supabase.auth.mfa.challenge({ factorId: mfaStep.factorId });
+      if (challenge.error) throw challenge.error;
+
+      const verifyRes = await supabase.auth.mfa.verify({
+        factorId: mfaStep.factorId,
+        challengeId: challenge.data.id,
+        code: totpCode.trim(),
+      });
+
+      if (verifyRes.error) throw verifyRes.error;
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("admin_failed_attempts");
+        localStorage.removeItem("admin_lockout_until");
       }
-    } catch (e: any) {
-      toast.error(e?.message || "Error claiming admin");
+      setFailedAttempts(0);
+      setLockoutSeconds(0);
+      setMfaStep(null);
+      toast.success(
+        lang === "ar"
+          ? "تم تأكيد الرمز وتسجيل الدخول بنجاح!"
+          : lang === "ku"
+            ? "کۆدی 2FA پەسەندکرا و چوونەژوورەوە سەرکەوتوو بوو!"
+            : "Two-Factor authentication verified!"
+      );
+      queryClient.invalidateQueries();
+    } catch {
+      toast.error(
+        lang === "ar"
+          ? "رمز المصادقة (2FA) غير صحيح أو منتهي الصلاحية"
+          : lang === "ku"
+            ? "کۆدی 2FA هەڵەیە یان بەسەرچووە"
+            : "Invalid or expired 2FA code."
+      );
     } finally {
-      setClaiming(false);
+      setMfaVerifying(false);
     }
   };
+
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -286,77 +465,228 @@ function AdminPage() {
                 <ShieldCheck className="size-8" />
               </div>
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                {lang === "ar" ? "بوابة الإدارة المركزية" : lang === "ku" ? "دەروازەی بەڕێوەبەرایەتی" : "Admin Security Portal"}
+                {mfaStep
+                  ? (lang === "ar" ? "المصادقة الثنائية (2FA)" : lang === "ku" ? "پشتڕاستکردنەوەی 2FA" : "Two-Factor Authentication")
+                  : (lang === "ar" ? "بوابة الإدارة المركزية" : lang === "ku" ? "دەروازەی بەڕێوەبەرایەتی" : "Admin Security Portal")}
               </h1>
               <p className="text-xs sm:text-sm font-semibold text-teal-200/70 mt-1">
-                {lang === "ar" ? "تسجيل الدخول المخصص لمدراء النظام" : lang === "ku" ? "چوونەژوورەوەی تایبەت بە بەڕێوەبەرانی سیستم" : "Authorized Management Access Only"}
+                {mfaStep
+                  ? (lang === "ar" ? "أدخل الرمز من تطبيق Google Authenticator" : lang === "ku" ? "کۆدی ئەپی Google Authenticator بنووسە" : "Enter code from Google Authenticator")
+                  : (lang === "ar" ? "تسجيل الدخول المخصص لمدراء النظام" : lang === "ku" ? "چوونەژوورەوەی تایبەت بە بەڕێوەبەرانی سیستم" : "Authorized Management Access Only")}
               </p>
             </div>
 
-            {/* Login Form */}
-            <form onSubmit={handleAdminLogin} className="space-y-4 relative z-10">
-              
-              {/* Phone / Email Input */}
-              <div className="space-y-1.5 text-start">
-                <label className="text-xs font-bold text-slate-300">
-                  {lang === "ar" ? "رقم الهاتف أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Admin Phone / Email"}
-                </label>
-                <div className="relative">
+            {mfaStep ? (
+              /* Step 2: 2FA Verification Form */
+              <form onSubmit={handleMfaVerify} className="space-y-4 relative z-10 animate-in fade-in zoom-in-95">
+                <div className="rounded-2xl border border-teal-500/30 bg-teal-950/40 p-3.5 text-center space-y-1">
+                  <p className="text-xs font-bold text-teal-300">
+                    {lang === "ar" ? "الرمز المكون من 6 أرقام" : lang === "ku" ? "کۆدی 6 ژمارەیی" : "6-Digit Security Code"}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    {lang === "ar" ? "افتح تطبيق هاتفك واكتب الرمز المؤقت:" : lang === "ku" ? "ئەپەکە بکەرەوە و کۆدە کاتییەکە بنووسە:" : "Open your authenticator app & type code:"}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-start">
                   <Input
                     type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="0770XXXXXXX / admin@batrading.iq"
-                    className="h-11 rounded-xl border-slate-700 bg-slate-800/80 px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
-                    required
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="••••••"
+                    className="h-12 text-center text-2xl font-mono font-black tracking-widest rounded-xl border-slate-700 bg-slate-800/90 text-teal-300 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
                     autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Password Input */}
-              <div className="space-y-1.5 text-start">
-                <label className="text-xs font-bold text-slate-300">
-                  {lang === "ar" ? "كلمة المرور السرية" : lang === "ku" ? "وشەی نهێنی" : "Password"}
-                </label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-11 rounded-xl border-slate-700 bg-slate-800/80 pe-10 ps-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
-                  >
-                    {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
-                  </button>
                 </div>
-              </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loginLoading}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-[#007979] to-teal-500 text-white font-black text-sm shadow-lg shadow-teal-500/25 hover:from-[#006666] hover:to-teal-600 active:scale-[0.99] transition mt-2"
-              >
-                {loginLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span>{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Verifying..."}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Lock className="size-4" />
-                    <span>{lang === "ar" ? "دخول لوحة التحكم" : lang === "ku" ? "چوونەژوورەوەی پانێڵ" : "Sign In to Dashboard"}</span>
+                <div className="space-y-2 pt-1">
+                  <Button
+                    type="submit"
+                    disabled={mfaVerifying || totpCode.trim().length < 6}
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-[#007979] to-teal-500 text-white font-black text-sm shadow-lg shadow-teal-500/25 hover:from-[#006666] hover:to-teal-600 transition"
+                  >
+                    {mfaVerifying ? (
+                      <div className="flex items-center gap-2">
+                        <div className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span>{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Verifying..."}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <CheckCircle2 className="size-4" />
+                        <span>{lang === "ar" ? "تأكيد والدخول للوحة التحكم" : lang === "ku" ? "پەسەندکردن و چوونەژوورەوە" : "Verify & Sign In"}</span>
+                      </div>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setMfaStep(null);
+                      setTotpCode("");
+                    }}
+                    className="w-full text-xs text-slate-400 hover:text-white"
+                  >
+                    {lang === "ar" ? "إلغاء والعودة لتسجيل الدخول" : lang === "ku" ? "پاشگەزبوونەوە و چوونەژوورەوە لە سەرەتاوە" : "Cancel & Return to Login"}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              /* Step 1: Standard Credentials Form */
+              <form onSubmit={handleAdminLogin} className="space-y-4 relative z-10">
+                
+                {/* Security Lockout Banner */}
+                {lockoutSeconds > 0 && (
+                  <div className="rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-red-200 flex items-center gap-3 text-xs animate-in fade-in zoom-in-95">
+                    <Clock className="size-5 shrink-0 text-red-400 animate-pulse" />
+                    <div>
+                      <p className="font-bold">
+                        {lang === "ar" ? "قفل الحماية الأمني نشط" : lang === "ku" ? "قوفڵی پاراستن چالاکە" : "Security Lockout Active"}
+                      </p>
+                      <p className="text-red-300/80 mt-0.5 font-medium">
+                        {lang === "ar"
+                          ? `تم تجميد تسجيل الدخول مؤقتاً. يرجى الانتظار ${lockoutSeconds} ثانية.`
+                          : lang === "ku"
+                            ? `چوونەژوورەوە بە کاتی قوفڵ کراوە. تکایە ${lockoutSeconds} چرکە چاوەڕێ بکە.`
+                            : `Too many failed attempts. Try again in ${lockoutSeconds}s.`}
+                      </p>
+                    </div>
                   </div>
                 )}
-              </Button>
-            </form>
+
+                {/* Failed Attempt Warning Banner */}
+                {failedAttempts > 0 && lockoutSeconds === 0 && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-amber-200 flex items-center gap-2 text-xs">
+                    <AlertTriangle className="size-4 shrink-0 text-amber-400" />
+                    <span>
+                      {lang === "ar"
+                        ? `تحذير أمني: محاولة خاطئة (${failedAttempts} من ${MAX_FAILED_ATTEMPTS})`
+                        : lang === "ku"
+                          ? `ئاگاداری ئاسایش: هەوڵی هەڵە (${failedAttempts} لە ${MAX_FAILED_ATTEMPTS})`
+                          : `Security Alert: ${failedAttempts} of ${MAX_FAILED_ATTEMPTS} failed attempts`}
+                    </span>
+                  </div>
+                )}
+
+                {/* Phone / Email Input */}
+                <div className="space-y-1.5 text-start">
+                  <label className="text-xs font-bold text-slate-300">
+                    {lang === "ar" ? "رقم الهاتف أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Admin Phone / Email"}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="0770XXXXXXX / admin@batrading.iq"
+                      className="h-11 rounded-xl border-slate-700 bg-slate-800/80 px-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
+                      required
+                      autoFocus
+                      disabled={lockoutSeconds > 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="space-y-1.5 text-start">
+                  <label className="text-xs font-bold text-slate-300">
+                    {lang === "ar" ? "كلمة المرور السرية" : lang === "ku" ? "وشەی نهێنی" : "Password"}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-11 rounded-xl border-slate-700 bg-slate-800/80 pe-10 ps-3.5 text-sm text-white placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
+                      required
+                      disabled={lockoutSeconds > 0}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition"
+                      disabled={lockoutSeconds > 0}
+                    >
+                      {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Anti-Bot Security Challenge */}
+                <div className="space-y-1.5 text-start">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                    <span>{lang === "ar" ? "التحقق الأمني (منع الروبوتات)" : lang === "ku" ? "پشکنینی ئاسایش (دژی ڕۆبۆت)" : "Security Challenge (Anti-Bot)"}</span>
+                    <span className="text-[10px] text-teal-400/90 font-mono tracking-wider uppercase bg-teal-950/60 border border-teal-500/30 px-1.5 py-0.5 rounded">Human Check</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center justify-between h-11 rounded-xl border border-teal-500/30 bg-slate-800/90 px-3.5 text-sm text-white font-mono select-none">
+                      <span className="tracking-widest text-teal-300 font-bold text-base">
+                        {challenge.a} + {challenge.b} = ?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={refreshChallenge}
+                        title="Refresh Challenge"
+                        className="text-slate-400 hover:text-teal-300 transition p-1"
+                        disabled={lockoutSeconds > 0}
+                      >
+                        <RefreshCw className="size-3.5" />
+                      </button>
+                    </div>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={challengeInput}
+                      onChange={(e) => setChallengeInput(e.target.value)}
+                      placeholder={lang === "ar" ? "الناتج" : lang === "ku" ? "وەڵام" : "Answer"}
+                      className="w-24 h-11 rounded-xl border-slate-700 bg-slate-800/80 text-center font-black text-base text-teal-300 placeholder:text-slate-500 focus:border-[#007979] focus:ring-1 focus:ring-[#007979]"
+                      required
+                      disabled={lockoutSeconds > 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loginLoading || lockoutSeconds > 0}
+                  className={`w-full h-11 rounded-xl text-white font-black text-sm shadow-lg transition mt-2 ${
+                    lockoutSeconds > 0
+                      ? "bg-red-900/60 border border-red-500/40 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-[#007979] to-teal-500 shadow-teal-500/25 hover:from-[#006666] hover:to-teal-600 active:scale-[0.99]"
+                  }`}
+                >
+                  {lockoutSeconds > 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-red-200">
+                      <Clock className="size-4 animate-pulse" />
+                      <span>
+                        {lang === "ar"
+                          ? `مغلق مؤقتاً (انتظر ${lockoutSeconds} ثانية)`
+                          : lang === "ku"
+                            ? `قوفڵ کراوە (${lockoutSeconds} چرکە)`
+                            : `Security Locked (${lockoutSeconds}s)`}
+                      </span>
+                    </div>
+                  ) : loginLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <span>{lang === "ar" ? "جاري التحقق..." : lang === "ku" ? "پشکنین..." : "Verifying..."}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Lock className="size-4" />
+                      <span>{lang === "ar" ? "دخول لوحة التحكم" : lang === "ku" ? "چوونەژوورەوەی پانێڵ" : "Sign In to Dashboard"}</span>
+                    </div>
+                  )}
+                </Button>
+              </form>
+            )}
 
             {/* Footer / Back to Store */}
             <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
@@ -396,12 +726,15 @@ function AdminPage() {
           </p>
 
           <div className="space-y-2.5">
-            <Button onClick={handleClaim} disabled={claiming} className="w-full font-bold bg-[#007979] hover:bg-[#006666] text-white">
-              {claiming ? "..." : (lang === "ar" ? "تفعيل حساب المدير الأول (Claim Admin)" : lang === "ku" ? "چالاککردنی بەڕێوەبەری یەکەم" : "Claim First Admin Account")}
-            </Button>
-            <Button onClick={handleLogout} variant="outline" className="w-full font-bold">
+            <Button onClick={handleLogout} variant="default" className="w-full font-bold bg-[#007979] hover:bg-[#006666] text-white">
               <LogOut className="size-4 me-1.5" />
               {lang === "ar" ? "تسجيل الخروج والتبديل لحساب المدير" : lang === "ku" ? "چوونەدەرەوە و گۆڕین بۆ هەژماری بەڕێوەبەر" : "Sign Out & Switch Account"}
+            </Button>
+            <Button asChild variant="outline" className="w-full font-bold">
+              <Link to="/">
+                <ArrowRight className="size-4 me-1.5" />
+                {lang === "ar" ? "العودة إلى واجهة المتجر" : lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : "Return to Store"}
+              </Link>
             </Button>
           </div>
         </div>

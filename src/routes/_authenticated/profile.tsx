@@ -12,10 +12,12 @@ import {
   Tag,
   TrendingDown,
   UserRound,
+  ShieldCheck,
 } from "lucide-react";
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { StoreLayout } from "@/components/StoreLayout";
 import { PageBlocks } from "@/components/blocks/PageBlocks";
+import { TwoFactorModal } from "@/components/profile/TwoFactorModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useMyVendor } from "@/hooks/useVendor";
@@ -88,6 +90,20 @@ function ProfilePage() {
     queryFn: async () =>
       (await supabase.from("addresses").select("id").order("is_default", { ascending: false }))
         .data ?? [],
+  });
+
+  const [show2FaModal, setShow2FaModal] = useState(false);
+  const { data: mfaActive, refetch: refetchMfa } = useQuery({
+    queryKey: ["mfa-factors", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      try {
+        const { data } = await supabase.auth.mfa.listFactors();
+        return Boolean(data?.totp?.some((f) => f.status === "verified"));
+      } catch {
+        return false;
+      }
+    },
   });
 
 
@@ -179,6 +195,43 @@ function ProfilePage() {
               label={L.editProfile[lang]}
               hint={L.editHint[lang]}
             />
+            <button
+              type="button"
+              onClick={() => setShow2FaModal(true)}
+              className="grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-4 px-4 py-3.5 text-start hover:bg-secondary/40 transition"
+            >
+              <ShieldCheck className="size-5 text-primary" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-base font-bold text-foreground">
+                    {lang === "ar"
+                      ? "المصادقة الثنائية (Google Authenticator)"
+                      : lang === "ku"
+                        ? "پشتڕاستکردنەوەی دوو قۆناغی (2FA)"
+                        : "Two-Factor Auth (2FA)"}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      mfaActive
+                        ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+                        : "bg-muted text-muted-foreground border border-border"
+                    }`}
+                  >
+                    {mfaActive
+                      ? (lang === "ar" ? "مفعل" : lang === "ku" ? "چالاکە" : "Active")
+                      : (lang === "ar" ? "غير مفعل" : lang === "ku" ? "ناچالاکە" : "Off")}
+                  </span>
+                </div>
+                <p className="truncate text-xs font-semibold text-muted-foreground">
+                  {lang === "ar"
+                    ? "حماية الحساب بتطبيق Google Authenticator"
+                    : lang === "ku"
+                      ? "پاراستنی هەژمار بە ئەپی Google Authenticator"
+                      : "Protect account with Google Authenticator"}
+                </p>
+              </div>
+              <ChevronLeft className="size-5 text-muted-foreground rtl:rotate-0 ltr:rotate-180" />
+            </button>
             {!vendor && (
               <RowLink
                 to="/orders"
@@ -222,6 +275,11 @@ function ProfilePage() {
           </div>
         </div>
       </div>
+      <TwoFactorModal
+        open={show2FaModal}
+        onOpenChange={setShow2FaModal}
+        onStatusChange={() => refetchMfa()}
+      />
       <PageBlocks page="profile" position="bottom" />
     </StoreLayout>
   );
