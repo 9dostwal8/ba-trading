@@ -81,3 +81,29 @@ export const createBrandManager = createServerFn({ method: "POST" })
     return { userId, phone, fullName };
   });
 
+/** Admin-only: immediately update the admin's own email address directly without email bounce. */
+export const updateCurrentAdminEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { newEmail: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const email = (data.newEmail ?? "").trim().toLowerCase();
+    if (!email || !email.includes("@")) throw new Error("Invalid email format");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const upd = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      email,
+      email_confirm: true,
+    });
+
+    if (upd.error) throw new Error(upd.error.message);
+
+    return { success: true, email };
+  });
+

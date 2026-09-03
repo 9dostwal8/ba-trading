@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
+import { updateCurrentAdminEmail } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/admin/profile")({
   ssr: false,
@@ -182,11 +183,31 @@ function AdminProfilePage() {
     }
 
     setEmailSaving(true);
-    const redirectUrl = typeof window !== "undefined"
-      ? `${window.location.origin}/admin/profile`
-      : "https://ba-trading.vercel.app/admin/profile";
-
     try {
+      // 1. Attempt direct administrative email update via server function (bypasses dead placeholder email bounce)
+      try {
+        await updateCurrentAdminEmail({ data: { newEmail: newEmail.trim() } });
+        await supabase.auth.refreshSession();
+        toast.success(
+          lang === "ar"
+            ? "تم تحديث البريد الإلكتروني بنجاح!"
+            : lang === "ku"
+              ? "ئیمەیڵ بە سەرکەوتوویی نوێکرایەوە!"
+              : "Email updated successfully!"
+        );
+        setNewEmail("");
+        queryClient.invalidateQueries();
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+      } catch (srvErr: any) {
+        console.warn("Direct admin email update failed, falling back to standard client update:", srvErr);
+      }
+
+      // 2. Fallback to standard Supabase client updateUser
+      const redirectUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/admin/profile`
+        : "https://ba-trading.vercel.app/admin/profile";
+
       const { error } = await supabase.auth.updateUser(
         { email: newEmail.trim() },
         { emailRedirectTo: redirectUrl }
