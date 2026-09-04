@@ -253,7 +253,15 @@ export function designVars(d: DesignSettings): Record<string, string> {
 
 export function applyDesign(el: HTMLElement | null | undefined, d: DesignSettings) {
   if (!el) return;
-  for (const [k, v] of Object.entries(designVars(d))) el.style.setProperty(k, v);
+  const isDark =
+    el.classList.contains("dark") ||
+    (typeof localStorage !== "undefined" && localStorage.getItem("admin_theme_mode") === "dark");
+  const vars = designVars(d);
+  if (isDark) {
+    delete vars["--background"];
+    delete vars["--design-surface"];
+  }
+  for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
 }
 
 /** Tailwind grid classes derived from the card settings. */

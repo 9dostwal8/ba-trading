@@ -74,10 +74,30 @@ export function PanelShell({
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
       localStorage.setItem("admin_theme_mode", "dark");
+      // Remove any inline light surface overrides on <html>
+      const surfaceProps = [
+        "--card",
+        "--background",
+        "--foreground",
+        "--card-foreground",
+        "--border",
+        "--input",
+        "--popover",
+        "--popover-foreground",
+        "--secondary",
+        "--secondary-foreground",
+        "--muted",
+        "--muted-foreground",
+        "--design-surface",
+      ];
+      for (const prop of surfaceProps) {
+        document.documentElement.style.removeProperty(prop);
+      }
     } else {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("admin_theme_mode", "light");
     }
+    window.dispatchEvent(new CustomEvent("themechange", { detail: { theme } }));
   }, [theme]);
 
   const toggleTheme = () => {

@@ -132,7 +132,27 @@ export function themeVars(input: ThemeInput): Record<string, string> {
 /** Apply (or clear) a theme on an element — used for live preview and globally. */
 export function applyTheme(el: HTMLElement | null | undefined, input: ThemeInput) {
   if (!el) return;
+  const isDark =
+    el.classList.contains("dark") ||
+    (typeof localStorage !== "undefined" && localStorage.getItem("admin_theme_mode") === "dark");
   const vars = themeVars(input);
+  if (isDark) {
+    // In dark mode, do not force light surface variables onto the element
+    delete vars["--card"];
+    delete vars["--background"];
+    delete vars["--foreground"];
+    delete vars["--card-foreground"];
+    delete vars["--popover"];
+    delete vars["--popover-foreground"];
+    delete vars["--secondary"];
+    delete vars["--secondary-foreground"];
+    delete vars["--muted"];
+    delete vars["--muted-foreground"];
+    delete vars["--border"];
+    delete vars["--input"];
+    delete vars["--sidebar"];
+    delete vars["--sidebar-foreground"];
+  }
   for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
 }
 

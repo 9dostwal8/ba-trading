@@ -17,20 +17,23 @@ export function ThemeSync() {
 
   useEffect(() => {
     if (!s || typeof document === "undefined") return;
-    applyTheme(document.documentElement, {
-      primary_hue: s.primary_hue,
-      primary_chroma: s.primary_chroma,
-      accent_hue: s.accent_hue,
-      accent_chroma: s.accent_chroma,
-      radius_px: s.radius_px,
-    });
-  }, [s]);
+    const run = () => {
+      applyTheme(document.documentElement, {
+        primary_hue: s.primary_hue,
+        primary_chroma: s.primary_chroma,
+        accent_hue: s.accent_hue,
+        accent_chroma: s.accent_chroma,
+        radius_px: s.radius_px,
+      });
+      if (design?.published) {
+        applyDesign(document.documentElement, design.published);
+      }
+    };
 
-  // Design tokens are applied after the theme so the chosen page surface wins.
-  useEffect(() => {
-    if (!design || typeof document === "undefined") return;
-    applyDesign(document.documentElement, design.published);
-  }, [design, s]);
+    run();
+    window.addEventListener("themechange", run);
+    return () => window.removeEventListener("themechange", run);
+  }, [s, design]);
 
   return null;
 }

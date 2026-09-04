@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 export function Field({
   label,
@@ -14,7 +15,7 @@ export function Field({
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] font-semibold text-muted-foreground dark:text-slate-400">{label}</Label>
       {children}
     </div>
   );
@@ -40,7 +41,7 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9"
+        className="h-9 bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 rounded-xl"
       />
     </Field>
   );
@@ -183,16 +184,16 @@ export function ToggleField({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-      <Label className="text-xs">{label}</Label>
+    <div className="flex items-center justify-between rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 px-3.5 py-2.5 transition-colors">
+      <Label className="text-xs font-bold text-slate-700 dark:text-slate-200">{label}</Label>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }
 
-export function AdminCard({ children }: { children: ReactNode }) {
+export function AdminCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="space-y-2.5 rounded-2xl border border-border/60 bg-card p-4 shadow-card">
+    <div className={cn("space-y-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs dark:shadow-none text-slate-900 dark:text-slate-100 transition-colors duration-200", className)}>
       {children}
     </div>
   );
@@ -200,9 +201,9 @@ export function AdminCard({ children }: { children: ReactNode }) {
 
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 text-sm font-extrabold">
-        <span className="h-4 w-1 rounded-full bg-primary" />
+    <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80 mb-3">
+      <h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
+        <span className="h-4 w-1 rounded-full bg-[#007979]" />
         {title}
       </h2>
       {action}
