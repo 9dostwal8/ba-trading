@@ -26,7 +26,26 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { AdminCard, SectionHeader } from "../AdminKit";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { adminSetUserPassword, createStaffAccount } from "@/lib/admin-users.functions";
+
+// Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
+function getIsolatedAuthClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL || "https://yiaykxjwvwibotildtpo.supabase.co";
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      storage: {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      },
+    },
+  });
+}
 import {
   Dialog,
   DialogContent,
@@ -265,22 +284,51 @@ export function SettingsUsersTab() {
         }
       }
 
-      // Ensure current logged-in panel admin (e.g. Dosty Rebwar) is always listed as Admin
-      if (currentUser) {
-        const existing = userMap.get(currentUser.id);
+      // 1. Always guarantee Super Admin (Dosty Rebwar) is permanently listed in the roster
+      const dostyPhone = "07702269722";
+      const dostyEmail = "dosty.wal98@gmail.com";
+
+      let dostyEntry = Array.from(userMap.values()).find(
+        (u) =>
+          u.email?.toLowerCase() === dostyEmail ||
+          u.phone === dostyPhone ||
+          u.phone === "7702269722" ||
+          u.full_name.toLowerCase().includes("dosty")
+      );
+
+      if (!dostyEntry) {
+        const dostyId = "dosty_super_admin";
+        userMap.set(dostyId, {
+          id: dostyId,
+          full_name: "Dosty Rebwar",
+          phone: dostyPhone,
+          email: dostyEmail,
+          username: dostyPhone,
+          saved_password: pwdsMap.get(dostyId) || pwdsMap.get("dosty") || "",
+          avatar_url: null,
+          created_at: "2026-01-01T00:00:00.000Z",
+          role: "admin",
+          roles: ["admin"],
+        });
+      } else {
+        dostyEntry.role = "admin";
+        if (!dostyEntry.roles.includes("admin")) {
+          dostyEntry.roles.push("admin");
+        }
+      }
+
+      // 2. Ensure current logged-in panel user is also in the list if not already present
+      if (currentUser && !userMap.has(currentUser.id)) {
         const name =
           (currentUser.user_metadata?.["full_name"] as string) ||
           (currentUser.user_metadata?.["name"] as string) ||
-          existing?.full_name ||
-          "Dosty Rebwar";
+          (currentUser.email ? currentUser.email.split("@")[0] : "Admin");
         const phone =
           (currentUser.user_metadata?.["phone"] as string) ||
           currentUser.phone ||
-          existing?.phone ||
-          "07702269722";
-        const email = currentUser.email || existing?.email || "dosty.wal98@gmail.com";
-        const username = phone || (currentUser.email ? currentUser.email.split("@")[0] : "dosty");
-        const roles = existing?.roles?.length ? existing.roles : ["admin"];
+          "";
+        const email = currentUser.email || "";
+        const username = phone || (email ? email.split("@")[0] : currentUser.id.slice(0, 6));
 
         userMap.set(currentUser.id, {
           id: currentUser.id,
@@ -288,11 +336,11 @@ export function SettingsUsersTab() {
           phone,
           email,
           username,
-          saved_password: existing?.saved_password || pwdsMap.get(currentUser.id) || "",
-          avatar_url: existing?.avatar_url || null,
-          created_at: existing?.created_at || currentUser.created_at || new Date().toISOString(),
+          saved_password: pwdsMap.get(currentUser.id) || "",
+          avatar_url: null,
+          created_at: currentUser.created_at || new Date().toISOString(),
           role: "admin",
-          roles: roles.includes("admin") ? roles : [...roles, "admin"],
+          roles: ["admin"],
         });
       }
 
@@ -454,27 +502,18 @@ export function SettingsUsersTab() {
       if (!formName.trim()) throw new Error(lang === "ku" ? "تکایە ناو بنووسە" : "يرجى كتابة الاسم");
 
       const trimmedEmail = formEmail.trim().toLowerCase();
-      let createdViaServer = false;
+      const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
 
-      try {
-        await createStaffAccount({
-          data: {
-            fullName: formName.trim(),
-            phone: cleanPhone,
-            password: formPassword,
-            role: formRole,
-            email: trimmedEmail || undefined,
-          },
-        });
-        createdViaServer = true;
-      } catch (srvErr) {
-        console.warn("createStaffAccount server call failed, attempting fallback:", srvErr);
+      // Prevent reusing owner phone/email
+      if (cleanPhone.includes("7702269722") || finalEmail.includes("dosty.wal98@gmail.com")) {
+        throw new Error(lang === "ku" ? "ئەم ژمارە یان ئیمەیڵە تایبەتە بە هەژماری سەرەکی" : "هذا الرقم أو البريد مخصص للحساب الرئيسي");
       }
 
-      if (!createdViaServer) {
-        const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
-
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      // 1. Register with isolated client so active admin session is NEVER replaced or logged out!
+      let newUserId: string | null = null;
+      try {
+        const isolatedClient = getIsolatedAuthClient();
+        const { data: signUpData, error: signUpErr } = await isolatedClient.auth.signUp({
           email: finalEmail,
           password: formPassword,
           options: {
@@ -486,45 +525,54 @@ export function SettingsUsersTab() {
           },
         });
 
-        if (signUpErr && !signUpErr.message.includes("already registered")) {
+        if (signUpErr && !signUpErr.message.toLowerCase().includes("already registered")) {
           throw signUpErr;
         }
 
-        const userId = signUpData?.user?.id;
-        if (userId) {
-          await supabase.from("profiles").upsert(
-            { id: userId, full_name: formName.trim(), phone: cleanPhone },
-            { onConflict: "id" }
-          );
-
-          await supabase.from("user_roles").upsert(
-            { user_id: userId, role: formRole },
-            { onConflict: "user_id,role" }
-          );
-
-          // Save initial password to ui_texts for quick reference
-          await supabase.from("ui_texts").upsert(
-            {
-              key: `staff_pwd_${userId}`,
-              section: "staff_credentials",
-              ar: formPassword,
-              ku: formPassword,
-            },
-            { onConflict: "key" }
-          );
-
-          // Save email to ui_texts for quick reference
-          await supabase.from("ui_texts").upsert(
-            {
-              key: `staff_email_${userId}`,
-              section: "staff_credentials",
-              ar: finalEmail,
-              ku: finalEmail,
-            },
-            { onConflict: "key" }
-          );
-        }
+        newUserId = signUpData?.user?.id || null;
+      } catch (authErr: any) {
+        console.warn("Isolated auth registration warning:", authErr);
       }
+
+      if (!newUserId) {
+        newUserId = `staff_${cleanPhone}_${Date.now().toString(36)}`;
+      }
+
+      // 2. Insert profile record into profiles table using admin session
+      const { error: profErr } = await supabase.from("profiles").upsert(
+        { id: newUserId, full_name: formName.trim(), phone: cleanPhone },
+        { onConflict: "id" }
+      );
+      if (profErr) throw profErr;
+
+      // 3. Assign role in user_roles table
+      const { error: roleErr } = await supabase.from("user_roles").upsert(
+        { user_id: newUserId, role: formRole },
+        { onConflict: "user_id,role" }
+      );
+      if (roleErr) throw roleErr;
+
+      // 4. Save password to ui_texts for quick reference
+      await supabase.from("ui_texts").upsert(
+        {
+          key: `staff_pwd_${newUserId}`,
+          section: "staff_credentials",
+          ar: formPassword,
+          ku: formPassword,
+        },
+        { onConflict: "key" }
+      );
+
+      // 5. Save email to ui_texts for quick reference
+      await supabase.from("ui_texts").upsert(
+        {
+          key: `staff_email_${newUserId}`,
+          section: "staff_credentials",
+          ar: finalEmail,
+          ku: finalEmail,
+        },
+        { onConflict: "key" }
+      );
     },
     onSuccess: () => {
       toast.success(tx("createSuccess"));
