@@ -334,4 +334,61 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+/** Public/Admin: Lookup email or candidate auth identifier for phone login */
+export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
+  .validator((input: { phoneOrEmail: string }) => input)
+  .handler(async ({ data }) => {
+    const raw = (data.phoneOrEmail ?? "").trim();
+    if (!raw) return { email: "" };
+    if (raw.includes("@")) return { email: raw.toLowerCase() };
+
+    const digits = raw.replace(/\D/g, "");
+    const cleanPhone = digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
+    const withZero = `0${cleanPhone}`;
+
+    // 1. Direct Dosty admin check
+    if (cleanPhone === "7702269722" || cleanPhone.includes("7702269722")) {
+      return { email: "dosty.wal98@gmail.com" };
+    }
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+      // 2. Query profiles by phone
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, phone")
+        .or(`phone.eq.${cleanPhone},phone.eq.${withZero}`)
+        .maybeSingle();
+
+      if (profile?.id) {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+        if (userData?.user?.email) {
+          return { email: userData.user.email };
+        }
+      }
+
+      // 3. Search auth users list
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 100 });
+      for (const u of listData?.users ?? []) {
+        const uPhone = (u.phone || (u.user_metadata?.phone as string) || "").replace(/\D/g, "");
+        if (uPhone.endsWith(cleanPhone) && u.email) {
+          return { email: u.email };
+        }
+      }
+    } catch (e) {
+      console.warn("lookupAdminLoginEmail error:", e);
+    }
+
+    return {
+      email: `${cleanPhone}@dentalstore.app`,
+      candidates: [
+        `${cleanPhone}@dentalstore.app`,
+        `${withZero}@dentalstore.app`,
+        `${cleanPhone}@batrading.com`,
+        `${withZero}@batrading.com`,
+      ],
+    };
+  });
+
 
