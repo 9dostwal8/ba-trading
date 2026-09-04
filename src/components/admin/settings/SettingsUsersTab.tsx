@@ -634,7 +634,7 @@ export function SettingsUsersTab() {
                       type="email"
                       value={formEmail}
                       onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="admin@batrading.iq / dosty@gmail.com"
+                      placeholder="admin@batrading.iq"
                       className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                     />
                   </div>
