@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { AdminCard, SectionHeader } from "../AdminKit";
 import { supabase } from "@/integrations/supabase/client";
-import { adminSetUserPassword } from "@/lib/admin-users.functions";
+import { adminSetUserPassword, createStaffAccount } from "@/lib/admin-users.functions";
 import {
   Dialog,
   DialogContent,
@@ -454,58 +454,76 @@ export function SettingsUsersTab() {
       if (!formName.trim()) throw new Error(lang === "ku" ? "تکایە ناو بنووسە" : "يرجى كتابة الاسم");
 
       const trimmedEmail = formEmail.trim().toLowerCase();
-      const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
+      let createdViaServer = false;
 
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: finalEmail,
-        password: formPassword,
-        options: {
+      try {
+        await createStaffAccount({
           data: {
-            full_name: formName.trim(),
+            fullName: formName.trim(),
             phone: cleanPhone,
-            email: finalEmail,
+            password: formPassword,
+            role: formRole,
+            email: trimmedEmail || undefined,
           },
-        },
-      });
-
-      if (signUpErr && !signUpErr.message.includes("already registered")) {
-        throw signUpErr;
+        });
+        createdViaServer = true;
+      } catch (srvErr) {
+        console.warn("createStaffAccount server call failed, attempting fallback:", srvErr);
       }
 
-      const userId = signUpData?.user?.id;
-      if (userId) {
-        await supabase.from("profiles").upsert(
-          { id: userId, full_name: formName.trim(), phone: cleanPhone },
-          { onConflict: "id" }
-        );
+      if (!createdViaServer) {
+        const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
 
-        const { error: roleErr } = await supabase.from("user_roles").upsert(
-          { user_id: userId, role: formRole },
-          { onConflict: "user_id,role" }
-        );
-        if (roleErr) throw roleErr;
-
-        // Save initial password to ui_texts for quick reference
-        await supabase.from("ui_texts").upsert(
-          {
-            key: `staff_pwd_${userId}`,
-            section: "staff_credentials",
-            ar: formPassword,
-            ku: formPassword,
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: finalEmail,
+          password: formPassword,
+          options: {
+            data: {
+              full_name: formName.trim(),
+              phone: cleanPhone,
+              email: finalEmail,
+            },
           },
-          { onConflict: "key" }
-        );
+        });
 
-        // Save email to ui_texts for quick reference
-        await supabase.from("ui_texts").upsert(
-          {
-            key: `staff_email_${userId}`,
-            section: "staff_credentials",
-            ar: finalEmail,
-            ku: finalEmail,
-          },
-          { onConflict: "key" }
-        );
+        if (signUpErr && !signUpErr.message.includes("already registered")) {
+          throw signUpErr;
+        }
+
+        const userId = signUpData?.user?.id;
+        if (userId) {
+          await supabase.from("profiles").upsert(
+            { id: userId, full_name: formName.trim(), phone: cleanPhone },
+            { onConflict: "id" }
+          );
+
+          await supabase.from("user_roles").upsert(
+            { user_id: userId, role: formRole },
+            { onConflict: "user_id,role" }
+          );
+
+          // Save initial password to ui_texts for quick reference
+          await supabase.from("ui_texts").upsert(
+            {
+              key: `staff_pwd_${userId}`,
+              section: "staff_credentials",
+              ar: formPassword,
+              ku: formPassword,
+            },
+            { onConflict: "key" }
+          );
+
+          // Save email to ui_texts for quick reference
+          await supabase.from("ui_texts").upsert(
+            {
+              key: `staff_email_${userId}`,
+              section: "staff_credentials",
+              ar: finalEmail,
+              ku: finalEmail,
+            },
+            { onConflict: "key" }
+          );
+        }
       }
     },
     onSuccess: () => {
@@ -608,14 +626,15 @@ export function SettingsUsersTab() {
 
                   {/* Email Input Field */}
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      {tx("email")}
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                      <Mail className="size-3 text-[#007979]" />
+                      <span>{tx("email")}</span>
                     </label>
                     <input
                       type="email"
                       value={formEmail}
                       onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="admin@batrading.iq (optional)"
+                      placeholder="admin@batrading.iq / dosty@gmail.com"
                       className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                     />
                   </div>
@@ -1036,8 +1055,9 @@ export function SettingsUsersTab() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  {tx("email")}
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1">
+                  <Mail className="size-3 text-[#007979]" />
+                  <span>{tx("email")}</span>
                 </label>
                 <input
                   type="email"

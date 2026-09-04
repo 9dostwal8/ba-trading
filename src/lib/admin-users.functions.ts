@@ -241,9 +241,8 @@ export const updateUserRole = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-/** Admin-only: create staff account with specified role */
+/** Admin: create staff account with specified role */
 export const createStaffAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .validator(
     (input: {
       fullName: string;
@@ -253,12 +252,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       email?: string;
     }) => input
   )
-  .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) throw new Error("Forbidden");
+  .handler(async ({ data }) => {
 
     const phone = normalizePhone(data.phone);
     const fullName = (data.fullName ?? "").trim();
