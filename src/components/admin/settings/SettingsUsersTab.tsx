@@ -284,64 +284,45 @@ export function SettingsUsersTab() {
         }
       }
 
-      // 1. Always guarantee Super Admin (Dosty Rebwar) is permanently listed in the roster
-      const dostyPhone = "07702269722";
-      const dostyEmail = "dosty.wal98@gmail.com";
-
-      let dostyEntry = Array.from(userMap.values()).find(
-        (u) =>
-          u.email?.toLowerCase() === dostyEmail ||
-          u.phone === dostyPhone ||
-          u.phone === "7702269722" ||
-          u.full_name.toLowerCase().includes("dosty")
-      );
-
-      if (!dostyEntry) {
-        const dostyId = "dosty_super_admin";
-        userMap.set(dostyId, {
-          id: dostyId,
-          full_name: "Dosty Rebwar",
-          phone: dostyPhone,
-          email: dostyEmail,
-          username: dostyPhone,
-          saved_password: pwdsMap.get(dostyId) || pwdsMap.get("dosty") || "",
-          avatar_url: null,
-          created_at: "2026-01-01T00:00:00.000Z",
-          role: "admin",
-          roles: ["admin"],
-        });
-      } else {
-        dostyEntry.role = "admin";
-        if (!dostyEntry.roles.includes("admin")) {
-          dostyEntry.roles.push("admin");
-        }
-      }
-
-      // 2. Ensure current logged-in panel user is also in the list if not already present
-      if (currentUser && !userMap.has(currentUser.id)) {
-        const name =
+      // Ensure current logged-in panel user is present in the list with accurate metadata
+      if (currentUser) {
+        const metaName =
           (currentUser.user_metadata?.["full_name"] as string) ||
           (currentUser.user_metadata?.["name"] as string) ||
-          (currentUser.email ? currentUser.email.split("@")[0] : "Admin");
-        const phone =
+          "";
+        const metaPhone =
           (currentUser.user_metadata?.["phone"] as string) ||
           currentUser.phone ||
           "";
-        const email = currentUser.email || "";
-        const username = phone || (email ? email.split("@")[0] : currentUser.id.slice(0, 6));
+        const metaEmail = currentUser.email || "";
 
-        userMap.set(currentUser.id, {
-          id: currentUser.id,
-          full_name: name,
-          phone,
-          email,
-          username,
-          saved_password: pwdsMap.get(currentUser.id) || "",
-          avatar_url: null,
-          created_at: currentUser.created_at || new Date().toISOString(),
-          role: "admin",
-          roles: ["admin"],
-        });
+        const existing = userMap.get(currentUser.id);
+        if (existing) {
+          if (metaName && (!existing.full_name || existing.full_name === "Admin Staff" || existing.full_name === "User")) {
+            existing.full_name = metaName;
+          }
+          if (metaPhone && !existing.phone) {
+            existing.phone = metaPhone;
+          }
+          if (metaEmail && !existing.email) {
+            existing.email = metaEmail;
+          }
+          existing.role = "admin";
+          if (!existing.roles.includes("admin")) existing.roles.push("admin");
+        } else {
+          userMap.set(currentUser.id, {
+            id: currentUser.id,
+            full_name: metaName || "Admin Staff",
+            phone: metaPhone,
+            email: metaEmail,
+            username: metaPhone || (metaEmail ? metaEmail.split("@")[0] : currentUser.id.slice(0, 6)),
+            saved_password: pwdsMap.get(currentUser.id) || "",
+            avatar_url: null,
+            created_at: currentUser.created_at || new Date().toISOString(),
+            role: "admin",
+            roles: ["admin"],
+          });
+        }
       }
 
       return Array.from(userMap.values());
@@ -508,29 +489,31 @@ export function SettingsUsersTab() {
   // Delete User Mutation
   const deleteUserMut = useMutation({
     mutationFn: async (targetUser: UserItem) => {
-      if (currentAuthUser && targetUser.id === currentAuthUser.id) {
-        throw new Error(tx("cannotDeleteSelf"));
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUser.id);
+
+      if (isValidUUID) {
+        // 1. Remove roles
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", targetUser.id);
+
+        // 2. Remove profile record
+        await supabase
+          .from("profiles")
+          .delete()
+          .eq("id", targetUser.id);
       }
 
-      // Remove roles
-      await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", targetUser.id);
-
-      // Remove credentials records
+      // 3. Remove credentials & permissions records from ui_texts
       await supabase
         .from("ui_texts")
         .delete()
-        .in("key", [`staff_pwd_${targetUser.id}`, `staff_email_${targetUser.id}`]);
-
-      // Remove profile record
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", targetUser.id);
-
-      if (error) throw error;
+        .in("key", [
+          `staff_pwd_${targetUser.id}`,
+          `staff_email_${targetUser.id}`,
+          `staff_perms_${targetUser.id}`,
+        ]);
     },
     onSuccess: () => {
       toast.success(tx("userDeleted"));
