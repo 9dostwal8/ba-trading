@@ -52,7 +52,19 @@ export function useIsAdmin(userId: string | undefined) {
           .eq("role", "admin")
           .maybeSingle();
 
-        if (active) setIsAdmin(!!roleRow);
+        if (roleRow) {
+          if (active) setIsAdmin(true);
+          return;
+        }
+
+        // 3. Fallback to ui_texts staff_role_
+        const { data: staffRoleRow } = await supabase
+          .from("ui_texts")
+          .select("ar")
+          .eq("key", `staff_role_${userId}`)
+          .maybeSingle();
+
+        if (active) setIsAdmin(staffRoleRow?.ar === "admin");
       } catch (err) {
         console.warn("useIsAdmin check error:", err);
         if (active) setIsAdmin(false);

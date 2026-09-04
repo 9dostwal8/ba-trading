@@ -156,7 +156,36 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
           candidates.push("dosty.wal98@gmail.com");
         }
 
-        // 2. Server lookup for exact email in auth/profiles
+        // 2. Direct client lookup from ui_texts staff records
+        try {
+          const { data: staffPhones } = await supabase
+            .from("ui_texts")
+            .select("key, ar")
+            .eq("section", "staff_credentials")
+            .like("key", "staff_phone_%");
+
+          for (const sp of staffPhones ?? []) {
+            const pDigits = (sp.ar || "").replace(/\D/g, "");
+            if (pDigits === rawDigits || pDigits.endsWith(cleanPhone) || rawDigits.endsWith(pDigits)) {
+              const uId = sp.key.replace("staff_phone_", "");
+              const { data: emRow } = await supabase
+                .from("ui_texts")
+                .select("ar")
+                .eq("key", `staff_email_${uId}`)
+                .maybeSingle();
+              if (emRow?.ar && emRow.ar.includes("@")) {
+                const emLower = emRow.ar.toLowerCase().trim();
+                if (!candidates.includes(emLower)) {
+                  candidates.unshift(emLower);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("ui_texts phone lookup fallback:", e);
+        }
+
+        // 3. Server lookup for exact email in auth/profiles
         try {
           const res = await lookupAdminLoginEmail({ data: { phoneOrEmail: trimmed } });
           if (res?.email && !candidates.includes(res.email)) {
