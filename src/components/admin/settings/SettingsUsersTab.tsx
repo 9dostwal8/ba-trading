@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Users,
   UserPlus,
   Shield,
-  ShieldCheck,
   Search,
-  Filter,
   Check,
   Loader2,
   Phone,
@@ -18,11 +15,7 @@ import {
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { AdminCard, SectionHeader } from "../AdminKit";
-import {
-  fetchUsersWithRoles,
-  updateUserRole,
-  createStaffAccount,
-} from "@/lib/admin-users.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,28 +31,25 @@ import {
 } from "@/components/ui/dialog";
 
 const L = {
-  title: { ar: "إدارة المستخدمين والأدوار", ku: "بەڕێوەبردنی بەکارهێنەران و ڕۆڵەکان", en: "Users & Access Control" },
+  title: { ar: "مستخدمو لوحة التحكم والصلاحيات", ku: "بەکارهێنەرانی ئەم پانێڵە و دەسەڵاتەکان", en: "Admin Panel Users & Permissions" },
   subtitle: {
-    ar: "تحديد صلاحيات المشرفين، مدراء البراندات، والعملاء المسجلين",
-    ku: "دیاریکردنی دەسەڵاتەکانی بەڕێوەبەران، بەڕێوەبەرانی براند، و کڕیاران",
-    en: "Manage permissions for administrators, brand managers, and customers",
+    ar: "إدارة المشرفين، مدراء البراندات، وصلاحيات الوصول للوحة التحكم",
+    ku: "بەڕێوەبردنی بەڕێوەبەران، بەڕێوەبەرانی براند، و دەسەڵاتەکانی چوونەژوورەوەی ئەم پانێڵە",
+    en: "Manage administrators, brand managers, and dashboard staff",
   },
-  addUser: { ar: "إضافة عضو إداري", ku: "زیادکردنی ئەندامی نوێ", en: "Add Staff Member" },
+  addUser: { ar: "إضافة عضو إداري جديد", ku: "زیادکردنی ئەندامی نوێ", en: "Add Staff Member" },
   searchPlaceholder: { ar: "بحث بالاسم أو رقم الهاتف...", ku: "گەڕان بەپێی ناو یان ژمارەی مۆبایل...", en: "Search by name or phone..." },
-  all: { ar: "الكل", ku: "هەموو", en: "All" },
-  admins: { ar: "المشرفون", ku: "بەڕێوەبەران", en: "Admins" },
+  panelUsers: { ar: "مشرفو هذه اللوحة", ku: "بەکارهێنەرانی ئەم پانێڵە", en: "Admin Panel Staff" },
+  admins: { ar: "المشرفون (Admin)", ku: "بەڕێوەبەران", en: "Admins" },
   managers: { ar: "مدراء البراندات", ku: "بەڕێوەبەرانی براند", en: "Brand Managers" },
-  customers: { ar: "العملاء", ku: "کڕیاران", en: "Customers" },
-  totalUsers: { ar: "إجمالي الحسابات", ku: "سەرجەم هەژمارەکان", en: "Total Users" },
-  totalAdmins: { ar: "المشرفون (Admin)", ku: "بەڕێوەبەران (Admin)", en: "Administrators" },
-  totalManagers: { ar: "مدراء البراندات", ku: "بەڕێوەبەرانی براند", en: "Brand Managers" },
+  allAccounts: { ar: "جميع الحسابات", ku: "هەموو هەژمارەکان", en: "All Accounts" },
   roleAdmin: { ar: "مشرف عام (Admin)", ku: "بەڕێوەبەری گشتی (Admin)", en: "Full Admin" },
   roleManager: { ar: "مدير براند (Brand Manager)", ku: "بەڕێوەبەری براند", en: "Brand Manager" },
   roleCustomer: { ar: "عميل عادي (Customer)", ku: "کڕیاری ئاسایی", en: "Customer" },
   changeRole: { ar: "تغيير الصلاحية", ku: "گۆڕینی ڕۆڵ", en: "Change Role" },
   makeAdmin: { ar: "ترقية إلى مشرف عام", ku: "کردن بە بەڕێوەبەری گشتی", en: "Promote to Admin" },
   makeManager: { ar: "تعيين كمدير براند", ku: "دانان وەک بەڕێوەبەری براند", en: "Set as Brand Manager" },
-  makeCustomer: { ar: "إلغاء الصلاحيات (عميل)", ku: "لابردنی دەسەڵات (کڕیار)", en: "Revoke to Customer" },
+  makeCustomer: { ar: "إلغاء الصلاحيات الإدارية", ku: "لابردنی دەسەڵاتی پانێڵ (کڕیار)", en: "Revoke Staff Access" },
   roleUpdated: { ar: "تم تحديث الصلاحية بنجاح", ku: "ڕۆڵی بەکارهێنەر بەسەرکەوتوویی نوێکرایەوە", en: "Role updated successfully" },
   createSuccess: { ar: "تم إنشاء الحساب بنجاح", ku: "هەژماری نوێ بەسەرکەوتوویی دروستکرا", en: "Staff account created" },
   fullName: { ar: "الاسم الكامل", ku: "ناوی تەواو", en: "Full Name" },
@@ -71,34 +61,87 @@ const L = {
   noUsers: { ar: "لا يوجد مستخدمون مطابقون", ku: "هیچ بەکارهێنەرێک نەدۆزرایەوە", en: "No users found" },
 };
 
+export interface UserItem {
+  id: string;
+  full_name: string;
+  phone: string;
+  avatar_url: string | null;
+  created_at: string;
+  role: "admin" | "brand_manager" | "customer";
+  roles: string[];
+}
+
 export function SettingsUsersTab() {
   const { lang } = useI18n();
   const tx = (k: keyof typeof L) => L[k][lang === "ku" ? "ku" : lang === "en" ? "en" : "ar"];
   const qc = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "brand_manager" | "customer">("all");
+  // Default filter to "panel_users" (users who have access to this admin panel)
+  const [roleFilter, setRoleFilter] = useState<"panel_users" | "admin" | "brand_manager" | "all">("panel_users");
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  // Form State for Add User
+  // Form State for Add Staff
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formPassword, setFormPassword] = useState("");
-  const [formRole, setFormRole] = useState<"admin" | "brand_manager">("brand_manager");
+  const [formRole, setFormRole] = useState<"admin" | "brand_manager">("admin");
 
-  // Server functions
-  const listUsersFn = useServerFn(fetchUsersWithRoles);
-  const updateRoleFn = useServerFn(updateUserRole);
-  const createStaffFn = useServerFn(createStaffAccount);
-
-  const { data: users = [], isLoading, refetch } = useQuery({
+  // Query users directly using client Supabase
+  const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ["admin-users-list"],
-    queryFn: () => listUsersFn(),
+    queryFn: async () => {
+      const [profilesRes, rolesRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, phone, created_at, avatar_url")
+          .order("created_at", { ascending: false }),
+        supabase.from("user_roles").select("user_id, role"),
+      ]);
+
+      const rolesMap = new Map<string, string[]>();
+      for (const r of rolesRes.data ?? []) {
+        if (!rolesMap.has(r.user_id)) rolesMap.set(r.user_id, []);
+        rolesMap.get(r.user_id)!.push(r.role);
+      }
+
+      const list = (profilesRes.data ?? []).map((p) => {
+        const userRoles = rolesMap.get(p.id) ?? [];
+        let role: "admin" | "brand_manager" | "customer" = "customer";
+        if (userRoles.includes("admin")) role = "admin";
+        else if (userRoles.includes("brand_manager")) role = "brand_manager";
+
+        return {
+          id: p.id,
+          full_name: p.full_name || p.phone || "User",
+          phone: p.phone || "",
+          avatar_url: p.avatar_url || null,
+          created_at: p.created_at,
+          role,
+          roles: userRoles,
+        };
+      });
+
+      return list;
+    },
   });
 
+  // Role Updater Mutation
   const updateRoleMut = useMutation({
     mutationFn: async ({ targetUserId, newRole }: { targetUserId: string; newRole: "admin" | "brand_manager" | "customer" }) => {
-      return await updateRoleFn({ data: { targetUserId, newRole } });
+      if (newRole === "customer") {
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", targetUserId)
+          .in("role", ["admin", "brand_manager"]);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_roles")
+          .upsert({ user_id: targetUserId, role: newRole }, { onConflict: "user_id,role" });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success(tx("roleUpdated"));
@@ -109,16 +152,46 @@ export function SettingsUsersTab() {
     },
   });
 
+  // Create Staff Account Mutation
   const createStaffMut = useMutation({
     mutationFn: async () => {
-      return await createStaffFn({
-        data: {
-          fullName: formName,
-          phone: formPhone,
-          password: formPassword,
-          role: formRole,
+      const cleanPhone = formPhone.replace(/\D/g, "");
+      if (cleanPhone.length < 9) throw new Error(lang === "ku" ? "ژمارەی مۆبایل نادروستە" : "رقم هاتف غير صالح");
+      if (formPassword.length < 6) throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
+      if (!formName.trim()) throw new Error(lang === "ku" ? "تکایە ناو بنووسە" : "يرجى كتابة الاسم");
+
+      // Register or update via supabase auth
+      const email = `${cleanPhone}@dentalstore.app`;
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email,
+        password: formPassword,
+        options: {
+          data: {
+            full_name: formName.trim(),
+            phone: cleanPhone,
+          },
         },
       });
+
+      if (signUpErr && !signUpErr.message.includes("already registered")) {
+        throw signUpErr;
+      }
+
+      const userId = signUpData?.user?.id;
+      if (userId) {
+        // Upsert profile
+        await supabase.from("profiles").upsert(
+          { id: userId, full_name: formName.trim(), phone: cleanPhone },
+          { onConflict: "id" }
+        );
+
+        // Upsert role
+        const { error: roleErr } = await supabase.from("user_roles").upsert(
+          { user_id: userId, role: formRole },
+          { onConflict: "user_id,role" }
+        );
+        if (roleErr) throw roleErr;
+      }
     },
     onSuccess: () => {
       toast.success(tx("createSuccess"));
@@ -133,56 +206,28 @@ export function SettingsUsersTab() {
     },
   });
 
-  // Filtered users
+  // Filtered users according to the selected view
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.phone.includes(searchQuery);
 
-    if (roleFilter === "all") return matchesSearch;
-    return matchesSearch && u.role === roleFilter;
+    if (!matchesSearch) return false;
+
+    if (roleFilter === "panel_users") {
+      return u.role === "admin" || u.role === "brand_manager";
+    }
+    if (roleFilter === "admin") {
+      return u.role === "admin";
+    }
+    if (roleFilter === "brand_manager") {
+      return u.role === "brand_manager";
+    }
+    return true; // all
   });
 
-  // Counts
-  const totalCount = users.length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
-  const managerCount = users.filter((u) => u.role === "brand_manager").length;
-
   return (
-    <div className="space-y-5 animate-in fade-in-50 duration-200">
-      {/* Top Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="size-11 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#007979] dark:text-teal-400 flex items-center justify-center shrink-0">
-            <Users className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{tx("totalUsers")}</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalCount}</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="size-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <Crown className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{tx("totalAdmins")}</p>
-            <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-0.5">{adminCount}</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs flex items-center gap-3.5">
-          <div className="size-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Shield className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{tx("totalManagers")}</p>
-            <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{managerCount}</p>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-4 animate-in fade-in-50 duration-200">
       <AdminCard>
         <SectionHeader
           title={tx("title")}
@@ -191,7 +236,7 @@ export function SettingsUsersTab() {
               <DialogTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#007979] hover:bg-teal-700 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007979] hover:bg-teal-700 text-white text-xs font-bold shadow-xs active:scale-95 transition"
                 >
                   <UserPlus className="size-3.5" />
                   <span>{tx("addUser")}</span>
@@ -214,7 +259,7 @@ export function SettingsUsersTab() {
                       type="text"
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
-                      placeholder="Dr. Ahmed / Ali..."
+                      placeholder="Dr. Ahmed / Dosty..."
                       className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                     />
                   </div>
@@ -252,19 +297,6 @@ export function SettingsUsersTab() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => setFormRole("brand_manager")}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                          formRole === "brand_manager"
-                            ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400 font-extrabold"
-                            : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        <Shield className="size-3.5" />
-                        <span>{tx("roleManager")}</span>
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => setFormRole("admin")}
                         className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                           formRole === "admin"
@@ -274,6 +306,19 @@ export function SettingsUsersTab() {
                       >
                         <Crown className="size-3.5" />
                         <span>{tx("roleAdmin")}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormRole("brand_manager")}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                          formRole === "brand_manager"
+                            ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400 font-extrabold"
+                            : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        <Shield className="size-3.5" />
+                        <span>{tx("roleManager")}</span>
                       </button>
                     </div>
                   </div>
@@ -317,33 +362,55 @@ export function SettingsUsersTab() {
             />
           </div>
 
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
-            {(["all", "admin", "brand_manager", "customer"] as const).map((r) => {
-              const isActive = roleFilter === r;
-              const label =
-                r === "all"
-                  ? tx("all")
-                  : r === "admin"
-                  ? tx("admins")
-                  : r === "brand_manager"
-                  ? tx("managers")
-                  : tx("customers");
+          {/* Quick Filter Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700 shrink-0">
+            <button
+              type="button"
+              onClick={() => setRoleFilter("panel_users")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                roleFilter === "panel_users"
+                  ? "bg-[#007979] text-white shadow-2xs font-extrabold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {tx("panelUsers")}
+            </button>
 
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRoleFilter(r)}
-                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap ${
-                    isActive
-                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-extrabold"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => setRoleFilter("admin")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                roleFilter === "admin"
+                  ? "bg-rose-600 text-white shadow-2xs font-extrabold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {tx("admins")}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRoleFilter("brand_manager")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                roleFilter === "brand_manager"
+                  ? "bg-amber-600 text-white shadow-2xs font-extrabold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {tx("managers")}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRoleFilter("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                roleFilter === "all"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-extrabold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              {tx("allAccounts")}
+            </button>
           </div>
         </div>
 
@@ -369,7 +436,7 @@ export function SettingsUsersTab() {
                 >
                   {/* User Profile Info */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="size-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-700 dark:text-slate-300 font-black text-xs">
+                    <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-700 dark:text-slate-300 font-black text-xs">
                       {user.avatar_url ? (
                         <img src={user.avatar_url} alt="" className="size-full rounded-xl object-cover" />
                       ) : (
@@ -383,7 +450,7 @@ export function SettingsUsersTab() {
                         </span>
                         {/* Role Badge */}
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black ${
                             isAdmin
                               ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50"
                               : isManager
@@ -391,8 +458,8 @@ export function SettingsUsersTab() {
                               : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                           }`}
                         >
-                          {isAdmin && <Crown className="size-2.5" />}
-                          {isManager && <Shield className="size-2.5" />}
+                          {isAdmin && <Crown className="size-3 text-rose-500" />}
+                          {isManager && <Shield className="size-3 text-amber-500" />}
                           <span>
                             {isAdmin
                               ? tx("roleAdmin")
@@ -404,12 +471,12 @@ export function SettingsUsersTab() {
                       </div>
                       <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
                         <Phone className="size-3" />
-                        <span>{user.phone || "No phone"}</span>
+                        <span>{user.phone || "No phone registered"}</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Actions / Role Modifier Dropdown */}
+                  {/* Role Actions Dropdown */}
                   <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -422,7 +489,7 @@ export function SettingsUsersTab() {
                           <ChevronDown className="size-3 text-slate-400" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52 rounded-2xl p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+                      <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
                         <DropdownMenuItem
                           onClick={() => updateRoleMut.mutate({ targetUserId: user.id, newRole: "admin" })}
                           className={`flex items-center gap-2 p-2 rounded-xl text-xs font-bold cursor-pointer text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 ${
