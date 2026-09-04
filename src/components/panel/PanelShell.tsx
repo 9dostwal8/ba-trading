@@ -170,11 +170,11 @@ export function PanelShell({
   // VIEW 2: ODOO APP LAUNCHER GRID (Matching Screenshot)
   // -------------------------------------------------------------
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-100/90 via-indigo-50/20 to-slate-100/90 flex flex-col justify-start py-8 sm:py-12 px-4 font-sans">
-      <div className="mx-auto w-full max-w-5xl">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-100/90 via-indigo-50/20 to-slate-100/90 flex flex-col justify-start py-8 sm:py-12 px-4 sm:px-8 font-sans">
+      <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px]">
         
         {/* Discreet Search Bar (Odoo Type-to-Filter) */}
-        <div className="mb-8 sm:mb-10 max-w-sm mx-auto">
+        <div className="mb-8 sm:mb-12 max-w-md mx-auto">
           <div className="relative">
             <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
             <input
@@ -188,7 +188,7 @@ export function PanelShell({
                   ? "گەڕان لە ئەپەکان..."
                   : "Search apps..."
               }
-              className="w-full h-10 rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur ps-10 pe-9 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#007979] focus:outline-none focus:ring-2 focus:ring-[#007979]/20 shadow-xs transition-all"
+              className="w-full h-11 rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur ps-10 pe-9 text-xs sm:text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-[#007979] focus:outline-none focus:ring-2 focus:ring-[#007979]/20 shadow-xs transition-all"
             />
             {searchQuery && (
               <button
@@ -220,7 +220,7 @@ export function PanelShell({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-y-7 sm:gap-y-9 gap-x-4 sm:gap-x-8 place-items-center">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 md:gap-x-8 lg:gap-x-10 place-items-center w-full">
             {filteredItems.map((app) => {
               const Icon = app.icon;
 
@@ -231,11 +231,11 @@ export function PanelShell({
                   className="group flex flex-col items-center focus:outline-none transition-transform"
                 >
                   {/* Odoo White Squircle Tile */}
-                  <div className="relative size-20 sm:size-24 rounded-2xl sm:rounded-3xl bg-white shadow-sm group-hover:shadow-xl border border-slate-200/80 group-hover:border-slate-300 flex items-center justify-center transition-all duration-200 group-hover:-translate-y-2 group-hover:scale-105 active:scale-95">
+                  <div className="relative size-20 sm:size-24 md:size-26 lg:size-28 rounded-2xl sm:rounded-3xl bg-white shadow-sm group-hover:shadow-xl border border-slate-200/80 group-hover:border-slate-300 flex items-center justify-center transition-all duration-200 group-hover:-translate-y-2 group-hover:scale-105 active:scale-95">
                     
                     {/* Centered Graphic Icon in Odoo Style */}
-                    <span className={`grid size-11 sm:size-13 place-items-center rounded-xl sm:rounded-2xl bg-gradient-to-tr ${app.color} text-white shadow-sm transition-transform duration-200 group-hover:scale-110`}>
-                      <Icon className="size-6 sm:size-7 stroke-[2.2]" />
+                    <span className={`grid size-11 sm:size-13 md:size-15 place-items-center rounded-xl sm:rounded-2xl bg-gradient-to-tr ${app.color} text-white shadow-sm transition-transform duration-200 group-hover:scale-110`}>
+                      <Icon className="size-6 sm:size-7 md:size-8 stroke-[2.2]" />
                     </span>
 
                     {/* Badge if available */}
@@ -247,7 +247,7 @@ export function PanelShell({
                   </div>
 
                   {/* App Title Underneath */}
-                  <span className="mt-2 text-xs font-bold text-slate-700 group-hover:text-slate-950 text-center truncate max-w-[84px] sm:max-w-[105px] transition-colors leading-tight">
+                  <span className="mt-2.5 text-xs sm:text-sm font-bold text-slate-700 group-hover:text-slate-950 text-center truncate max-w-[90px] sm:max-w-[115px] transition-colors leading-tight">
                     {app.label}
                   </span>
                 </button>
