@@ -80,7 +80,7 @@ const L = {
   wallet: { ar: "نقاط المكافأة", ku: "خاڵی خەڵات", en: "Rewards" },
   costs: { ar: "تكلفة التشغيل", ku: "تێچووی کارپێکردن", en: "Running Cost" },
   fees: { ar: "أجور التسويق", ku: "کرێی ڕیکلام", en: "Marketing Fees" },
-  settings: { ar: "إعدادات المتجر", ku: "ڕێکخستنی کۆگا", en: "Store Settings" },
+  settings: { ar: "إعدادات", ku: "ڕێکخستنەکان", en: "Settings" },
 };
 
 interface AdminDashboardProps {
