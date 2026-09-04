@@ -91,7 +91,8 @@ export function SettingsUsersTab() {
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
-      const [profilesRes, rolesRes] = await Promise.all([
+      const [userAuthRes, profilesRes, rolesRes] = await Promise.all([
+        supabase.auth.getUser().catch(() => ({ data: { user: null } })),
         supabase
           .from("profiles")
           .select("id, full_name, phone, created_at, avatar_url")
@@ -99,19 +100,22 @@ export function SettingsUsersTab() {
         supabase.from("user_roles").select("user_id, role"),
       ]);
 
+      const currentUser = userAuthRes?.data?.user;
       const rolesMap = new Map<string, string[]>();
       for (const r of rolesRes.data ?? []) {
         if (!rolesMap.has(r.user_id)) rolesMap.set(r.user_id, []);
         rolesMap.get(r.user_id)!.push(r.role);
       }
 
-      const list = (profilesRes.data ?? []).map((p) => {
+      const userMap = new Map<string, UserItem>();
+
+      for (const p of profilesRes.data ?? []) {
         const userRoles = rolesMap.get(p.id) ?? [];
         let role: "admin" | "brand_manager" | "customer" = "customer";
         if (userRoles.includes("admin")) role = "admin";
         else if (userRoles.includes("brand_manager")) role = "brand_manager";
 
-        return {
+        userMap.set(p.id, {
           id: p.id,
           full_name: p.full_name || p.phone || "User",
           phone: p.phone || "",
@@ -119,10 +123,55 @@ export function SettingsUsersTab() {
           created_at: p.created_at,
           role,
           roles: userRoles,
-        };
-      });
+        });
+      }
 
-      return list;
+      // If any staff member is in user_roles but not yet in profiles, ensure they show up
+      for (const [userId, userRoles] of rolesMap.entries()) {
+        if (!userMap.has(userId)) {
+          let role: "admin" | "brand_manager" | "customer" = "customer";
+          if (userRoles.includes("admin")) role = "admin";
+          else if (userRoles.includes("brand_manager")) role = "brand_manager";
+
+          userMap.set(userId, {
+            id: userId,
+            full_name: role === "admin" ? "Admin Staff" : "Brand Manager",
+            phone: "",
+            avatar_url: null,
+            created_at: new Date().toISOString(),
+            role,
+            roles: userRoles,
+          });
+        }
+      }
+
+      // Ensure current logged-in panel admin (e.g. Dosty Rebwar) is always listed as Admin
+      if (currentUser) {
+        const existing = userMap.get(currentUser.id);
+        const name =
+          (currentUser.user_metadata?.["full_name"] as string) ||
+          (currentUser.user_metadata?.["name"] as string) ||
+          existing?.full_name ||
+          "Dosty Rebwar";
+        const phone =
+          (currentUser.user_metadata?.["phone"] as string) ||
+          currentUser.phone ||
+          existing?.phone ||
+          "07702269722";
+        const roles = existing?.roles?.length ? existing.roles : ["admin"];
+
+        userMap.set(currentUser.id, {
+          id: currentUser.id,
+          full_name: name,
+          phone,
+          avatar_url: existing?.avatar_url || null,
+          created_at: existing?.created_at || currentUser.created_at || new Date().toISOString(),
+          role: "admin",
+          roles: roles.includes("admin") ? roles : [...roles, "admin"],
+        });
+      }
+
+      return Array.from(userMap.values());
     },
   });
 
