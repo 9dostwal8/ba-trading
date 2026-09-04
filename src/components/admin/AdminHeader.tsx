@@ -72,7 +72,7 @@ export function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xs transition-colors">
-      <div className="mx-auto flex h-14 sm:h-16 max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between px-3 sm:px-6">
+      <div className="w-full flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6">
         
         {/* Brand & Admin Badge */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">

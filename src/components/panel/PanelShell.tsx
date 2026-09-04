@@ -138,7 +138,7 @@ export function PanelShell({
       <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 pb-16 font-sans transition-colors duration-200">
         {/* Minimal Odoo Top Bar with Back to Apps */}
         <div className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-4 py-2.5 backdrop-blur shadow-2xs">
-          <div className="mx-auto flex max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between gap-3">
+          <div className="w-full flex items-center justify-between gap-3">
             
             {/* Left: Odoo Apps Breadcrumb */}
             <div className="flex items-center gap-2.5 min-w-0">
@@ -221,7 +221,7 @@ export function PanelShell({
         </div>
 
         {/* Active Tool Content */}
-        <div className="mx-auto max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] p-3 sm:p-6">
+        <div className="w-full p-3 sm:p-6">
           {children}
         </div>
       </div>
@@ -233,7 +233,7 @@ export function PanelShell({
   // -------------------------------------------------------------
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-100/90 via-indigo-50/20 to-slate-100/90 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col justify-start py-8 sm:py-12 px-4 sm:px-8 font-sans transition-colors duration-200">
-      <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px]">
+      <div className="w-full">
         
         {/* Top Control Bar with Theme Toggle on the Left and Search in the Center */}
         <div className="mb-8 sm:mb-12 flex items-center justify-between gap-4 w-full [direction:ltr]">
