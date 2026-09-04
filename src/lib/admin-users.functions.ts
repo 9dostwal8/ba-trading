@@ -159,3 +159,152 @@ export const claimSuperAdminForDosty = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+/** Admin-only: list all user profiles with their assigned roles */
+export const fetchUsersWithRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [profilesRes, rolesRes] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("id, full_name, phone, created_at, avatar_url")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+    ]);
+
+    if (profilesRes.error) throw new Error(profilesRes.error.message);
+
+    const rolesMap = new Map<string, string[]>();
+    for (const r of rolesRes.data ?? []) {
+      if (!rolesMap.has(r.user_id)) rolesMap.set(r.user_id, []);
+      rolesMap.get(r.user_id)!.push(r.role);
+    }
+
+    return (profilesRes.data ?? []).map((p) => {
+      const userRoles = rolesMap.get(p.id) ?? [];
+      let role = "customer";
+      if (userRoles.includes("admin")) role = "admin";
+      else if (userRoles.includes("brand_manager")) role = "brand_manager";
+
+      return {
+        id: p.id,
+        full_name: p.full_name || "Unknown User",
+        phone: p.phone || "",
+        avatar_url: p.avatar_url || null,
+        created_at: p.created_at,
+        role,
+        roles: userRoles,
+      };
+    });
+  });
+
+/** Admin-only: update or revoke user role */
+export const updateUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { targetUserId: string; newRole: "admin" | "brand_manager" | "customer" }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.newRole === "customer") {
+      // Remove staff roles
+      const del = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.targetUserId)
+        .in("role", ["admin", "brand_manager"]);
+      if (del.error) throw new Error(del.error.message);
+    } else {
+      // Upsert the chosen role
+      const up = await supabaseAdmin
+        .from("user_roles")
+        .upsert(
+          { user_id: data.targetUserId, role: data.newRole },
+          { onConflict: "user_id,role" }
+        );
+      if (up.error) throw new Error(up.error.message);
+    }
+
+    return { success: true };
+  });
+
+/** Admin-only: create staff account with specified role */
+export const createStaffAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator(
+    (input: {
+      fullName: string;
+      phone: string;
+      password: string;
+      role: "admin" | "brand_manager";
+    }) => input
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const phone = normalizePhone(data.phone);
+    const fullName = (data.fullName ?? "").trim();
+    if (phone.length < 9) throw new Error("badPhone");
+    if ((data.password ?? "").length < 6) throw new Error("badPassword");
+    if (fullName.length < 2) throw new Error("badName");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email = `${phone}@${PHONE_DOMAIN}`;
+
+    const existing = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    let userId = existing.data?.id ?? null;
+
+    if (userId) {
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, phone },
+      });
+    } else {
+      const created = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, phone },
+      });
+      if (created.error || !created.data.user) {
+        throw new Error(created.error?.message ?? "createFailed");
+      }
+      userId = created.data.user.id;
+    }
+
+    await supabaseAdmin
+      .from("profiles")
+      .upsert({ id: userId, full_name: fullName, phone }, { onConflict: "id" });
+
+    await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: userId, role: data.role }, { onConflict: "user_id,role" });
+
+    return { userId, phone, fullName, role: data.role };
+  });
+
+

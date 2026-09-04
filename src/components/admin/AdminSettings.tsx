@@ -14,6 +14,9 @@ import {
   Loader2,
   CheckCircle2,
   UploadCloud,
+  Users,
+  Database,
+  FileText,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +27,9 @@ import { useI18n } from "@/lib/i18n";
 import { uploadBannerImage, uploadMessage } from "@/lib/upload";
 import type { StoreSettings } from "@/lib/store";
 import { setDocumentFavicon } from "@/components/SiteMeta";
+import { SettingsUsersTab } from "./settings/SettingsUsersTab";
+import { SettingsBackupTab } from "./settings/SettingsBackupTab";
+import { SettingsLogsTab } from "./settings/SettingsLogsTab";
 
 /** Bilingual labels for Settings */
 const L = {
@@ -42,6 +48,9 @@ const L = {
   tabContact: { ar: "التواصل", ku: "پەیوەندی", en: "Contact" },
   tabMarketing: { ar: "الإعلانات والتسويق", ku: "ڕاگەیاندن و ڕیکلام", en: "Ad Bar & Marketing" },
   tabSystem: { ar: "الصيانة وتصفير البيانات", ku: "چاککردن و داتا", en: "System & Reset" },
+  tabUsers: { ar: "المستخدمون والصلاحيات", ku: "بەکارهێنەران و دەسەڵات", en: "Users & Roles" },
+  tabBackup: { ar: "النسخ الاحتياطي", ku: "پاشەکەوتی داتابەیس", en: "Database Backup" },
+  tabLogs: { ar: "سجلات النظام", ku: "تۆماری سیستم", en: "System Logs" },
 
   identity: { ar: "هوية التطبيق", ku: "ناسنامەی ئەپ", en: "App Identity" },
   brandingFiles: { ar: "الشعار والأيقونة", ku: "لۆگۆ و ئایکۆن", en: "Logo & Icon" },
@@ -385,6 +394,9 @@ export function AdminSettings() {
     { key: "contact", label: tx("tabContact"), icon: Phone },
     { key: "marketing", label: tx("tabMarketing"), icon: Megaphone },
     { key: "system", label: tx("tabSystem"), icon: Wrench },
+    { key: "users", label: tx("tabUsers"), icon: Users },
+    { key: "backup", label: tx("tabBackup"), icon: Database },
+    { key: "logs", label: tx("tabLogs"), icon: FileText },
   ];
 
   return (
@@ -700,23 +712,34 @@ export function AdminSettings() {
           </div>
         )}
 
+        {/* TAB 8: USERS & ROLES */}
+        {activeTab === "users" && <SettingsUsersTab />}
+
+        {/* TAB 9: DATABASE BACKUP */}
+        {activeTab === "backup" && <SettingsBackupTab />}
+
+        {/* TAB 10: SYSTEM LOGS & HEALTH */}
+        {activeTab === "logs" && <SettingsLogsTab />}
+
       </div>
 
-      {/* Bottom Floating Save Button */}
-      <div className="flex justify-end pt-2">
-        <Button
-          onClick={() => save.mutate()}
-          disabled={save.isPending}
-          className="h-11 px-8 rounded-2xl bg-[#007979] hover:bg-teal-700 text-white font-extrabold text-xs shadow-lg shadow-teal-700/25 gap-2 active:scale-95 transition-all"
-        >
-          {save.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="size-4" />
-          )}
-          <span>{tx("save")}</span>
-        </Button>
-      </div>
+      {/* Bottom Floating Save Button (for store configuration tabs) */}
+      {!["users", "backup", "logs"].includes(activeTab) && (
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={() => save.mutate()}
+            disabled={save.isPending}
+            className="h-11 px-8 rounded-2xl bg-[#007979] hover:bg-teal-700 text-white font-extrabold text-xs shadow-lg shadow-teal-700/25 gap-2 active:scale-95 transition-all"
+          >
+            {save.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="size-4" />
+            )}
+            <span>{tx("save")}</span>
+          </Button>
+        </div>
+      )}
 
     </div>
   );
