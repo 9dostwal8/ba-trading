@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   Bell,
@@ -26,10 +25,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
-import { PanelShell } from "@/components/panel/PanelShell";
+import { PanelShell, type PanelGroup } from "@/components/panel/PanelShell";
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { supabase } from "@/integrations/supabase/client";
-import { formatPrice, useI18n } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 
 const PromoStudio = lazy(() => import("@/components/promo/PromoStudio").then((m) => ({ default: m.PromoStudio })));
 const AdminBanners = lazy(() => import("@/components/admin/AdminBanners").then((m) => ({ default: m.AdminBanners })));
@@ -58,19 +56,26 @@ const AdminShipping = lazy(() => import("@/components/admin/AdminShipping").then
 const AdminCostTracker = lazy(() => import("@/components/admin/AdminCostTracker").then((m) => ({ default: m.AdminCostTracker })));
 
 const L = {
-  title: { ar: "لوحة التحكم", ku: "پانێلی بەڕێوەبردن", en: "Dashboard" },
-  daily: { ar: "اليومي", ku: "ڕۆژانە", en: "Daily" },
-  vendors: { ar: "البائعون والمال", ku: "فرۆشیار و پارە", en: "Vendors & Finance" },
-  catalog: { ar: "المنتجات", ku: "بەرهەمەکان", en: "Products" },
-  marketing: { ar: "العروض والتسويق", ku: "ئۆفەر و ڕیکلام", en: "Offers & Marketing" },
-  fees: { ar: "أجور ومدة التسويق", ku: "کرێ و ماوەی بازاڕکردن", en: "Marketing Fees & Durations" },
-  feesHint: { ar: "أسعار ومدد العروض لجميع البائعين", ku: "نرخ و ماوەی ئۆفەرەکان بۆ هەموو فرۆشیارەکان", en: "Offer prices and durations for all vendors" },
-  storefront: { ar: "واجهة المتجر", ku: "ڕووکاری کۆگا", en: "Storefront" },
-  notify: { ar: "إرسال إشعار", ku: "ناردنی ئاگاداری", en: "Send notification" },
-  whatsapp: { ar: "رسائل واتساب", ku: "پەیامی واتسئاپ", en: "WhatsApp messages" },
-  whatsappHint: { ar: "قوالب جاهزة للبائعين بضغطة واحدة", ku: "تێمپلەیتی ئامادە بۆ فرۆشیارەکان", en: "Ready templates for vendors, one tap" },
-  notifyHint: { ar: "رسالة لكل الأطباء أو البائعين", ku: "پەیام بۆ پزیشکان یان فرۆشیارەکان", en: "Message dentists or vendors" },
-  setup: { ar: "الإعدادات", ku: "ڕێکخستن", en: "Settings" },
+  title: { ar: "لوحة تحكم أودو المركزية", ku: "پانێلی بەڕێوەبردنی سیستم", en: "Operations Command Center" },
+  subtitle: { ar: "تطبيقات الإدارة والأزرار السريعة", ku: "ئەپەکانی بەڕێوەبردن و دوگمە خێراکان", en: "Enterprise Apps & Quick Actions" },
+  
+  daily: { ar: "الطلبات والمبيعات", ku: "داواکاری و فرۆشتن", en: "Orders & Sales" },
+  dailyDesc: { ar: "متابعة الطلبات، حالات التوصيل وقواعد التصفية", ku: "بەدواداچوونی داواکاری و داشکاندنی خۆکار", en: "Order fulfillment, delivery status & clearance" },
+
+  catalog: { ar: "المنتجات والمخزون", ku: "بەرهەمەکان و کۆگا", en: "Catalog & Inventory" },
+  catalogDesc: { ar: "إضافة وتعديل المنتجات، الأقسام والأسعار", ku: "زیادکردن و دەستکاری بەرهەمەکان و بەشەکان", en: "Manage items, categories and pricing" },
+
+  vendors: { ar: "البائعون والمالية", ku: "فرۆشیاران و دارایی", en: "Vendors & Finance" },
+  vendorsDesc: { ar: "حسابات التجار، كلفة الشحن، المحاسبة وتتبع التكاليف", ku: "هەژماری فرۆشیاران، کرێی گەیاندن و ژمێریاری", en: "Vendor portals, commissions, shipping & accounting" },
+
+  marketing: { ar: "العروض والتسويق", ku: "ئۆفەر و بازاڕکردن", en: "Offers & Marketing" },
+  marketingDesc: { ar: "إنشاء العروض السريعة، كوبونات الخصم وصفقات اليوم", ku: "ئۆفەری خێرا، کۆدی داشکاندن و پاکێجەکان", en: "Promotions, coupon codes and flash deals" },
+
+  storefront: { ar: "واجهة المتجر والتصميم", ku: "ڕووکار و ستۆدیۆی دیزاین", en: "Storefront & Design" },
+  storefrontDesc: { ar: "تخصيص القوالب، اللافتات، ترتيب الصفحة والماركات", ku: "تێمپلەیتی دیزاین، بانەرەکان و براندەکان", en: "Templates, homepage layout, banners and brands" },
+
+  setup: { ar: "الإعدادات والمراسلات", ku: "ڕێکخستن و پەیوەندی", en: "System & Messaging" },
+  setupDesc: { ar: "إعدادات المتجر العامة، رسائل واتساب وقوالب الإشعارات", ku: "ڕێکخستنی کۆگا، پەیامی واتسئاپ و ئاگاداری", en: "General configurations, WhatsApp & notifications" },
 
   orders: { ar: "الطلبات", ku: "داواکاریەکان", en: "Orders" },
   ordersHint: { ar: "متابعة وتغيير حالة الطلبات", ku: "بەدواداچوون و گۆڕینی دۆخ", en: "Track & change order status" },
@@ -79,12 +84,14 @@ const L = {
 
   vendorList: { ar: "البائعون", ku: "فرۆشیارەکان", en: "Vendors" },
   vendorListHint: { ar: "إضافة بائع، العمولة، حساب الدخول", ku: "زیادکردن، کۆمیشن، هەژمار", en: "Add vendor, commission, login account" },
-  charges: { ar: "فواتير التسويق", ku: "پسوولەی ڕیکلام", en: "Marketing Invoices" },
-  chargesHint: { ar: "ما يدفعه البائعون", ku: "ئەوەی فرۆشیارەکان دەدەن", en: "What vendors pay" },
-  accounting: { ar: "المحاسبة", ku: "ژمێریاري", en: "Accounting" },
+  accounting: { ar: "المحاسبة والتسويات", ku: "ژمێریاری و کۆمیشن", en: "Accounting" },
+  accountingHint: { ar: "العمولات والتسويات والفواتير", ku: "کۆمیشن و حیسابکردن", en: "Commissions, settlements, and invoices" },
   shipping: { ar: "أجور التوصيل", ku: "کرێی گەیاندن", en: "Shipping costs" },
   shippingHint: { ar: "سعر التوصيل لكل مدينة لكل بائع", ku: "نرخی گەیاندن بۆ هەر شار بۆ هەر فرۆشیار", en: "Per-city delivery price for each vendor" },
-  accountingHint: { ar: "العمولات والتسويات والفواتير", ku: "کۆمیشن و حیسابکردن", en: "Commissions, settlements, and invoices" },
+  wallet: { ar: "نقاط المكافأة", ku: "خاڵی خەڵات", en: "Reward points" },
+  walletHint: { ar: "قيم النقاط، معدل الاستبدال، الكروت والحركات", ku: "بەهای خاڵ، ڕێژەی گۆڕین، کارت و جوڵەکان", en: "Point values, redeem rate, cards & activity" },
+  costs: { ar: "تكلفة التشغيل", ku: "تێچووی کارپێکردن", en: "Running cost" },
+  costsHint: { ar: "تقدير الكلفة الشهرية بالدولار", ku: "خەملاندنی تێچووی مانگانە بە دۆلار", en: "Monthly USD cost estimate" },
 
   products: { ar: "المنتجات", ku: "بەرهەمەکان", en: "Products" },
   productsHint: { ar: "إضافة وتعديل المنتجات", ku: "زیادکردن و دەستکاری", en: "Add & Edit Products" },
@@ -93,6 +100,8 @@ const L = {
 
   promo: { ar: "إنشاء عرض سريع", ku: "ئۆفەری خێرا", en: "Create Quick Offer" },
   promoHint: { ar: "خصم، صفقة اليوم، حزمة، لافتة", ku: "داشکاندن، ئۆفەری ڕۆژ، پاکێج", en: "Discount, Deal of the Day, Bundle, Banner" },
+  fees: { ar: "أجور ومدة التسويق", ku: "کرێ و ماوەی بازاڕکردن", en: "Marketing Fees & Durations" },
+  feesHint: { ar: "أسعار ومدد العروض لجميع البائعين", ku: "نرخ و ماوەی ئۆفەرەکان بۆ هەموو فرۆشیارەکان", en: "Offer prices and durations for all vendors" },
   offers: { ar: "العروض", ku: "ئۆفەرەکان", en: "Offers" },
   deals: { ar: "صفقات اليوم", ku: "ئۆفەری ڕۆژ", en: "Deals of the Day" },
   bundles: { ar: "الحزم", ku: "پاکێجەکان", en: "Bundles" },
@@ -103,20 +112,16 @@ const L = {
   brands: { ar: "الماركات", ku: "براندەکان", en: "Brands" },
   banners: { ar: "اللافتات والأماكن", ku: "بانەر و شوێنەکان", en: "Banners & Locations" },
   usp: { ar: "شريط الخدمات", ku: "هێڵی خزمەتگوزاری", en: "Services Bar" },
+  theme: { ar: "استوديو التصميم", ku: "ستۆدیۆی دیزاین", en: "Design Studio" },
+  themeHint: { ar: "القوالب، الألوان، بطاقات المنتج والأقسام", ku: "تێمپلەیت، ڕەنگ، کارتی بەرهەم و بەشەکان", en: "Templates, colours, product cards and sections" },
 
   settings: { ar: "إعدادات المتجر", ku: "ڕێکخستنی کۆگا", en: "Store Settings" },
   settingsHint: { ar: "الاسم، التوصيل، الأسعار، الألوان", ku: "ناو، گەیاندن، نرخ، ڕەنگ", en: "Name, Delivery, Prices, Colors" },
   texts: { ar: "نصوص الموقع", ku: "دەقەکانی سایت", en: "Site Texts" },
-
-  wallet: { ar: "نقاط المكافأة", ku: "خاڵی خەڵات", en: "Reward points" },
-  walletHint: { ar: "قيم النقاط، معدل الاستبدال، الكروت والحركات", ku: "بەهای خاڵ، ڕێژەی گۆڕین، کارت و جوڵەکان", en: "Point values, redeem rate, cards & activity" },
-
-  costs: { ar: "تكلفة التشغيل", ku: "تێچووی کارپێکردن", en: "Running cost" },
-  costsHint: { ar: "تقدير الكلفة الشهرية بالدولار", ku: "خەملاندنی تێچووی مانگانە بە دۆلار", en: "Monthly USD cost estimate" },
-  revenue: { ar: "الإيرادات", ku: "داهات", en: "Revenue" },
-  newOrders: { ar: "طلبات جديدة", ku: "داواکاری نوێ", en: "New Orders" },
-  productsCount: { ar: "المنتجات", ku: "بەرهەم", en: "Products" },
-  activeOffers: { ar: "عروض نشطة", ku: "ئۆفەری چالاک", en: "Active Offers" },
+  notify: { ar: "إرسال إشعار", ku: "ناردنی ئاگاداری", en: "Send notification" },
+  notifyHint: { ar: "رسالة لكل الأطباء أو البائعين", ku: "پەیام بۆ پزیشکان یان فرۆشیارەکان", en: "Message dentists or vendors" },
+  whatsapp: { ar: "رسائل واتساب", ku: "پەیامی واتسئاپ", en: "WhatsApp messages" },
+  whatsappHint: { ar: "قوالب جاهزة للبائعين بضغطة واحدة", ku: "تێمپلەیتی ئامادە بۆ فرۆشیارەکان", en: "Ready templates for vendors, one tap" },
 };
 
 interface AdminDashboardProps {
@@ -149,33 +154,57 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
     }
   };
 
-  const { data: stats } = useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: async () => {
-      try {
-        const [orders, products, offers] = await Promise.all([
-          supabase.from("orders").select("total, status"),
-          supabase.from("products").select("id", { count: "exact", head: true }),
-          supabase.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true),
-        ]);
-        const rows = orders.data ?? [];
-        return {
-          revenue: rows
-            .filter((o) => o.status !== "cancelled")
-            .reduce((s, o) => s + Number(o.total), 0),
-          newOrders: rows.filter((o) => o.status === "new").length,
-          products: products.count ?? 0,
-          offers: offers.count ?? 0,
-        };
-      } catch {
-        return { revenue: 0, newOrders: 0, products: 0, offers: 0 };
-      }
+  // Top Odoo Quick Actions Ribbon
+  const topQuickActions = [
+    {
+      key: "products",
+      label: lang === "ku" ? "+ بەرهەمی نوێ" : lang === "ar" ? "+ منتج جديد" : "+ New Product",
+      icon: Package,
     },
-  });
+    {
+      key: "promo",
+      label: lang === "ku" ? "⚡ ئۆفەری خێرا" : lang === "ar" ? "⚡ عرض سريع" : "⚡ Quick Offer",
+      icon: Sparkles,
+    },
+    {
+      key: "orders",
+      label: lang === "ku" ? "📦 داواکارییەکان" : lang === "ar" ? "📦 الطلبات" : "📦 Orders",
+      icon: LayoutGrid,
+    },
+    {
+      key: "whatsapp",
+      label: lang === "ku" ? "💬 واتسئاپ" : lang === "ar" ? "💬 واتساب" : "💬 WhatsApp",
+      icon: MessageCircle,
+    },
+    {
+      key: "store",
+      label: lang === "ku" ? "🌐 بینینی کۆگا" : lang === "ar" ? "🌐 المتجر" : "🌐 Live Store",
+      icon: Store,
+      external: true,
+      url: "/",
+    },
+  ];
 
-  const groups = [
+  // Odoo Module App Groups with Quick Buttons
+  const groups: PanelGroup[] = [
     {
       label: L.daily[lang],
+      description: L.dailyDesc[lang],
+      icon: LayoutGrid,
+      color: "teal",
+      quickActions: [
+        {
+          key: "orders",
+          label: lang === "ku" ? "+ داواکارییەکان" : lang === "ar" ? "+ الطلبات" : "+ Orders",
+          icon: LayoutGrid,
+          primary: true,
+        },
+        {
+          key: "clearance",
+          label: lang === "ku" ? "نزیکی بەسەرچوون" : lang === "ar" ? "قريب الانتهاء" : "Clearance",
+          icon: Hourglass,
+        },
+      ],
       items: [
         { key: "orders", label: L.orders[lang], hint: L.ordersHint[lang], icon: LayoutGrid },
         {
@@ -187,7 +216,56 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
       ],
     },
     {
+      label: L.catalog[lang],
+      description: L.catalogDesc[lang],
+      icon: Package,
+      color: "amber",
+      quickActions: [
+        {
+          key: "products",
+          label: lang === "ku" ? "+ بەرهەمی نوێ" : lang === "ar" ? "+ منتج جديد" : "+ Add Product",
+          icon: Package,
+          primary: true,
+        },
+        {
+          key: "categories",
+          label: lang === "ku" ? "بەشەکان" : lang === "ar" ? "الأقسام" : "Categories",
+          icon: Shapes,
+        },
+      ],
+      items: [
+        { key: "products", label: L.products[lang], hint: L.productsHint[lang], icon: Package },
+        {
+          key: "categories",
+          label: L.categories[lang],
+          hint: L.categoriesHint[lang],
+          icon: Shapes,
+        },
+      ],
+    },
+    {
       label: L.vendors[lang],
+      description: L.vendorsDesc[lang],
+      icon: Store,
+      color: "emerald",
+      quickActions: [
+        {
+          key: "vendors",
+          label: lang === "ku" ? "+ فرۆشیاران" : lang === "ar" ? "+ البائعون" : "+ Vendors",
+          icon: Store,
+          primary: true,
+        },
+        {
+          key: "accounting",
+          label: lang === "ku" ? "ژمێریاری" : lang === "ar" ? "المحاسبة" : "Accounting",
+          icon: Receipt,
+        },
+        {
+          key: "shipping",
+          label: lang === "ku" ? "کرێی گەیاندن" : lang === "ar" ? "أجور التوصيل" : "Shipping",
+          icon: Truck,
+        },
+      ],
       items: [
         { key: "vendors", label: L.vendorList[lang], hint: L.vendorListHint[lang], icon: Store },
         { key: "shipping", label: L.shipping[lang], hint: L.shippingHint[lang], icon: Truck },
@@ -202,19 +280,28 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
       ],
     },
     {
-      label: L.catalog[lang],
-      items: [
-        { key: "products", label: L.products[lang], hint: L.productsHint[lang], icon: Package },
+      label: L.marketing[lang],
+      description: L.marketingDesc[lang],
+      icon: Sparkles,
+      color: "purple",
+      quickActions: [
         {
-          key: "categories",
-          label: L.categories[lang],
-          hint: L.categoriesHint[lang],
-          icon: Shapes,
+          key: "promo",
+          label: lang === "ku" ? "+ ئۆفەری خێرا" : lang === "ar" ? "+ عرض سريع" : "+ Quick Promo",
+          icon: Sparkles,
+          primary: true,
+        },
+        {
+          key: "coupons",
+          label: lang === "ku" ? "کۆدی داشکاندن" : lang === "ar" ? "أكواد الخصم" : "Coupons",
+          icon: Ticket,
+        },
+        {
+          key: "deals",
+          label: lang === "ku" ? "ئۆفەری ڕۆژ" : lang === "ar" ? "صفقات اليوم" : "Deals",
+          icon: Zap,
         },
       ],
-    },
-    {
-      label: L.marketing[lang],
       items: [
         { key: "promo", label: L.promo[lang], hint: L.promoHint[lang], icon: Sparkles },
         { key: "fees", label: L.fees[lang], hint: L.feesHint[lang], icon: Wallet },
@@ -227,6 +314,27 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
     },
     {
       label: L.storefront[lang],
+      description: L.storefrontDesc[lang],
+      icon: Palette,
+      color: "indigo",
+      quickActions: [
+        {
+          key: "theme",
+          label: lang === "ku" ? "ستۆدیۆی دیزاین" : lang === "ar" ? "استوديو التصميم" : "Design Studio",
+          icon: Palette,
+          primary: true,
+        },
+        {
+          key: "banners",
+          label: lang === "ku" ? "بانەرەکان" : lang === "ar" ? "اللافتات" : "Banners",
+          icon: Image,
+        },
+        {
+          key: "home",
+          label: lang === "ku" ? "ڕیزبەندی سەرەکی" : lang === "ar" ? "الصفحة الرئيسية" : "Homepage",
+          icon: Home,
+        },
+      ],
       items: [
         { key: "home", label: L.home[lang], icon: Home },
         { key: "brands", label: L.brands[lang], icon: Sparkles },
@@ -234,19 +342,35 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
         { key: "usp", label: L.usp[lang], icon: BadgeCheck },
         {
           key: "theme",
-          label: lang === "ar" ? "استوديو التصميم" : lang === "ku" ? "ستۆدیۆی دیزاین" : "Design Studio",
-          hint:
-            lang === "ar"
-              ? "القوالب، الألوان، بطاقات المنتج والأقسام من مكان واحد"
-              : lang === "ku"
-                ? "تێمپلەیت، ڕەنگ، کارتی بەرهەم و بەشەکان لە یەک شوێن"
-                : "Templates, colours, product cards and sections in one place",
+          label: L.theme[lang],
+          hint: L.themeHint[lang],
           icon: Palette,
         },
       ],
     },
     {
       label: L.setup[lang],
+      description: L.setupDesc[lang],
+      icon: Settings,
+      color: "slate",
+      quickActions: [
+        {
+          key: "whatsapp",
+          label: lang === "ku" ? "پەیامی واتسئاپ" : lang === "ar" ? "رسائل واتساب" : "WhatsApp",
+          icon: MessageCircle,
+          primary: true,
+        },
+        {
+          key: "settings",
+          label: lang === "ku" ? "ڕێکخستنی کۆگا" : lang === "ar" ? "إعدادات المتجر" : "Settings",
+          icon: Settings,
+        },
+        {
+          key: "notify",
+          label: lang === "ku" ? "ئاگاداری" : lang === "ar" ? "إشعار" : "Notify",
+          icon: Bell,
+        },
+      ],
       items: [
         { key: "settings", label: L.settings[lang], hint: L.settingsHint[lang], icon: Settings },
         { key: "texts", label: L.texts[lang], icon: Languages },
@@ -262,18 +386,14 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
       <AdminHeader />
       <div className="flex-1">
         <PanelShell
           title={L.title[lang]}
-          subtitle={`${L.revenue[lang]}: ${formatPrice(stats?.revenue ?? 0, lang)}`}
-          kpis={[
-            { label: L.newOrders[lang], value: String(stats?.newOrders ?? 0) },
-            { label: L.productsCount[lang], value: String(stats?.products ?? 0) },
-            { label: L.activeOffers[lang], value: String(stats?.offers ?? 0) },
-            { label: L.revenue[lang], value: formatPrice(stats?.revenue ?? 0, lang) },
-          ]}
+          subtitle={L.subtitle[lang]}
+          showKpis={false}
+          topQuickActions={topQuickActions}
           groups={groups}
           active={active}
           onOpen={handleOpenTab}
@@ -282,7 +402,7 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
           <Suspense
             fallback={
               <div className="flex h-64 w-full items-center justify-center py-12">
-                <Loader2 className="size-8 animate-spin text-primary" />
+                <Loader2 className="size-8 animate-spin text-[#007979]" />
               </div>
             }
           >
