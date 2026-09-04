@@ -307,4 +307,31 @@ export const createStaffAccount = createServerFn({ method: "POST" })
     return { userId, phone, fullName, role: data.role };
   });
 
+/** Admin: set or reset user password directly */
+export const adminSetUserPassword = createServerFn({ method: "POST" })
+  .validator((input: { targetUserId: string; newPassword: string }) => input)
+  .handler(async ({ data }) => {
+    if (!data.newPassword || data.newPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const upd = await supabaseAdmin.auth.admin.updateUserById(data.targetUserId, {
+      password: data.newPassword,
+    });
+    if (upd.error) throw new Error(upd.error.message);
+
+    // Save in ui_texts for admin quick reference
+    await supabaseAdmin.from("ui_texts").upsert(
+      {
+        key: `staff_pwd_${data.targetUserId}`,
+        section: "staff_credentials",
+        ar: data.newPassword,
+        ku: data.newPassword,
+      },
+      { onConflict: "key" }
+    );
+
+    return { success: true };
+  });
+
 

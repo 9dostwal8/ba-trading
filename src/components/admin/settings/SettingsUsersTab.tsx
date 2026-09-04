@@ -16,11 +16,16 @@ import {
   Trash2,
   Calendar,
   AlertTriangle,
+  Eye,
+  EyeOff,
+  Copy,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { AdminCard, SectionHeader } from "../AdminKit";
 import { supabase } from "@/integrations/supabase/client";
+import { adminSetUserPassword } from "@/lib/admin-users.functions";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +53,7 @@ const L = {
     en: "Manage administrators, brand managers, and dashboard staff",
   },
   addUser: { ar: "إضافة عضو إداري جديد", ku: "زیادکردنی ئەندامی نوێ", en: "Add Staff Member" },
-  searchPlaceholder: { ar: "بحث بالاسم أو رقم الهاتف...", ku: "گەڕان بەپێی ناو یان ژمارەی مۆبایل...", en: "Search by name or phone..." },
+  searchPlaceholder: { ar: "بحث بالاسم أو رقم الهاتف أو اسم المستخدم...", ku: "گەڕان بەپێی ناو، مۆبایل، یان ناوی بەکارهێنەر...", en: "Search by name, phone, or username..." },
   panelUsers: { ar: "مشرفو هذه اللوحة", ku: "بەکارهێنەرانی ئەم پانێڵە", en: "Admin Panel Staff" },
   admins: { ar: "المشرفون (Admin)", ku: "بەڕێوەبەران", en: "Admins" },
   managers: { ar: "مدراء البراندات", ku: "بەڕێوەبەرانی براند", en: "Brand Managers" },
@@ -60,7 +65,8 @@ const L = {
   editBtn: { ar: "تعديل", ku: "دەستکاریکردن", en: "Edit" },
   deleteBtn: { ar: "حذف", ku: "سڕینەوە", en: "Delete" },
   colUser: { ar: "المستخدم", ku: "بەکارهێنەر", en: "User" },
-  colPhone: { ar: "رقم الهاتف", ku: "ژمارەی مۆبایل", en: "Phone Number" },
+  colUsername: { ar: "اسم المستخدم", ku: "ناوی بەکارهێنەر", en: "Username" },
+  colPassword: { ar: "كلمة المرور", ku: "وشەی تێپەڕ", en: "Password" },
   colRole: { ar: "الدور في النظام", ku: "ڕۆڵ لە سیستەم", en: "System Role" },
   colJoined: { ar: "تاريخ الانضمام", ku: "بەرواری تۆماربوون", en: "Joined Date" },
   colActions: { ar: "الإجراءات والصلاحيات", ku: "دەسەڵاتەکان و کردارەکان", en: "Permissions & Actions" },
@@ -68,14 +74,24 @@ const L = {
   createSuccess: { ar: "تم إنشاء الحساب بنجاح", ku: "هەژماری نوێ بەسەرکەوتوویی دروستکرا", en: "Staff account created" },
   userUpdated: { ar: "تم تحديث بيانات المستخدم بنجاح", ku: "زانیارییەکانی بەکارهێنەر نوێکرایەوە", en: "User details updated" },
   userDeleted: { ar: "تم حذف المستخدم بنجاح", ku: "بەکارهێنەرەکە بە سەرکەوتوویی سڕایەوە", en: "User deleted successfully" },
+  passwordUpdated: { ar: "تم تغيير كلمة المرور بنجاح", ku: "وشەی تێپەڕ بەسەرکەوتوویی گۆڕدرا", en: "Password updated successfully" },
   fullName: { ar: "الاسم الكامل", ku: "ناوی تەواو", en: "Full Name" },
   phone: { ar: "رقم الهاتف", ku: "ژمارەی مۆبایل", en: "Phone Number" },
   password: { ar: "كلمة المرور", ku: "وشەی تێپەڕ", en: "Password" },
+  newPassword: { ar: "كلمة المرور الجديدة (اختياري)", ku: "وشەی تێپەڕی نوێ (ئارەزوومەندانە)", en: "New Password (optional)" },
+  newPasswordRequired: { ar: "كلمة المرور الجديدة", ku: "وشەی تێپەڕی نوێ", en: "New Password" },
+  newPasswordHelp: {
+    ar: "اترك الحقل فارغاً إذا كنت لا ترغب بتغيير كلمة المرور",
+    ku: "ئەگەر ناتەوێت وشەی تێپەڕ بگۆڕیت بە بەتاڵی جێی بهێڵە",
+    en: "Leave blank to keep existing password unchanged",
+  },
   roleSelect: { ar: "نوع الصلاحية", ku: "جۆری ڕۆڵ", en: "Role Type" },
   cancel: { ar: "إلغاء", ku: "پاشگەزبوونەوە", en: "Cancel" },
   create: { ar: "حفظ وإنشاء", ku: "دروستکردن", en: "Create Account" },
   saveChanges: { ar: "حفظ التعديلات", ku: "پاشەکەوتکردنی گۆڕانکاری", en: "Save Changes" },
+  savePassword: { ar: "حفظ كلمة المرور", ku: "پاشەکەوتکردنی وشەی تێپەڕ", en: "Save Password" },
   editUserTitle: { ar: "تعديل بيانات المستخدم", ku: "دەستکاریکردنی بەکارهێنەر", en: "Edit User Details" },
+  changePasswordTitle: { ar: "تعديل كلمة مرور المستخدم", ku: "گۆڕینی وشەی تێپەڕی بەکارهێنەر", en: "Change User Password" },
   deleteConfirmTitle: { ar: "هل أنت متأكد من الحذف؟", ku: "ئایا دڵنیایت لە سڕینەوە؟", en: "Are you sure you want to delete?" },
   deleteConfirmDesc: {
     ar: "سيتم إزالة صلاحيات هذا المستخدم من لوحة التحكم بشكل نهائي.",
@@ -87,6 +103,7 @@ const L = {
     ku: "ناتوانیت هەژماری سەرەکی خۆت بسڕیتەوە کە پێی چوویتەتە ژوورەوە.",
     en: "You cannot delete your own active administrative account.",
   },
+  copied: { ar: "تم النسخ للحافظة", ku: "کۆپی کرا بۆ کلیپبۆرد", en: "Copied to clipboard" },
   noUsers: { ar: "لا يوجد مستخدمون مطابقون", ku: "هیچ بەکارهێنەرێک نەدۆزرایەوە", en: "No users found" },
 };
 
@@ -94,6 +111,8 @@ export interface UserItem {
   id: string;
   full_name: string;
   phone: string;
+  username: string;
+  saved_password?: string;
   avatar_url: string | null;
   created_at: string;
   role: "admin" | "brand_manager" | "customer";
@@ -108,11 +127,15 @@ export function SettingsUsersTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"panel_users" | "admin" | "brand_manager" | "all">("panel_users");
   
-  // Modals & Navigation
+  // Password Visibility Toggle per user ID
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+
+  // Modals & Navigation State
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<UserItem | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserItem | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
+  const [userForPasswordChange, setUserForPasswordChange] = useState<UserItem | null>(null);
 
   // Form State for Add Staff
   const [formName, setFormName] = useState("");
@@ -124,6 +147,22 @@ export function SettingsUsersTab() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "brand_manager" | "customer">("customer");
+  const [editPassword, setEditPassword] = useState("");
+
+  // Form State for Quick Password Change Modal
+  const [quickNewPassword, setQuickNewPassword] = useState("");
+
+  // Toggle Password Visibility
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  // Copy to Clipboard Helper
+  const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label}: ${tx("copied")}`);
+  };
 
   // Current Auth User query
   const { data: currentAuthUser } = useQuery({
@@ -135,16 +174,31 @@ export function SettingsUsersTab() {
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
-      const [userAuthRes, profilesRes, rolesRes] = await Promise.all([
+      const [userAuthRes, profilesRes, rolesRes, pwdsRes] = await Promise.all([
         supabase.auth.getUser().catch(() => ({ data: { user: null } })),
         supabase
           .from("profiles")
           .select("id, full_name, phone, created_at, avatar_url")
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
+        supabase
+          .from("ui_texts")
+          .select("key, ar")
+          .eq("section", "staff_credentials"),
       ]);
 
       const currentUser = userAuthRes?.data?.user;
+      
+      // Map stored staff passwords
+      const pwdsMap = new Map<string, string>();
+      for (const item of pwdsRes.data ?? []) {
+        if (item.key.startsWith("staff_pwd_")) {
+          const uId = item.key.replace("staff_pwd_", "");
+          pwdsMap.set(uId, item.ar);
+        }
+      }
+
+      // Map roles
       const rolesMap = new Map<string, string[]>();
       for (const r of rolesRes.data ?? []) {
         if (!rolesMap.has(r.user_id)) rolesMap.set(r.user_id, []);
@@ -159,10 +213,15 @@ export function SettingsUsersTab() {
         if (userRoles.includes("admin")) role = "admin";
         else if (userRoles.includes("brand_manager")) role = "brand_manager";
 
+        const phone = p.phone || "";
+        const username = phone || (p.full_name ? p.full_name.toLowerCase().replace(/\s+/g, '_') : `user_${p.id.slice(0, 6)}`);
+
         userMap.set(p.id, {
           id: p.id,
-          full_name: p.full_name || p.phone || "User",
-          phone: p.phone || "",
+          full_name: p.full_name || phone || "User",
+          phone,
+          username,
+          saved_password: pwdsMap.get(p.id) || "",
           avatar_url: p.avatar_url || null,
           created_at: p.created_at,
           role,
@@ -181,6 +240,8 @@ export function SettingsUsersTab() {
             id: userId,
             full_name: role === "admin" ? "Admin Staff" : "Brand Manager",
             phone: "",
+            username: `staff_${userId.slice(0, 6)}`,
+            saved_password: pwdsMap.get(userId) || "",
             avatar_url: null,
             created_at: new Date().toISOString(),
             role,
@@ -202,12 +263,15 @@ export function SettingsUsersTab() {
           currentUser.phone ||
           existing?.phone ||
           "07702269722";
+        const username = phone || (currentUser.email ? currentUser.email.split("@")[0] : "dosty");
         const roles = existing?.roles?.length ? existing.roles : ["admin"];
 
         userMap.set(currentUser.id, {
           id: currentUser.id,
           full_name: name,
           phone,
+          username,
+          saved_password: existing?.saved_password || pwdsMap.get(currentUser.id) || "",
           avatar_url: existing?.avatar_url || null,
           created_at: existing?.created_at || currentUser.created_at || new Date().toISOString(),
           role: "admin",
@@ -225,9 +289,16 @@ export function SettingsUsersTab() {
     setEditName(user.full_name);
     setEditPhone(user.phone);
     setEditRole(user.role);
+    setEditPassword(user.saved_password || "");
   };
 
-  // Update User Mutation (Full Name, Phone, Role)
+  // Open Quick Password Change Modal
+  const openQuickPasswordModal = (user: UserItem) => {
+    setUserForPasswordChange(user);
+    setQuickNewPassword(user.saved_password || "");
+  };
+
+  // Update User Mutation (Full Name, Phone, Role, and optional Password)
   const editUserMut = useMutation({
     mutationFn: async () => {
       if (!userToEdit) return;
@@ -255,6 +326,19 @@ export function SettingsUsersTab() {
           { onConflict: "user_id,role" }
         );
       }
+
+      // 3. Update Password if provided
+      if (editPassword.trim()) {
+        if (editPassword.trim().length < 6) {
+          throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
+        }
+        await adminSetUserPassword({
+          data: {
+            targetUserId: userToEdit.id,
+            newPassword: editPassword.trim(),
+          },
+        });
+      }
     },
     onSuccess: () => {
       toast.success(tx("userUpdated"));
@@ -263,6 +347,32 @@ export function SettingsUsersTab() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to update user");
+    },
+  });
+
+  // Quick Password Change Mutation
+  const changePasswordMut = useMutation({
+    mutationFn: async () => {
+      if (!userForPasswordChange) return;
+      if (!quickNewPassword.trim() || quickNewPassword.trim().length < 6) {
+        throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
+      }
+
+      await adminSetUserPassword({
+        data: {
+          targetUserId: userForPasswordChange.id,
+          newPassword: quickNewPassword.trim(),
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success(tx("passwordUpdated"));
+      setUserForPasswordChange(null);
+      setQuickNewPassword("");
+      qc.invalidateQueries({ queryKey: ["admin-users-list"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update password");
     },
   });
 
@@ -278,6 +388,12 @@ export function SettingsUsersTab() {
         .from("user_roles")
         .delete()
         .eq("user_id", targetUser.id);
+
+      // Remove password record
+      await supabase
+        .from("ui_texts")
+        .delete()
+        .eq("key", `staff_pwd_${targetUser.id}`);
 
       // Remove profile record
       const { error } = await supabase
@@ -333,6 +449,17 @@ export function SettingsUsersTab() {
           { onConflict: "user_id,role" }
         );
         if (roleErr) throw roleErr;
+
+        // Save initial password to ui_texts for quick reference
+        await supabase.from("ui_texts").upsert(
+          {
+            key: `staff_pwd_${userId}`,
+            section: "staff_credentials",
+            ar: formPassword,
+            ku: formPassword,
+          },
+          { onConflict: "key" }
+        );
       }
     },
     onSuccess: () => {
@@ -360,9 +487,11 @@ export function SettingsUsersTab() {
 
   // Filtered users according to the selected view
   const filteredUsers = users.filter((u) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.phone.includes(searchQuery);
+      u.full_name.toLowerCase().includes(q) ||
+      u.phone.includes(q) ||
+      u.username.toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
 
@@ -418,7 +547,7 @@ export function SettingsUsersTab() {
 
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      {tx("phone")}
+                      {tx("phone")} (Username)
                     </label>
                     <input
                       type="tel"
@@ -566,7 +695,7 @@ export function SettingsUsersTab() {
           </div>
         </div>
 
-        {/* Users Data Table */}
+        {/* Users Data Table with Username and Password */}
         {isLoading ? (
           <div className="flex h-44 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-[#007979]" />
@@ -578,13 +707,14 @@ export function SettingsUsersTab() {
         ) : (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-start border-collapse">
+              <table className="w-full text-start border-collapse min-w-[700px]">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-black uppercase tracking-wider">
                     <th className="py-3 px-4 text-start">{tx("colUser")}</th>
-                    <th className="py-3 px-4 text-start">{tx("colPhone")}</th>
+                    <th className="py-3 px-4 text-start">{tx("colUsername")}</th>
+                    <th className="py-3 px-4 text-start">{tx("colPassword")}</th>
                     <th className="py-3 px-4 text-start">{tx("colRole")}</th>
-                    <th className="py-3 px-4 text-start hidden md:table-cell">{tx("colJoined")}</th>
+                    <th className="py-3 px-4 text-start hidden lg:table-cell">{tx("colJoined")}</th>
                     <th className="py-3 px-4 text-end">{tx("colActions")}</th>
                   </tr>
                 </thead>
@@ -593,6 +723,8 @@ export function SettingsUsersTab() {
                     const isAdmin = user.role === "admin";
                     const isManager = user.role === "brand_manager";
                     const isSelf = currentAuthUser?.id === user.id;
+                    const isPasswordRevealed = !!visiblePasswords[user.id];
+                    const pwdDisplay = user.saved_password || "";
 
                     const formattedDate = user.created_at
                       ? new Date(user.created_at).toLocaleDateString(lang === "ku" ? "ku" : lang === "ar" ? "ar-EG" : "en-US", {
@@ -619,7 +751,7 @@ export function SettingsUsersTab() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                                <span className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[140px]">
                                   {user.full_name}
                                 </span>
                                 {isSelf && (
@@ -635,11 +767,71 @@ export function SettingsUsersTab() {
                           </div>
                         </td>
 
-                        {/* Phone Column */}
+                        {/* Username Column */}
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                            <Phone className="size-3 text-slate-400 shrink-0" />
-                            <span dir="ltr" className="font-mono">{user.phone || "—"}</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                              <User className="size-3 text-slate-400 shrink-0" />
+                              <span dir="ltr">{user.username}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(user.username, tx("colUsername"))}
+                              className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                              title={tx("colUsername")}
+                            >
+                              <Copy className="size-3" />
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Password Column */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                              <Key className="size-3 text-slate-400 shrink-0" />
+                              <span dir="ltr">
+                                {pwdDisplay
+                                  ? isPasswordRevealed
+                                    ? pwdDisplay
+                                    : "••••••••"
+                                  : "••••••••"}
+                              </span>
+                            </div>
+
+                            {/* Show/Hide Toggle */}
+                            {pwdDisplay && (
+                              <button
+                                type="button"
+                                onClick={() => togglePasswordVisibility(user.id)}
+                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                title={isPasswordRevealed ? "Hide password" : "Show password"}
+                              >
+                                {isPasswordRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                              </button>
+                            )}
+
+                            {/* Copy Password Button */}
+                            {pwdDisplay && (
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(pwdDisplay, tx("colPassword"))}
+                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                title={tx("colPassword")}
+                              >
+                                <Copy className="size-3" />
+                              </button>
+                            )}
+
+                            {/* Quick Set/Change Password Key Button */}
+                            <button
+                              type="button"
+                              onClick={() => openQuickPasswordModal(user)}
+                              className="size-7 rounded-lg hover:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
+                              title={tx("savePassword")}
+                            >
+                              <Pencil className="size-3" />
+                            </button>
                           </div>
                         </td>
 
@@ -668,7 +860,7 @@ export function SettingsUsersTab() {
                         </td>
 
                         {/* Date Column */}
-                        <td className="py-3 px-4 hidden md:table-cell">
+                        <td className="py-3 px-4 hidden lg:table-cell">
                           <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                             <Calendar className="size-3 shrink-0" />
                             <span>{formattedDate}</span>
@@ -720,7 +912,7 @@ export function SettingsUsersTab() {
         )}
       </AdminCard>
 
-      {/* Edit User Modal */}
+      {/* Edit User Modal (With Name, Phone, Role, and Password) */}
       <Dialog open={!!userToEdit} onOpenChange={(open) => !open && setUserToEdit(null)}>
         <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
           <DialogHeader>
@@ -746,7 +938,7 @@ export function SettingsUsersTab() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  {tx("phone")}
+                  {tx("phone")} (Username)
                 </label>
                 <input
                   type="tel"
@@ -754,6 +946,20 @@ export function SettingsUsersTab() {
                   onChange={(e) => setEditPhone(e.target.value)}
                   className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  {tx("newPassword")}
+                </label>
+                <input
+                  type="text"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">{tx("newPasswordHelp")}</p>
               </div>
 
               <div>
@@ -825,6 +1031,63 @@ export function SettingsUsersTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Quick Password Change Modal */}
+      <Dialog open={!!userForPasswordChange} onOpenChange={(open) => !open && setUserForPasswordChange(null)}>
+        <DialogContent className="max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Key className="size-4 text-amber-500" />
+              <span>{tx("changePasswordTitle")}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {userForPasswordChange && (
+            <div className="space-y-3.5 pt-3">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  {userForPasswordChange.full_name}
+                </p>
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  @{userForPasswordChange.username}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  {tx("newPasswordRequired")}
+                </label>
+                <input
+                  type="text"
+                  value={quickNewPassword}
+                  onChange={(e) => setQuickNewPassword(e.target.value)}
+                  placeholder="Min 6 characters..."
+                  className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setUserForPasswordChange(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  {tx("cancel")}
+                </button>
+                <button
+                  type="button"
+                  disabled={changePasswordMut.isPending}
+                  onClick={() => changePasswordMut.mutate()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007979] hover:bg-teal-700 text-white text-xs font-extrabold shadow-sm transition active:scale-95"
+                >
+                  {changePasswordMut.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                  <span>{tx("savePassword")}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Delete User Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
@@ -837,7 +1100,7 @@ export function SettingsUsersTab() {
               {tx("deleteConfirmDesc")}
               {userToDelete && (
                 <span className="block mt-2 font-black text-slate-900 dark:text-white">
-                  {userToDelete.full_name} ({userToDelete.phone})
+                  {userToDelete.full_name} ({userToDelete.phone || userToDelete.username})
                 </span>
               )}
             </AlertDialogDescription>
