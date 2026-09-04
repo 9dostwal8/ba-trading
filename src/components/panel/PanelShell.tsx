@@ -216,9 +216,9 @@ export function PanelShell({
       <div className="mx-auto w-full max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px]">
         
         {/* Top Control Bar with Theme Toggle on the Left and Search in the Center */}
-        <div className="mb-8 sm:mb-12 flex items-center justify-between gap-4 w-full">
+        <div className="mb-8 sm:mb-12 flex items-center justify-between gap-4 w-full [direction:ltr]">
           
-          {/* Left: User Theme Toggle Button (Dark / Light) */}
+          {/* Physical Left: User Theme Toggle Button (Dark / Light) */}
           <button
             onClick={toggleTheme}
             type="button"
@@ -238,7 +238,10 @@ export function PanelShell({
           </button>
 
           {/* Center: Search Bar */}
-          <div className="relative flex-1 max-w-md mx-auto">
+          <div
+            className="relative flex-1 max-w-md mx-auto"
+            style={{ direction: lang === "ar" || lang === "ku" ? "rtl" : "ltr" }}
+          >
             <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
