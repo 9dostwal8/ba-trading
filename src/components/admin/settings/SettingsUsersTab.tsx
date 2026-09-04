@@ -583,8 +583,22 @@ export function SettingsUsersTab() {
         console.warn("Isolated auth registration warning:", authErr);
       }
 
+      // Check if an existing profile already exists with this phone
       if (!newUserId) {
-        newUserId = `staff_${cleanPhone}_${Date.now().toString(36)}`;
+        const { data: existingProf } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("phone", cleanPhone)
+          .maybeSingle();
+
+        if (existingProf?.id) {
+          newUserId = existingProf.id;
+        }
+      }
+
+      // Fallback: must ALWAYS be a valid UUID for PostgreSQL
+      if (!newUserId) {
+        newUserId = crypto.randomUUID();
       }
 
       // 2. Insert profile record into profiles table using admin session
