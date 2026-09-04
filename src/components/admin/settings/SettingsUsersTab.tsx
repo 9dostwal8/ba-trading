@@ -20,6 +20,7 @@ import {
   EyeOff,
   Copy,
   Key,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -53,7 +54,7 @@ const L = {
     en: "Manage administrators, brand managers, and dashboard staff",
   },
   addUser: { ar: "إضافة عضو إداري جديد", ku: "زیادکردنی ئەندامی نوێ", en: "Add Staff Member" },
-  searchPlaceholder: { ar: "بحث بالاسم أو رقم الهاتف أو اسم المستخدم...", ku: "گەڕان بەپێی ناو، مۆبایل، یان ناوی بەکارهێنەر...", en: "Search by name, phone, or username..." },
+  searchPlaceholder: { ar: "بحث بالاسم أو الهاتف أو البريد أو اسم المستخدم...", ku: "گەڕان بەپێی ناو، مۆبایل، ئیمەیڵ، یان ناوی بەکارهێنەر...", en: "Search by name, phone, email, or username..." },
   panelUsers: { ar: "مشرفو هذه اللوحة", ku: "بەکارهێنەرانی ئەم پانێڵە", en: "Admin Panel Staff" },
   admins: { ar: "المشرفون (Admin)", ku: "بەڕێوەبەران", en: "Admins" },
   managers: { ar: "مدراء البراندات", ku: "بەڕێوەبەرانی براند", en: "Brand Managers" },
@@ -65,7 +66,7 @@ const L = {
   editBtn: { ar: "تعديل", ku: "دەستکاریکردن", en: "Edit" },
   deleteBtn: { ar: "حذف", ku: "سڕینەوە", en: "Delete" },
   colUser: { ar: "المستخدم", ku: "بەکارهێنەر", en: "User" },
-  colUsername: { ar: "اسم المستخدم", ku: "ناوی بەکارهێنەر", en: "Username" },
+  colUsername: { ar: "اسم المستخدم / الدخول", ku: "ناوی بەکارهێنەر / چوونەژوورەوە", en: "Username / Contact" },
   colPassword: { ar: "كلمة المرور", ku: "وشەی تێپەڕ", en: "Password" },
   colRole: { ar: "الدور في النظام", ku: "ڕۆڵ لە سیستەم", en: "System Role" },
   colJoined: { ar: "تاريخ الانضمام", ku: "بەرواری تۆماربوون", en: "Joined Date" },
@@ -77,6 +78,7 @@ const L = {
   passwordUpdated: { ar: "تم تغيير كلمة المرور بنجاح", ku: "وشەی تێپەڕ بەسەرکەوتوویی گۆڕدرا", en: "Password updated successfully" },
   fullName: { ar: "الاسم الكامل", ku: "ناوی تەواو", en: "Full Name" },
   phone: { ar: "رقم الهاتف", ku: "ژمارەی مۆبایل", en: "Phone Number" },
+  email: { ar: "البريد الإلكتروني", ku: "ئیمەیڵ", en: "Email Address" },
   password: { ar: "كلمة المرور", ku: "وشەی تێپەڕ", en: "Password" },
   newPassword: { ar: "كلمة المرور الجديدة (اختياري)", ku: "وشەی تێپەڕی نوێ (ئارەزوومەندانە)", en: "New Password (optional)" },
   newPasswordRequired: { ar: "كلمة المرور الجديدة", ku: "وشەی تێپەڕی نوێ", en: "New Password" },
@@ -111,6 +113,7 @@ export interface UserItem {
   id: string;
   full_name: string;
   phone: string;
+  email?: string;
   username: string;
   saved_password?: string;
   avatar_url: string | null;
@@ -140,12 +143,14 @@ export function SettingsUsersTab() {
   // Form State for Add Staff
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
+  const [formEmail, setFormEmail] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formRole, setFormRole] = useState<"admin" | "brand_manager">("admin");
 
   // Form State for Edit User
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "brand_manager" | "customer">("customer");
   const [editPassword, setEditPassword] = useState("");
 
@@ -174,7 +179,7 @@ export function SettingsUsersTab() {
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
-      const [userAuthRes, profilesRes, rolesRes, pwdsRes] = await Promise.all([
+      const [userAuthRes, profilesRes, rolesRes, credsRes] = await Promise.all([
         supabase.auth.getUser().catch(() => ({ data: { user: null } })),
         supabase
           .from("profiles")
@@ -189,12 +194,17 @@ export function SettingsUsersTab() {
 
       const currentUser = userAuthRes?.data?.user;
       
-      // Map stored staff passwords
+      // Map stored staff passwords and emails
       const pwdsMap = new Map<string, string>();
-      for (const item of pwdsRes.data ?? []) {
+      const emailsMap = new Map<string, string>();
+
+      for (const item of credsRes.data ?? []) {
         if (item.key.startsWith("staff_pwd_")) {
           const uId = item.key.replace("staff_pwd_", "");
           pwdsMap.set(uId, item.ar);
+        } else if (item.key.startsWith("staff_email_")) {
+          const uId = item.key.replace("staff_email_", "");
+          emailsMap.set(uId, item.ar);
         }
       }
 
@@ -214,12 +224,14 @@ export function SettingsUsersTab() {
         else if (userRoles.includes("brand_manager")) role = "brand_manager";
 
         const phone = p.phone || "";
+        const savedEmail = emailsMap.get(p.id) || (phone ? `${phone}@dentalstore.app` : "");
         const username = phone || (p.full_name ? p.full_name.toLowerCase().replace(/\s+/g, '_') : `user_${p.id.slice(0, 6)}`);
 
         userMap.set(p.id, {
           id: p.id,
           full_name: p.full_name || phone || "User",
           phone,
+          email: savedEmail,
           username,
           saved_password: pwdsMap.get(p.id) || "",
           avatar_url: p.avatar_url || null,
@@ -236,10 +248,13 @@ export function SettingsUsersTab() {
           if (userRoles.includes("admin")) role = "admin";
           else if (userRoles.includes("brand_manager")) role = "brand_manager";
 
+          const savedEmail = emailsMap.get(userId) || "";
+
           userMap.set(userId, {
             id: userId,
             full_name: role === "admin" ? "Admin Staff" : "Brand Manager",
             phone: "",
+            email: savedEmail,
             username: `staff_${userId.slice(0, 6)}`,
             saved_password: pwdsMap.get(userId) || "",
             avatar_url: null,
@@ -263,6 +278,7 @@ export function SettingsUsersTab() {
           currentUser.phone ||
           existing?.phone ||
           "07702269722";
+        const email = currentUser.email || existing?.email || "dosty.wal98@gmail.com";
         const username = phone || (currentUser.email ? currentUser.email.split("@")[0] : "dosty");
         const roles = existing?.roles?.length ? existing.roles : ["admin"];
 
@@ -270,6 +286,7 @@ export function SettingsUsersTab() {
           id: currentUser.id,
           full_name: name,
           phone,
+          email,
           username,
           saved_password: existing?.saved_password || pwdsMap.get(currentUser.id) || "",
           avatar_url: existing?.avatar_url || null,
@@ -288,6 +305,7 @@ export function SettingsUsersTab() {
     setUserToEdit(user);
     setEditName(user.full_name);
     setEditPhone(user.phone);
+    setEditEmail(user.email || "");
     setEditRole(user.role);
     setEditPassword(user.saved_password || "");
   };
@@ -298,11 +316,12 @@ export function SettingsUsersTab() {
     setQuickNewPassword(user.saved_password || "");
   };
 
-  // Update User Mutation (Full Name, Phone, Role, and optional Password)
+  // Update User Mutation (Full Name, Phone, Email, Role, and optional Password)
   const editUserMut = useMutation({
     mutationFn: async () => {
       if (!userToEdit) return;
       const cleanPhone = editPhone.replace(/\D/g, "");
+      const trimmedEmail = editEmail.trim().toLowerCase();
 
       // 1. Update Profile
       const { error: profErr } = await supabase
@@ -313,7 +332,20 @@ export function SettingsUsersTab() {
         );
       if (profErr) throw profErr;
 
-      // 2. Update Role in user_roles
+      // 2. Update Email in ui_texts if provided
+      if (trimmedEmail) {
+        await supabase.from("ui_texts").upsert(
+          {
+            key: `staff_email_${userToEdit.id}`,
+            section: "staff_credentials",
+            ar: trimmedEmail,
+            ku: trimmedEmail,
+          },
+          { onConflict: "key" }
+        );
+      }
+
+      // 3. Update Role in user_roles
       if (editRole === "customer") {
         await supabase
           .from("user_roles")
@@ -327,7 +359,7 @@ export function SettingsUsersTab() {
         );
       }
 
-      // 3. Update Password if provided
+      // 4. Update Password if provided
       if (editPassword.trim()) {
         if (editPassword.trim().length < 6) {
           throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
@@ -389,11 +421,11 @@ export function SettingsUsersTab() {
         .delete()
         .eq("user_id", targetUser.id);
 
-      // Remove password record
+      // Remove credentials records
       await supabase
         .from("ui_texts")
         .delete()
-        .eq("key", `staff_pwd_${targetUser.id}`);
+        .in("key", [`staff_pwd_${targetUser.id}`, `staff_email_${targetUser.id}`]);
 
       // Remove profile record
       const { error } = await supabase
@@ -413,7 +445,7 @@ export function SettingsUsersTab() {
     },
   });
 
-  // Create Staff Account Mutation
+  // Create Staff Account Mutation (With Name, Phone, Email, Password, Role)
   const createStaffMut = useMutation({
     mutationFn: async () => {
       const cleanPhone = formPhone.replace(/\D/g, "");
@@ -421,14 +453,17 @@ export function SettingsUsersTab() {
       if (formPassword.length < 6) throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
       if (!formName.trim()) throw new Error(lang === "ku" ? "تکایە ناو بنووسە" : "يرجى كتابة الاسم");
 
-      const email = `${cleanPhone}@dentalstore.app`;
+      const trimmedEmail = formEmail.trim().toLowerCase();
+      const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
+
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email,
+        email: finalEmail,
         password: formPassword,
         options: {
           data: {
             full_name: formName.trim(),
             phone: cleanPhone,
+            email: finalEmail,
           },
         },
       });
@@ -460,6 +495,17 @@ export function SettingsUsersTab() {
           },
           { onConflict: "key" }
         );
+
+        // Save email to ui_texts for quick reference
+        await supabase.from("ui_texts").upsert(
+          {
+            key: `staff_email_${userId}`,
+            section: "staff_credentials",
+            ar: finalEmail,
+            ku: finalEmail,
+          },
+          { onConflict: "key" }
+        );
       }
     },
     onSuccess: () => {
@@ -467,6 +513,7 @@ export function SettingsUsersTab() {
       setIsAddOpen(false);
       setFormName("");
       setFormPhone("");
+      setFormEmail("");
       setFormPassword("");
       qc.invalidateQueries({ queryKey: ["admin-users-list"] });
     },
@@ -491,6 +538,7 @@ export function SettingsUsersTab() {
     const matchesSearch =
       u.full_name.toLowerCase().includes(q) ||
       u.phone.includes(q) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
       u.username.toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
@@ -547,13 +595,27 @@ export function SettingsUsersTab() {
 
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                      {tx("phone")} (Username)
+                      {tx("phone")}
                     </label>
                     <input
                       type="tel"
                       value={formPhone}
                       onChange={(e) => setFormPhone(e.target.value)}
                       placeholder="0770xxxxxxx"
+                      className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
+                    />
+                  </div>
+
+                  {/* Email Input Field */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      {tx("email")}
+                    </label>
+                    <input
+                      type="email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      placeholder="admin@batrading.iq (optional)"
                       className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                     />
                   </div>
@@ -695,7 +757,7 @@ export function SettingsUsersTab() {
           </div>
         </div>
 
-        {/* Users Data Table with Username and Password */}
+        {/* Users Data Table with Username, Email and Password */}
         {isLoading ? (
           <div className="flex h-44 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-[#007979]" />
@@ -707,7 +769,7 @@ export function SettingsUsersTab() {
         ) : (
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-start border-collapse min-w-[700px]">
+              <table className="w-full text-start border-collapse min-w-[760px]">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-black uppercase tracking-wider">
                     <th className="py-3 px-4 text-start">{tx("colUser")}</th>
@@ -739,7 +801,7 @@ export function SettingsUsersTab() {
                         key={user.id}
                         className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors group"
                       >
-                        {/* User Column */}
+                        {/* User Column (Avatar, Name, Email, ID) */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="size-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-700 dark:text-slate-300 font-black text-xs shadow-2xs">
@@ -760,28 +822,53 @@ export function SettingsUsersTab() {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[10px] text-slate-400 font-mono block">
-                                #{user.id.slice(0, 8)}
-                              </span>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  #{user.id.slice(0, 8)}
+                                </span>
+                                {user.email && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                                    <Mail className="size-2.5 text-slate-400" />
+                                    <span className="truncate max-w-[140px]">{user.email}</span>
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
 
-                        {/* Username Column */}
+                        {/* Username & Contact Column */}
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-                              <User className="size-3 text-slate-400 shrink-0" />
-                              <span dir="ltr">{user.username}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                                <Phone className="size-3 text-slate-400 shrink-0" />
+                                <span dir="ltr">{user.phone || user.username}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(user.phone || user.username, tx("phone"))}
+                                className="size-6 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                title={tx("phone")}
+                              >
+                                <Copy className="size-3" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(user.username, tx("colUsername"))}
-                              className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
-                              title={tx("colUsername")}
-                            >
-                              <Copy className="size-3" />
-                            </button>
+
+                            {user.email && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                <Mail className="size-3 text-slate-400 shrink-0" />
+                                <span className="font-mono truncate max-w-[150px]">{user.email}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(user.email!, tx("email"))}
+                                  className="size-5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                  title={tx("email")}
+                                >
+                                  <Copy className="size-2.5" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
 
@@ -804,7 +891,7 @@ export function SettingsUsersTab() {
                               <button
                                 type="button"
                                 onClick={() => togglePasswordVisibility(user.id)}
-                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition"
                                 title={isPasswordRevealed ? "Hide password" : "Show password"}
                               >
                                 {isPasswordRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -816,7 +903,7 @@ export function SettingsUsersTab() {
                               <button
                                 type="button"
                                 onClick={() => copyToClipboard(pwdDisplay, tx("colPassword"))}
-                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition"
                                 title={tx("colPassword")}
                               >
                                 <Copy className="size-3" />
@@ -912,7 +999,7 @@ export function SettingsUsersTab() {
         )}
       </AdminCard>
 
-      {/* Edit User Modal (With Name, Phone, Role, and Password) */}
+      {/* Edit User Modal (With Name, Phone, Email, Role, and Password) */}
       <Dialog open={!!userToEdit} onOpenChange={(open) => !open && setUserToEdit(null)}>
         <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
           <DialogHeader>
@@ -938,12 +1025,25 @@ export function SettingsUsersTab() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  {tx("phone")} (Username)
+                  {tx("phone")}
                 </label>
                 <input
                   type="tel"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  {tx("email")}
+                </label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="admin@batrading.iq"
                   className="w-full h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 px-3 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#007979]"
                 />
               </div>
@@ -1048,7 +1148,7 @@ export function SettingsUsersTab() {
                   {userForPasswordChange.full_name}
                 </p>
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  @{userForPasswordChange.username}
+                  {userForPasswordChange.phone || userForPasswordChange.email || userForPasswordChange.username}
                 </p>
               </div>
 
@@ -1100,7 +1200,7 @@ export function SettingsUsersTab() {
               {tx("deleteConfirmDesc")}
               {userToDelete && (
                 <span className="block mt-2 font-black text-slate-900 dark:text-white">
-                  {userToDelete.full_name} ({userToDelete.phone || userToDelete.username})
+                  {userToDelete.full_name} ({userToDelete.email || userToDelete.phone})
                 </span>
               )}
             </AlertDialogDescription>

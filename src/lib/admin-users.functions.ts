@@ -250,6 +250,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       phone: string;
       password: string;
       role: "admin" | "brand_manager";
+      email?: string;
     }) => input
   )
   .handler(async ({ data, context }) => {
@@ -266,7 +267,10 @@ export const createStaffAccount = createServerFn({ method: "POST" })
     if (fullName.length < 2) throw new Error("badName");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email = `${phone}@${PHONE_DOMAIN}`;
+    const email =
+      data.email && data.email.includes("@")
+        ? data.email.trim().toLowerCase()
+        : `${phone}@${PHONE_DOMAIN}`;
 
     const existing = await supabaseAdmin
       .from("profiles")
@@ -281,14 +285,14 @@ export const createStaffAccount = createServerFn({ method: "POST" })
         email,
         password: data.password,
         email_confirm: true,
-        user_metadata: { full_name: fullName, phone },
+        user_metadata: { full_name: fullName, phone, email },
       });
     } else {
       const created = await supabaseAdmin.auth.admin.createUser({
         email,
         password: data.password,
         email_confirm: true,
-        user_metadata: { full_name: fullName, phone },
+        user_metadata: { full_name: fullName, phone, email },
       });
       if (created.error || !created.data.user) {
         throw new Error(created.error?.message ?? "createFailed");
@@ -304,7 +308,28 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       .from("user_roles")
       .upsert({ user_id: userId, role: data.role }, { onConflict: "user_id,role" });
 
-    return { userId, phone, fullName, role: data.role };
+    // Store email and password reference in ui_texts
+    await supabaseAdmin.from("ui_texts").upsert(
+      {
+        key: `staff_email_${userId}`,
+        section: "staff_credentials",
+        ar: email,
+        ku: email,
+      },
+      { onConflict: "key" }
+    );
+
+    await supabaseAdmin.from("ui_texts").upsert(
+      {
+        key: `staff_pwd_${userId}`,
+        section: "staff_credentials",
+        ar: data.password,
+        ku: data.password,
+      },
+      { onConflict: "key" }
+    );
+
+    return { userId, phone, fullName, email, role: data.role };
   });
 
 /** Admin: set or reset user password directly */
