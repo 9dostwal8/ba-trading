@@ -13,13 +13,15 @@ import {
   Wrench,
   Loader2,
   CheckCircle2,
+  UploadCloud,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, SectionHeader, TextField, ToggleField } from "./AdminKit";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { uploadBannerImage, uploadMessage } from "@/lib/upload";
 import type { StoreSettings } from "@/lib/store";
 
 /** Bilingual labels for Settings */
@@ -42,7 +44,7 @@ const L = {
 
   identity: { ar: "هوية التطبيق", ku: "ناسنامەی ئەپ", en: "App Identity" },
   brandingFiles: { ar: "الشعار والأيقونة", ku: "لۆگۆ و ئایکۆن", en: "Logo & Icon" },
-  seo: { ar: "SEO والمشاركة", ku: "SEO و بڵاوکردنەوە", en: "SEO & Sharing" },
+  seo: { ar: "SEO والمشاركة في شبكات التواصل", ku: "SEO و بڵاوکردنەوە لە تۆڕە کۆمەڵایەتییەکان", en: "SEO & Social Sharing" },
   contact: { ar: "التواصل والشبكات", ku: "پەیوەندی و تۆڕەکان", en: "Contact & Networks" },
   commerce: { ar: "الشراء والتوصيل", ku: "کڕین و گەیاندن", en: "Purchase & Delivery" },
   announcement: { ar: "شريط الإعلان", ku: "شریتی ڕاگەیاندن", en: "Announcement Bar" },
@@ -57,9 +59,17 @@ const L = {
   metaDescAr: { ar: "وصف Meta (عربي)", ku: "وەسفی Meta (عەرەبی)", en: "Meta Description (Arabic)" },
   metaDescKu: { ar: "وصف Meta (كردي)", ku: "وەسفی Meta (کوردی)", en: "Meta Description (Kurdish)" },
 
-  logoUrl: { ar: "رابط الشعار", ku: "بەستەری لۆگۆ", en: "Logo URL" },
-  faviconUrl: { ar: "رابط الأيقونة favicon", ku: "بەستەری favicon", en: "Favicon URL" },
-  ogImage: { ar: "صورة المشاركة og:image", ku: "وێنەی بڵاوکردنەوە og:image", en: "og:image URL" },
+  logoUpload: { ar: "شعار المتجر (Logo)", ku: "لۆگۆی کۆگا (Logo)", en: "Store Logo" },
+  logoHint: { ar: "يظهر في أعلى الموقع والفواتير", ku: "لە سەرەوەی ماڵپەڕ و پسوولەکان دەردەکەوێت", en: "Displayed in header and invoices" },
+  faviconUpload: { ar: "أيقونة المتصفح (Favicon)", ku: "ئایکۆنی تابەکانی وێبگەڕ (Favicon)", en: "Browser Favicon" },
+  faviconHint: { ar: "تظهر بجانب اسم الموقع في متصفح الويب", ku: "لە تەنیشت ناوی سایت لە تابی برۆوسەر دەردەکەوێت", en: "Displayed in browser tab next to title" },
+  ogImageUpload: { ar: "صورة المشاركة (og:image)", ku: "وێنەی بڵاوکردنەوە (og:image)", en: "Social Share Image" },
+  ogImageHint: {
+    ar: "تظهر كصورة معاينة عند إرسال الرابط في واتساب وفيسبوك وفايبر",
+    ku: "دەردەکەوێت کاتێک لینکی ماڵپەڕ لە واتسئاپ، ڤایبەر یان فەیسبووک دەنێریت",
+    en: "Preview image displayed when sharing store link on WhatsApp, Facebook, etc.",
+  },
+
   logoEmoji: { ar: "رمز بديل للشعار", ku: "هێمای جێگرەوەی لۆگۆ", en: "Logo Alt Text" },
 
   phone: { ar: "رقم الهاتف", ku: "ژمارەی مۆبایل", en: "Phone Number" },
@@ -123,6 +133,174 @@ const L = {
 } as const;
 
 type Row = Record<string, unknown> & { id: string };
+
+/** Interactive Image Upload Field with Dropzone, Preview, and Delete */
+function ImageUploadField({
+  label,
+  value,
+  onChange,
+  hint,
+  shape = "square",
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  hint?: string;
+  shape?: "square" | "wide";
+}) {
+  const { lang } = useI18n();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = await uploadBannerImage(file, "branding");
+      onChange(url);
+      toast.success(
+        lang === "ku"
+          ? "وێنەکە بە سەرکەوتوویی بارکرا"
+          : lang === "ar"
+          ? "تم رفع الصورة بنجاح"
+          : "Image uploaded successfully"
+      );
+    } catch (err) {
+      toast.error(uploadMessage(err, lang));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block">
+        {label}
+      </label>
+      {hint && (
+        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          {hint}
+        </p>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {value ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60">
+          <div
+            className={`overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-2xs ${
+              shape === "wide" ? "w-36 h-20" : "size-16"
+            }`}
+          >
+            <img
+              src={value}
+              alt={label}
+              className="w-full h-full object-contain p-1"
+            />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate font-mono">
+              {value}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all active:scale-95 shadow-2xs"
+              >
+                {isUploading ? (
+                  <Loader2 className="size-3.5 animate-spin text-[#007979]" />
+                ) : (
+                  <UploadCloud className="size-3.5 text-[#007979]" />
+                )}
+                <span>
+                  {lang === "ku"
+                    ? "گۆڕینی وێنە"
+                    : lang === "ar"
+                    ? "تغيير الصورة"
+                    : "Change Image"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onChange("")}
+                disabled={isUploading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 text-xs font-bold text-rose-600 dark:text-rose-400 transition-all active:scale-95"
+              >
+                <Trash2 className="size-3.5" />
+                <span>
+                  {lang === "ku" ? "سڕینەوە" : lang === "ar" ? "حذف" : "Remove"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="group cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-[#007979] dark:hover:border-teal-500 rounded-2xl p-5 text-center bg-slate-50/50 dark:bg-slate-900/50 hover:bg-teal-50/20 dark:hover:bg-slate-800/60 transition-all duration-200 flex flex-col items-center justify-center gap-2"
+        >
+          <div className="size-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+            {isUploading ? (
+              <Loader2 className="size-5 animate-spin text-[#007979]" />
+            ) : (
+              <UploadCloud className="size-5 text-[#007979] group-hover:text-teal-600" />
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#007979] transition-colors">
+              {isUploading
+                ? (lang === "ku" ? "بارکردنی وێنە..." : lang === "ar" ? "جاري الرفع..." : "Uploading...")
+                : (lang === "ku" ? "کلیک بکە بۆ بارکردنی وێنە لە ئامێرەکەت" : lang === "ar" ? "انقر لاختيار ورفع صورة من جهازك" : "Click to select and upload image")}
+            </p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+              PNG, JPG, WEBP, SVG (Max 8MB)
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Manual URL entry toggle */}
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={() => setShowUrlInput(!showUrlInput)}
+          className="text-[11px] font-bold text-slate-400 hover:text-[#007979] transition-colors flex items-center gap-1"
+        >
+          <span>
+            {showUrlInput
+              ? (lang === "ku" ? "▲ شاردنەوەی لینکی دەستی" : lang === "ar" ? "▲ إخفاء الرابط اليدوي" : "▲ Hide Manual URL")
+              : (lang === "ku" ? "▼ یان لینکی وێنەکە بنووسە بە دەستی" : lang === "ar" ? "▼ أو أدخل رابط الصورة يدوياً" : "▼ Or enter image URL manually")}
+          </span>
+        </button>
+        {showUrlInput && (
+          <div className="mt-1.5">
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="https://example.com/image.png"
+              className="w-full h-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#007979]"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function AdminSettings() {
   const { lang, t } = useI18n();
@@ -288,33 +466,49 @@ export function AdminSettings() {
               <div className="grid grid-cols-1 gap-3">
                 {text("meta_description_ar", "metaDescAr")}
                 {text("meta_description_ku", "metaDescKu")}
-                {text("og_image_url", "ogImage")}
+              </div>
+
+              {/* Upload og:image for Social Sharing */}
+              <div className="pt-2">
+                <ImageUploadField
+                  label={tx("ogImageUpload")}
+                  hint={tx("ogImageHint")}
+                  value={str("og_image_url")}
+                  onChange={(url) => set("og_image_url", url)}
+                  shape="wide"
+                />
               </div>
             </AdminCard>
           </div>
         )}
 
-        {/* TAB 2: BRANDING (LOGO & ICON) */}
+        {/* TAB 2: BRANDING (LOGO & FAVICON UPLOAD) */}
         {activeTab === "branding" && (
           <div className="space-y-4 animate-in fade-in-50 duration-200">
             <AdminCard>
-              <SectionHeader
-                title={tx("brandingFiles")}
-                action={
-                  str("logo_url") ? (
-                    <img
-                      src={str("logo_url")}
-                      alt={tx("logoPreview")}
-                      className="size-11 rounded-xl object-contain border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1"
-                    />
-                  ) : (
-                    <span className="text-2xl">{str("logo_emoji") || "🦷"}</span>
-                  )
-                }
-              />
-              <div className="space-y-3">
-                {text("logo_url", "logoUrl")}
-                {text("favicon_url", "faviconUrl")}
+              <SectionHeader title={tx("brandingFiles")} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                {/* 1. Logo Upload with live preview */}
+                <ImageUploadField
+                  label={tx("logoUpload")}
+                  hint={tx("logoHint")}
+                  value={str("logo_url")}
+                  onChange={(url) => set("logo_url", url)}
+                  shape="square"
+                />
+
+                {/* 2. Favicon Upload */}
+                <ImageUploadField
+                  label={tx("faviconUpload")}
+                  hint={tx("faviconHint")}
+                  value={str("favicon_url")}
+                  onChange={(url) => set("favicon_url", url)}
+                  shape="square"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
                 {text("logo_emoji", "logoEmoji")}
               </div>
             </AdminCard>
