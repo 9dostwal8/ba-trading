@@ -14,6 +14,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { CartProvider } from "@/lib/cart";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeSync } from "@/components/ThemeSync";
+import { SiteMeta } from "@/components/SiteMeta";
 import { NativeShell } from "@/components/NativeShell";
 
 function NotFoundComponent() {
@@ -120,6 +121,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <CartProvider>
+          <SiteMeta />
           <ThemeSync />
           <NativeShell />
           {/* Required: nested routes render here. */}

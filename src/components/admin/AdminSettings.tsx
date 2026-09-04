@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { uploadBannerImage, uploadMessage } from "@/lib/upload";
 import type { StoreSettings } from "@/lib/store";
+import { setDocumentFavicon } from "@/components/SiteMeta";
 
 /** Bilingual labels for Settings */
 const L = {
@@ -353,6 +354,9 @@ export function AdminSettings() {
     },
     onSuccess: () => {
       toast.success(tx("saved"));
+      if (draft && draft["favicon_url"]) {
+        setDocumentFavicon(String(draft["favicon_url"]));
+      }
       qc.invalidateQueries({ queryKey: ["admin-store-settings"] });
       qc.invalidateQueries({ queryKey: ["store"] });
     },
@@ -503,7 +507,10 @@ export function AdminSettings() {
                   label={tx("faviconUpload")}
                   hint={tx("faviconHint")}
                   value={str("favicon_url")}
-                  onChange={(url) => set("favicon_url", url)}
+                  onChange={(url) => {
+                    set("favicon_url", url);
+                    if (url) setDocumentFavicon(url);
+                  }}
                   shape="square"
                 />
               </div>
