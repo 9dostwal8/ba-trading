@@ -84,9 +84,6 @@ export function AdminHeader() {
               <span className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white">
                 BA Trading
               </span>
-              <span className="rounded-md bg-[#007979]/10 dark:bg-teal-500/20 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-black text-[#007979] dark:text-teal-400">
-                {lang === "ar" ? "لوحة الإدارة" : lang === "ku" ? "بەڕێوەبردن" : "Admin Panel"}
-              </span>
             </div>
             <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 dark:text-slate-500 hidden xs:block">
               {lang === "ar" ? "إدارة المتجر والطلبات والأسعار" : lang === "ku" ? "بەڕێوەبردنی کۆگا و داواکاری و نرخەکان" : "Store Operations & Management"}
