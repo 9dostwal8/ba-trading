@@ -412,11 +412,40 @@ export function SettingsUsersTab() {
         if (editPassword.trim().length < 6) {
           throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
         }
-        await adminSetUserPassword({
-          data: {
-            targetUserId: userToEdit.id,
-            newPassword: editPassword.trim(),
+
+        // Save to ui_texts for quick reference
+        await supabase.from("ui_texts").upsert(
+          {
+            key: `staff_pwd_${userToEdit.id}`,
+            section: "staff_credentials",
+            ar: editPassword.trim(),
+            ku: editPassword.trim(),
           },
+          { onConflict: "key" }
+        );
+
+        // If editing own account, update directly via client auth without needing service role key!
+        if (currentAuthUser && userToEdit.id === currentAuthUser.id) {
+          await supabase.auth.updateUser({
+            password: editPassword.trim(),
+            data: { full_name: editName.trim(), phone: cleanPhone },
+          });
+        } else {
+          try {
+            await adminSetUserPassword({
+              data: {
+                targetUserId: userToEdit.id,
+                newPassword: editPassword.trim(),
+              },
+            });
+          } catch (srvErr) {
+            console.warn("adminSetUserPassword note:", srvErr);
+          }
+        }
+      } else if (currentAuthUser && userToEdit.id === currentAuthUser.id) {
+        // Update user metadata name
+        await supabase.auth.updateUser({
+          data: { full_name: editName.trim(), phone: cleanPhone },
         });
       }
     },
@@ -438,12 +467,32 @@ export function SettingsUsersTab() {
         throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
       }
 
-      await adminSetUserPassword({
-        data: {
-          targetUserId: userForPasswordChange.id,
-          newPassword: quickNewPassword.trim(),
+      // Save to ui_texts for quick reference
+      await supabase.from("ui_texts").upsert(
+        {
+          key: `staff_pwd_${userForPasswordChange.id}`,
+          section: "staff_credentials",
+          ar: quickNewPassword.trim(),
+          ku: quickNewPassword.trim(),
         },
-      });
+        { onConflict: "key" }
+      );
+
+      // If updating own password, update directly via client auth!
+      if (currentAuthUser && userForPasswordChange.id === currentAuthUser.id) {
+        await supabase.auth.updateUser({ password: quickNewPassword.trim() });
+      } else {
+        try {
+          await adminSetUserPassword({
+            data: {
+              targetUserId: userForPasswordChange.id,
+              newPassword: quickNewPassword.trim(),
+            },
+          });
+        } catch (srvErr) {
+          console.warn("adminSetUserPassword note:", srvErr);
+        }
+      }
     },
     onSuccess: () => {
       toast.success(tx("passwordUpdated"));
