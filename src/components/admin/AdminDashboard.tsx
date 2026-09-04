@@ -273,7 +273,7 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100/90 flex flex-col">
+    <div className="min-h-screen bg-slate-100/90 dark:bg-slate-950 flex flex-col transition-colors duration-200">
       {/* Existing Header (no extra duplicate header) */}
       <AdminHeader />
       
