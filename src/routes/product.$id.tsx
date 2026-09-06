@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   Banknote,
@@ -50,6 +50,9 @@ import { ProductBadges, DiscountBlade } from "@/lib/badges";
 import { fetchVendors } from "@/lib/vendor-public";
 import { siblingOffers } from "@/lib/catalog";
 import { categoryIcon, tintStyle } from "@/lib/category-icons";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavorites } from "@/hooks/useFavorites";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -90,60 +93,12 @@ function Faq({ q, a }: { q: string; a: string }) {
 function ProductPage() {
   const { id } = Route.useParams();
   const { lang, t } = useI18n();
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const cart = useCart();
   const [qty, setQty] = useState(1);
   const { data, isLoading } = useQuery({ queryKey: ["store"], queryFn: fetchStoreData });
   const { data: vendors } = useQuery({ queryKey: ["vendors"], queryFn: fetchVendors });
-
-  // Rating Modal state
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const [userStars, setUserStars] = useState(5);
-  const [hoverStars, setHoverStars] = useState(0);
-  const [reviewerName, setReviewerName] = useState("");
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewsList, setReviewsList] = useState<Array<{ name: string; stars: number; comment: string; date: string }>>([
-    {
-      name: lang === "ar" ? "د. أحمد خليل - مركز الابتسامة" : lang === "ku" ? "د. ئەحمەد خەلیل - سەنتەری ددان" : "Dr. Ahmed Khalil",
-      stars: 5,
-      comment: lang === "ar" ? "منتج أصلي بجودة ممتازة وسعر مناسب جداً للجملة." : lang === "ku" ? "بەرهەمی ئەسڵی بە کوالێتی زۆر بەرز و گونجاو." : "Authentic product with excellent quality.",
-      date: "2026-08-20",
-    },
-    {
-      name: lang === "ar" ? "عيادة النور لطب الأسنان" : lang === "ku" ? "کلینیکی نوور" : "Al-Noor Clinic",
-      stars: 5,
-      comment: lang === "ar" ? "توصيل سريع وتغليف احترافي، شكراً لكم." : lang === "ku" ? "گەیاندنی خێرا و پاکێجکردنی باش، سوپاس." : "Fast delivery and great packaging.",
-      date: "2026-08-22",
-    },
-  ]);
-
-  const handleRatingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewerName.trim()) {
-      toast.error(lang === "ar" ? "يرجى كتابة اسمك أو اسم العيادة" : lang === "ku" ? "تکایە ناوی خۆت یان کلینیک بنووسە" : "Please enter your name or clinic name");
-      return;
-    }
-    const newReview = {
-      name: reviewerName.trim(),
-      stars: userStars,
-      comment: reviewComment.trim() || (lang === "ar" ? "تقييم ممتاز بدون تعليق" : lang === "ku" ? "هەڵسەنگاندنی بەرز" : "Great rating"),
-      date: new Date().toISOString().split("T")[0] ?? "2026-08-28",
-    };
-    setReviewsList((prev) => [newReview, ...prev]);
-    setIsRatingModalOpen(false);
-    setReviewerName("");
-    setReviewComment("");
-    toast.success(
-      lang === "ar"
-        ? "شكراً لك! تم تسجيل تقييمك بنجاح"
-        : lang === "ku"
-        ? "سوپاس! هەڵسەنگاندنەکەت بە سەرکەوتوویی تۆمارکرا"
-        : "Thank you! Your rating has been submitted successfully."
-    );
-  };
-
-  const avgRating = (
-    reviewsList.reduce((acc, curr) => acc + curr.stars, 0) / reviewsList.length
-  ).toFixed(1);
 
   const [pickedId, setPickedId] = useState<string | null>(null);
   useEffect(() => setPickedId(null), [id]);
@@ -155,6 +110,140 @@ function ProductPage() {
     ? (vendors ?? []).find((v) => v.id === product.vendor_id)
     : undefined;
   const category = (data?.categories ?? []).find((c) => c.id === product?.category_id);
+
+  // User profile for prefilling review author
+  const { data: userProfile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Query Real Database Reviews
+  const { data: dbReviews = [], refetch: refetchReviews } = useQuery({
+    queryKey: ["product_reviews", product?.id],
+    queryFn: async () => {
+      if (!product?.id) return [];
+      const { data, error } = await supabase
+        .from("product_reviews")
+        .select("id, user_id, rating, comment, reviewer_name, created_at")
+        .eq("product_id", product.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("Failed to fetch product reviews:", error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!product?.id,
+  });
+
+  // Rating Modal state
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [userStars, setUserStars] = useState(5);
+  const [hoverStars, setHoverStars] = useState(0);
+  const [reviewerName, setReviewerName] = useState("");
+  const [reviewComment, setReviewComment] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
+  const openRatingModal = () => {
+    if (!user) {
+      toast.error(
+        lang === "ku"
+          ? "پێویستە سەرەتا بچیتە ژوورەوە بۆ ئەوەی ئەم بەرهەمە هەڵسەنگێنیت"
+          : "يجب تسجيل الدخول بحساب أولاً لإضافة تقييم",
+        {
+          description:
+            lang === "ku"
+              ? "تەنها بەکارهێنەرانی تۆمارکراو دەتوانن هەڵسەنگاندن بنووسن."
+              : "التقييمات مخصصة للأطباء والعيادات المسجلين فقط.",
+        }
+      );
+      return;
+    }
+    if (!reviewerName && userProfile?.full_name) {
+      setReviewerName(userProfile.full_name);
+    }
+    setIsRatingModalOpen(true);
+  };
+
+  const handleRatingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error(
+        lang === "ku"
+          ? "پێویستە سەرەتا بچیتە ژوورەوە بۆ ئەوەی ئەم بەرهەمە هەڵسەنگێنیت"
+          : "يجب تسجيل الدخول أولاً لتقييم هذا المنتج"
+      );
+      return;
+    }
+    if (!reviewerName.trim()) {
+      toast.error(
+        lang === "ar"
+          ? "يرجى كتابة اسمك أو اسم العيادة"
+          : lang === "ku"
+          ? "تکایە ناوی خۆت یان کلینیک بنووسە"
+          : "Please enter your name or clinic name"
+      );
+      return;
+    }
+
+    if (!product?.id) return;
+
+    setIsSubmittingRating(true);
+    try {
+      const { error } = await supabase.from("product_reviews").upsert(
+        {
+          product_id: product.id,
+          user_id: user.id,
+          rating: userStars,
+          comment: reviewComment.trim() || (lang === "ar" ? "تقييم ممتاز" : lang === "ku" ? "هەڵسەنگاندنی بەرز" : "Great rating"),
+          reviewer_name: reviewerName.trim(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id, product_id" }
+      );
+
+      if (error) throw error;
+
+      await refetchReviews();
+      setIsRatingModalOpen(false);
+      setReviewComment("");
+      toast.success(
+        lang === "ar"
+          ? "شكراً لك! تم حفظ تقييمك بنجاح في قاعدة البيانات"
+          : lang === "ku"
+          ? "سوپاس! هەڵسەنگاندنەکەت بە سەرکەوتوویی لە داتابەیس پاشەکەوت کرا"
+          : "Thank you! Your rating has been saved to the database successfully."
+      );
+    } catch (err: any) {
+      console.error("Error saving review:", err);
+      toast.error(
+        lang === "ku"
+          ? "هەڵەیەک ڕوویدا لە تۆمارکردنی هەڵسەنگاندن"
+          : "حدث خطأ أثناء إرسال التقييم"
+      );
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+
+  const ratingCount = dbReviews.length;
+  const avgRating =
+    ratingCount > 0
+      ? (
+          dbReviews.reduce((acc, curr) => acc + Number(curr.rating || 5), 0) /
+          ratingCount
+        ).toFixed(1)
+      : "5.0";
 
   if (isLoading) {
     return (
@@ -329,11 +418,17 @@ function ProductPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => toast.success(lang === "ar" ? "تمت الإضافة للمفضلة" : lang === "ku" ? "زیادکرا بۆ دڵخوازەکان" : "Saved to wishlist")}
-                  aria-label="Wishlist"
-                  className="flex size-9 items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-primary active:scale-95"
+                  onClick={() => toggleFavorite(product.id)}
+                  aria-label={lang === "ku" ? "دڵخوازەکان" : "المفضلة"}
+                  className="flex size-9 items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-rose-500 active:scale-95"
                 >
-                  <Bookmark className="size-4" />
+                  <Heart
+                    className={`size-4 transition-colors ${
+                      isFavorite(product.id)
+                        ? "fill-rose-500 text-rose-500"
+                        : "text-slate-600"
+                    }`}
+                  />
                 </button>
                 <button
                   type="button"
@@ -394,13 +489,13 @@ function ProductPage() {
                 )}
                 <button
                   type="button"
-                  onClick={() => setIsRatingModalOpen(true)}
+                  onClick={openRatingModal}
                   className="ms-auto flex items-center gap-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1 text-[11.5px] font-black text-amber-700 transition shadow-xs active:scale-95 cursor-pointer"
                   title={lang === "ar" ? "اضغط لتقييم المنتج" : lang === "ku" ? "کلیک بکە بۆ هەڵسەنگاندن" : "Click to rate product"}
                 >
                   <Star className="size-3.5 fill-amber-400 text-amber-400" />
                   <span>{avgRating}</span>
-                  <span className="text-amber-600 font-medium">({reviewsList.length} {lang === "ar" ? "تقييم" : lang === "ku" ? "دەنگ" : "reviews"})</span>
+                  <span className="text-amber-600 font-medium">({ratingCount} {lang === "ar" ? "تقييم" : lang === "ku" ? "دەنگ" : "reviews"})</span>
                 </button>
               </div>
 
@@ -550,7 +645,7 @@ function ProductPage() {
                     size="lg"
                     disabled={product.stock <= 0}
                     onClick={() => {
-                      cart.add(
+                      const ok = cart.add(
                         {
                           id: product.id,
                           name_ar: product.name_ar,
@@ -561,7 +656,9 @@ function ProductPage() {
                         },
                         qty,
                       );
-                      toast.success(t("added"));
+                      if (ok) {
+                        toast.success(t("added"));
+                      }
                     }}
                     className="hidden lg:flex flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-primary-foreground shadow-lg shadow-primary/25 transition hover:opacity-95 active:scale-[0.98]"
                   >
@@ -675,12 +772,12 @@ function ProductPage() {
                     {lang === "ar" ? "آراء وتقييمات العيادات والأطباء" : lang === "ku" ? "ڕا و هەڵسەنگاندنی پزیشکان" : "Clinic Reviews & Ratings"}
                   </h3>
                   <p className="text-[12px] font-bold text-slate-400 mt-0.5">
-                    {avgRating} ⭐ ({reviewsList.length} {lang === "ar" ? "تقييمات معتمدة" : lang === "ku" ? "هەڵسەنگاندن" : "verified ratings"})
+                    {avgRating} ⭐ ({ratingCount} {lang === "ar" ? "تقييمات مسجلة" : lang === "ku" ? "هەڵسەنگاندنی تۆمارکراو" : "verified ratings"})
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsRatingModalOpen(true)}
+                  onClick={openRatingModal}
                   className="rounded-xl bg-primary px-4 py-2 text-[12.5px] font-black text-white shadow-sm transition hover:opacity-95 active:scale-95 cursor-pointer"
                 >
                   {lang === "ar" ? "أضف تقييمك" : lang === "ku" ? "هەڵسەنگاندن زیادبکە" : "Write Review"}
@@ -688,31 +785,65 @@ function ProductPage() {
               </div>
 
               {/* Reviews List */}
-              <div className="space-y-3 divide-y divide-slate-100">
-                {reviewsList.map((rev, idx) => (
-                  <div key={idx} className="pt-3 first:pt-0 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[13px] text-slate-800">{rev.name}</span>
-                        <span className="rounded-md bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-black flex items-center gap-1">
-                          <BadgeCheck className="size-3" />
-                          {lang === "ar" ? "طبيب معتمد" : lang === "ku" ? "پزیشکی باوەڕپێکراو" : "Verified"}
-                        </span>
+              {dbReviews.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 p-6 text-center border border-dashed border-slate-200 space-y-2">
+                  <Star className="size-8 text-amber-400 mx-auto fill-amber-400/30" />
+                  <p className="text-[13px] font-black text-slate-700">
+                    {lang === "ar"
+                      ? "لا توجد تقييمات لهذا المنتج حتى الآن"
+                      : lang === "ku"
+                      ? "تا ئێستا هیچ هەڵسەنگاندنێک بۆ ئەم بەرهەمە نییە"
+                      : "No reviews for this product yet"}
+                  </p>
+                  <p className="text-[11.5px] font-medium text-slate-400">
+                    {lang === "ar"
+                      ? "كن أول من يقيّم هذا المنتج ويشارك تجربته مع الأطباء والعيادات."
+                      : lang === "ku"
+                      ? "یەکەم پزیشک یان کلینیک بە کە هەڵسەنگاندن دەنووسێت."
+                      : "Be the first verified clinic to rate this product."}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={openRatingModal}
+                    className="mt-2 rounded-xl text-[12px] font-bold"
+                  >
+                    {lang === "ar" ? "اكتب أول تقييم" : lang === "ku" ? "یەکەم هەڵسەنگاندن بنووسە" : "Write First Review"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3 divide-y divide-slate-100">
+                  {dbReviews.map((rev) => (
+                    <div key={rev.id} className="pt-3 first:pt-0 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[13px] text-slate-800">
+                            {rev.reviewer_name || (lang === "ar" ? "طبيب أسنان" : lang === "ku" ? "پزیشکی ددان" : "Dentist")}
+                          </span>
+                          <span className="rounded-md bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-black flex items-center gap-1">
+                            <BadgeCheck className="size-3" />
+                            {lang === "ar" ? "طبيب معتمد" : lang === "ku" ? "پزیشکی باوەڕپێکراو" : "Verified"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`size-3.5 ${i < (rev.rating ?? 5) ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-0.5 text-amber-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`size-3.5 ${i < rev.stars ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
-                          />
-                        ))}
-                      </div>
+                      {rev.comment && (
+                        <p className="text-[12.5px] text-slate-600 leading-relaxed">{rev.comment}</p>
+                      )}
+                      <span className="text-[10px] font-medium text-slate-400 block">
+                        {rev.created_at ? new Date(rev.created_at).toLocaleDateString() : ""}
+                      </span>
                     </div>
-                    <p className="text-[12.5px] text-slate-600 leading-relaxed">{rev.comment}</p>
-                    <span className="text-[10px] font-medium text-slate-400 block">{rev.date}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Frequently Asked Questions */}
@@ -840,9 +971,12 @@ function ProductPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 h-11 rounded-xl bg-primary text-[13.5px] font-black text-white shadow-md transition hover:opacity-95 active:scale-95"
+                    disabled={isSubmittingRating}
+                    className="flex-1 h-11 rounded-xl bg-primary text-[13.5px] font-black text-white shadow-md transition hover:opacity-95 active:scale-95 disabled:opacity-50"
                   >
-                    {lang === "ar" ? "إرسال التقييم" : lang === "ku" ? "ناردنی هەڵسەنگاندن" : "Submit Rating"}
+                    {isSubmittingRating
+                      ? (lang === "ar" ? "جاري الحفظ..." : lang === "ku" ? "پاشەکەوت دەکرێت..." : "Saving...")
+                      : (lang === "ar" ? "إرسال التقييم" : lang === "ku" ? "ناردنی هەڵسەنگاندن" : "Submit Rating")}
                   </button>
                 </div>
 
@@ -914,7 +1048,7 @@ function ProductPage() {
               size="lg"
               disabled={product.stock <= 0}
               onClick={() => {
-                cart.add(
+                const ok = cart.add(
                   {
                     id: product.id,
                     name_ar: product.name_ar,
@@ -925,7 +1059,9 @@ function ProductPage() {
                   },
                   qty,
                 );
-                toast.success(t("added"));
+                if (ok) {
+                  toast.success(t("added"));
+                }
               }}
               className="flex-1 h-12 rounded-2xl bg-primary text-[14px] font-black text-white shadow-lg shadow-primary/25 active:scale-95 flex items-center justify-center gap-2"
             >

@@ -50,7 +50,7 @@ function BundlePage() {
   const addAll = () => {
     if (!bundle) return;
     const lines = bundleLines(bundle, items);
-    cart.addBundle(
+    const ok = cart.addBundle(
       { id: bundle.id, title_ar: bundle.title_ar, title_ku: bundle.title_ku },
       items.map((p) => ({
         id: p.id,
@@ -61,7 +61,9 @@ function BundlePage() {
         vendor_id: p.vendor_id ?? null,
       })),
     );
-    toast.success(label(copy.added, lang));
+    if (ok) {
+      toast.success(label(copy.added, lang));
+    }
   };
 
 

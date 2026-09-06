@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Hourglass, PackageOpen, ShoppingCart, Star, Store } from "lucide-react";
+import { BadgeCheck, Heart, Hourglass, PackageOpen, Plus, ShoppingCart, Star, Store } from "lucide-react";
 import { toast } from "sonner";
 import { ProductBadges } from "@/lib/badges";
 import { isOutlet, monthsChip, monthsLeft, urgencyTone } from "@/lib/clearance";
@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart";
 import { formatPrice, pickName, useI18n, offPct } from "@/lib/i18n";
 import { fetchVendors } from "@/lib/vendor-public";
 import { useDesign } from "@/lib/design-store";
+import { useFavorites } from "@/hooks/useFavorites";
 import type { Product } from "@/lib/store";
 
 /**
@@ -28,6 +29,7 @@ export function ProductCard({
 }) {
   const { lang, t } = useI18n();
   const cart = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const design = useDesign();
   const dc = design.card;
   const base = product.compare_price && product.compare_price > price ? product.compare_price : null;
@@ -44,8 +46,12 @@ export function ProductCard({
   const low = product.stock > 0 && product.stock <= 5;
   const out = product.stock <= 0;
 
-  const add = () => {
-    cart.add({
+  const add = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const ok = cart.add({
       id: product.id,
       name_ar: product.name_ar,
       name_ku: product.name_ku,
@@ -53,12 +59,20 @@ export function ProductCard({
       image_url: product.image_url,
       vendor_id: product.vendor_id ?? null,
     });
-    toast.success(t("added"));
+    if (ok) {
+      toast.success(t("added"));
+    }
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(product.id);
   };
 
   return (
     <article
-      className="flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card"
+      className="group relative flex h-full min-w-0 flex-col overflow-hidden border-border/60 bg-card transition-all duration-200 hover:shadow-md"
       style={{
         borderRadius: "var(--card-radius)",
         borderWidth: "var(--card-border-w)",
@@ -70,7 +84,7 @@ export function ProductCard({
         <Link
           to="/product/$id"
           params={{ id: product.id }}
-          className="block w-full group-hover:scale-105 transition-transform duration-300"
+          className="block w-full transition-transform duration-300 group-hover:scale-105"
           style={{ aspectRatio: "var(--card-img-ratio)" }}
         >
           {product.image_url ? (
@@ -85,15 +99,31 @@ export function ProductCard({
             <div className="grid h-full w-full place-items-center text-3xl">🦷</div>
           )}
         </Link>
-        {/* Top-End: Discount Badge */}
-        {percent > 0 && (
-          <span className="absolute top-2.5 end-2.5 rounded-full bg-[#007979] px-2 py-0.5 text-[10.5px] font-black text-white shadow-sm z-10">
-            {percent}%
-          </span>
-        )}
+
+        {/* Favorite Heart Button */}
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          aria-label={lang === "ku" ? "دڵخوازەکان" : "المفضلة"}
+          className="absolute top-2.5 end-2.5 z-20 flex size-7 items-center justify-center rounded-full bg-white/90 text-slate-400 shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:scale-110 hover:text-rose-500 active:scale-95 cursor-pointer"
+        >
+          <Heart
+            className={`size-4 transition-colors ${
+              isFavorite(product.id)
+                ? "fill-rose-500 text-rose-500"
+                : "text-slate-400"
+            }`}
+          />
+        </button>
 
         {/* Top-Start: Expiry & Custom Badges Overlay */}
-        <div className="absolute top-2.5 start-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
+        <div className="absolute top-2.5 start-2.5 flex flex-col items-start gap-1 z-10 max-w-[65%]">
+          {percent > 0 && (
+            <span className="rounded-full bg-[#007979] px-2 py-0.5 text-[10px] font-black text-white shadow-sm">
+              {percent}% {lang === "ar" ? "خصم" : lang === "ku" ? "داشکاندن" : "OFF"}
+            </span>
+          )}
+
           {dc.show_expiry && (nearExpiry || outlet) && (
             <div
               className="flex min-w-0 items-center gap-1"
@@ -156,10 +186,10 @@ export function ProductCard({
             </Link>
           )}
           {dc.show_rating && (
-          <span className="ms-auto inline-flex shrink-0 items-center gap-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
-            <Star className="size-3 fill-deal text-deal" />
-            4.8
-          </span>
+            <span className="ms-auto inline-flex shrink-0 items-center gap-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
+              <Star className="size-3 fill-amber-400 text-amber-400" />
+              4.9
+            </span>
           )}
         </div>
 
@@ -198,15 +228,32 @@ export function ProductCard({
               </div>
             </div>
           </div>
-          {low && (
-            <p className="mt-1 text-[9.5px] font-bold text-primary">
-              {product.stock} {t("stock")}
-            </p>
-          )}
+
+          <div className="mt-2 flex items-center justify-between gap-1.5 pt-1 border-t border-slate-100">
+            {low ? (
+              <p className="text-[9.5px] font-bold text-primary">
+                {product.stock} {t("stock")}
+              </p>
+            ) : (
+              <span className="text-[9.5px] text-muted-foreground font-semibold">
+                {out ? t("outOfStock") : t("availableNow")}
+              </span>
+            )}
+
+            {!out && (
+              <button
+                type="button"
+                onClick={add}
+                aria-label={t("addToCart")}
+                className="ms-auto flex h-7 items-center gap-1 rounded-lg bg-primary/10 px-2 text-[11px] font-black text-primary transition-all hover:bg-primary hover:text-white active:scale-95 cursor-pointer"
+              >
+                <Plus className="size-3" strokeWidth={3} />
+                <span>{t("addToCart")}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </article>
   );
 }
-
-
