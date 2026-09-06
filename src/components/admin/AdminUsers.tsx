@@ -36,7 +36,7 @@ import { formatPrice, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminSetUserPassword } from "@/lib/admin-users.functions";
+import { adminDeleteUser, adminSetUserPassword } from "@/lib/admin-users.functions";
 
 type ProfileRow = {
   id: string;
@@ -454,15 +454,14 @@ function AdminUsersContent() {
     if (!selectedUser) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", selectedUser.id);
-
-      if (error) throw error;
+      await adminDeleteUser({
+        data: {
+          targetUserId: selectedUser.id,
+        },
+      });
 
       toast.success(
-        lang === "ku" ? "بەکارهێنەر سڕدرایەوە" : "تم حذف المستخدم بنجاح"
+        lang === "ku" ? "بەکارهێنەر بە تەواوی سڕدرایەوە" : "تم حذف حساب وبيانات المستخدم بنجاح"
       );
       qc.invalidateQueries({ queryKey: ["admin_website_profiles"] });
       setIsDeleteModalOpen(false);

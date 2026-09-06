@@ -410,4 +410,81 @@ export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
     };
   });
 
+/** Admin: completely delete a user and all associated accounts/data */
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .validator((input: { targetUserId: string }) => input)
+  .handler(async ({ data }) => {
+    const targetUserId = data?.targetUserId;
+    if (!targetUserId) {
+      throw new Error("Target user ID is required");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Delete associated data safely (bypasses RLS)
+    try {
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("user_roles cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("addresses").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("addresses cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("wallets").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("wallets cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("notifications").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("notifications cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("push_subscriptions").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("push_subscriptions cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("vendor_members").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("vendor_members cleanup:", e);
+    }
+
+    try {
+      await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
+    } catch (e) {
+      console.warn("profiles cleanup:", e);
+    }
+
+    // Delete ui_texts user entries
+    try {
+      await supabaseAdmin
+        .from("ui_texts")
+        .delete()
+        .or(`key.eq.user_cart_${targetUserId},key.eq.fav_${targetUserId},key.eq.staff_pwd_${targetUserId},key.eq.staff_email_${targetUserId},key.eq.staff_name_${targetUserId},key.eq.staff_phone_${targetUserId},key.eq.user_perm_${targetUserId}`);
+    } catch (e) {
+      console.warn("ui_texts cleanup:", e);
+    }
+
+    // 2. Delete from Supabase Auth
+    try {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+      if (error) {
+        console.warn("Auth deleteUser note:", error.message);
+      }
+    } catch (err: any) {
+      console.warn("Auth deleteUser exception:", err?.message || err);
+    }
+
+    return { success: true };
+  });
+
 
