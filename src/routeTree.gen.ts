@@ -58,6 +58,7 @@ import { Route as AdminShippingRouteImport } from './routes/admin/shipping'
 import { Route as AdminTextsRouteImport } from './routes/admin/texts'
 import { Route as AdminThemeRouteImport } from './routes/admin/theme'
 import { Route as AdminTiersRouteImport } from './routes/admin/tiers'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminUspRouteImport } from './routes/admin/usp'
 import { Route as AdminVendorsRouteImport } from './routes/admin/vendors'
 import { Route as AdminWalletRouteImport } from './routes/admin/wallet'
@@ -317,6 +318,11 @@ const AdminTiersRoute = AdminTiersRouteImport.update({
   path: '/admin/tiers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUspRoute = AdminUspRouteImport.update({
   id: '/admin/usp',
   path: '/admin/usp',
@@ -440,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/admin/texts': typeof AdminTextsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/tiers': typeof AdminTiersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin/usp': typeof AdminUspRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -504,6 +511,7 @@ export interface FileRoutesByTo {
   '/admin/texts': typeof AdminTextsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/tiers': typeof AdminTiersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin/usp': typeof AdminUspRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -570,6 +578,7 @@ export interface FileRoutesById {
   '/admin/texts': typeof AdminTextsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/tiers': typeof AdminTiersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/admin/usp': typeof AdminUspRoute
   '/admin/vendors': typeof AdminVendorsRoute
   '/admin/wallet': typeof AdminWalletRoute
@@ -636,6 +645,7 @@ export interface FileRouteTypes {
     | '/admin/texts'
     | '/admin/theme'
     | '/admin/tiers'
+    | '/admin/users'
     | '/admin/usp'
     | '/admin/vendors'
     | '/admin/wallet'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/admin/texts'
     | '/admin/theme'
     | '/admin/tiers'
+    | '/admin/users'
     | '/admin/usp'
     | '/admin/vendors'
     | '/admin/wallet'
@@ -765,6 +776,7 @@ export interface FileRouteTypes {
     | '/admin/texts'
     | '/admin/theme'
     | '/admin/tiers'
+    | '/admin/users'
     | '/admin/usp'
     | '/admin/vendors'
     | '/admin/wallet'
@@ -827,6 +839,7 @@ export interface RootRouteChildren {
   AdminTextsRoute: typeof AdminTextsRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminTiersRoute: typeof AdminTiersRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminUspRoute: typeof AdminUspRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdminWalletRoute: typeof AdminWalletRoute
@@ -1184,6 +1197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTiersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/usp': {
       id: '/admin/usp'
       path: '/admin/usp'
@@ -1358,6 +1378,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminTextsRoute: AdminTextsRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminTiersRoute: AdminTiersRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminUspRoute: AdminUspRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdminWalletRoute: AdminWalletRoute,

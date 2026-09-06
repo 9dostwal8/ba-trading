@@ -20,6 +20,7 @@ import {
   Store,
   Ticket,
   Truck,
+  Users,
   Wallet,
   Zap,
   Loader2,
@@ -54,9 +55,11 @@ const AdminNotify = lazy(() => import("@/components/admin/AdminNotify").then((m)
 const AdminWhatsapp = lazy(() => import("@/components/admin/AdminWhatsapp").then((m) => ({ default: m.AdminWhatsapp })));
 const AdminShipping = lazy(() => import("@/components/admin/AdminShipping").then((m) => ({ default: m.AdminShipping })));
 const AdminCostTracker = lazy(() => import("@/components/admin/AdminCostTracker").then((m) => ({ default: m.AdminCostTracker })));
+const AdminUsers = lazy(() => import("@/components/admin/AdminUsers").then((m) => ({ default: m.AdminUsers })));
 
 const L = {
   orders: { ar: "الطلبات", ku: "داواکاریەکان", en: "Orders" },
+  users: { ar: "مستخدمو الموقع", ku: "بەکارهێنەرانی سایت", en: "Website Users" },
   products: { ar: "المنتجات", ku: "بەرهەمەکان", en: "Products" },
   categories: { ar: "الأقسام", ku: "بەشەکان", en: "Categories" },
   vendors: { ar: "البائعون", ku: "فرۆشیارەکان", en: "Vendors" },
@@ -123,6 +126,12 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
           label: L.orders[lang],
           icon: LayoutGrid,
           color: "from-cyan-500 to-blue-600",
+        },
+        {
+          key: "users",
+          label: L.users[lang],
+          icon: Users,
+          color: "from-blue-600 to-indigo-700",
         },
         {
           key: "products",
@@ -293,6 +302,7 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
             }
           >
             {active === "orders" && <AdminOrders />}
+            {active === "users" && <AdminUsers />}
             {active === "clearance" && <AdminClearance />}
             {active === "vendors" && <AdminVendors />}
             {active === "shipping" && <AdminShipping />}
