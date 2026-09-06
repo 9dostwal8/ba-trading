@@ -186,6 +186,33 @@ function AdminUsersContent() {
     queryFn: async () => {
       if (!selectedUser?.id) return [];
       try {
+        // Check ui_texts
+        const { data: uiData } = await supabase
+          .from("ui_texts")
+          .select("ar")
+          .eq("key", `fav_${selectedUser.id}`)
+          .maybeSingle();
+
+        if (uiData?.ar) {
+          try {
+            const ids: string[] = JSON.parse(uiData.ar);
+            if (Array.isArray(ids) && ids.length > 0) {
+              const { data: prods } = await supabase
+                .from("products")
+                .select("id, name_ar, name_ku, price, image_url")
+                .in("id", ids);
+
+              return (prods || []).map((p) => ({
+                id: p.id,
+                product_id: p.id,
+                products: p,
+              }));
+            }
+          } catch {
+            // parse error
+          }
+        }
+
         const { data } = await supabase
           .from("product_favorites")
           .select("id, product_id, created_at, products(id, name_ar, name_ku, price, image_url)")
@@ -205,11 +232,48 @@ function AdminUsersContent() {
     queryFn: async () => {
       if (!selectedUser?.id) return [];
       try {
+        const list: any[] = [];
+        // Check ui_texts
+        const { data: uiTexts } = await supabase
+          .from("ui_texts")
+          .select("key, ar, created_at")
+          .eq("section", "product_reviews");
+
+        if (uiTexts && Array.isArray(uiTexts)) {
+          for (const row of uiTexts) {
+            try {
+              const parsed = JSON.parse(row.ar);
+              if (parsed?.user_id === selectedUser.id) {
+                list.push({
+                  id: row.key,
+                  product_id: parsed.product_id,
+                  rating: Number(parsed.rating || 5),
+                  comment: parsed.comment || "",
+                  reviewer_name: parsed.reviewer_name || selectedUser.full_name,
+                  created_at: parsed.created_at || row.created_at,
+                  products: { name_ar: parsed.comment || "Product", name_ku: parsed.comment || "Product" },
+                });
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
         const { data } = await supabase
           .from("product_reviews")
-          .select("id, product_id, rating, comment, reviewer_name, created_at, products(id, name_ar, name_ku)")
+          .select("id, product_id, rating, comment, created_at, products(id, name_ar, name_ku)")
           .eq("user_id", selectedUser.id);
-        return data || [];
+
+        if (data && Array.isArray(data)) {
+          for (const d of data) {
+            if (!list.some((l) => l.product_id === d.product_id)) {
+              list.push(d);
+            }
+          }
+        }
+
+        return list;
       } catch (err) {
         console.warn("User reviews error:", err);
         return [];

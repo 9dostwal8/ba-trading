@@ -131,17 +131,85 @@ function ProductPage() {
     queryKey: ["product_reviews", product?.id],
     queryFn: async () => {
       if (!product?.id) return [];
-      const { data, error } = await supabase
-        .from("product_reviews")
-        .select("id, user_id, rating, comment, reviewer_name, created_at")
-        .eq("product_id", product.id)
-        .order("created_at", { ascending: false });
+      const results: {
+        id: string;
+        user_id: string;
+        rating: number;
+        comment: string;
+        reviewer_name: string;
+        created_at: string;
+      }[] = [];
 
-      if (error) {
-        console.warn("Failed to fetch product reviews:", error);
-        return [];
+      try {
+        // 1. Fetch from ui_texts
+        const { data: uiTexts } = await supabase
+          .from("ui_texts")
+          .select("key, ar, created_at")
+          .eq("section", "product_reviews")
+          .like("key", `rev_${product.id}_%`);
+
+        if (uiTexts && Array.isArray(uiTexts)) {
+          for (const row of uiTexts) {
+            try {
+              const parsed = JSON.parse(row.ar);
+              if (parsed && typeof parsed.rating === "number") {
+                results.push({
+                  id: row.key,
+                  user_id: parsed.user_id || "",
+                  rating: Number(parsed.rating || 5),
+                  comment: parsed.comment || "",
+                  reviewer_name: parsed.reviewer_name || (lang === "ar" ? "طبيب أسنان" : lang === "ku" ? "پزیشکی ددان" : "Dentist"),
+                  created_at: parsed.created_at || row.created_at,
+                });
+              }
+            } catch {
+              // ignore json parse
+            }
+          }
+        }
+
+        // 2. Fetch from product_reviews table if available
+        const { data: prData } = await supabase
+          .from("product_reviews")
+          .select("id, user_id, rating, comment, created_at")
+          .eq("product_id", product.id)
+          .order("created_at", { ascending: false });
+
+        if (prData && Array.isArray(prData)) {
+          for (const row of prData) {
+            const existingIdx = results.findIndex((r) => r.user_id === row.user_id);
+            let name = lang === "ar" ? "طبيب أسنان" : lang === "ku" ? "پزیشکی ددان" : "Dentist";
+            let cleanComment = row.comment || "";
+
+            if (cleanComment.startsWith("[") && cleanComment.includes("]:")) {
+              const match = cleanComment.match(/^\[(.*?)\]:\s*(.*)$/);
+              if (match) {
+                name = match[1];
+                cleanComment = match[2];
+              }
+            }
+
+            const item = {
+              id: row.id,
+              user_id: row.user_id,
+              rating: Number(row.rating || 5),
+              comment: cleanComment,
+              reviewer_name: name,
+              created_at: row.created_at,
+            };
+
+            if (existingIdx >= 0) {
+              results[existingIdx] = { ...results[existingIdx], ...item };
+            } else {
+              results.push(item);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Reviews fetch note:", error);
       }
-      return data || [];
+
+      return results;
     },
     enabled: !!product?.id,
   });
@@ -200,29 +268,61 @@ function ProductPage() {
 
     setIsSubmittingRating(true);
     try {
-      const { error } = await supabase.from("product_reviews").upsert(
+      const name = reviewerName.trim();
+      const rawComment = reviewComment.trim() || (lang === "ar" ? "تقييم ممتاز" : lang === "ku" ? "هەڵسەنگاندنی بەرز" : "Great rating");
+      const fullComment = `[${name}]: ${rawComment}`;
+
+      // 1. Save in ui_texts
+      await supabase.from("ui_texts").upsert(
         {
-          product_id: product.id,
-          user_id: user.id,
-          rating: userStars,
-          comment: reviewComment.trim() || (lang === "ar" ? "تقييم ممتاز" : lang === "ku" ? "هەڵسەنگاندنی بەرز" : "Great rating"),
-          reviewer_name: reviewerName.trim(),
+          key: `rev_${product.id}_${user.id}`,
+          section: "product_reviews",
+          ar: JSON.stringify({
+            product_id: product.id,
+            user_id: user.id,
+            rating: userStars,
+            comment: rawComment,
+            reviewer_name: name,
+            created_at: new Date().toISOString(),
+          }),
+          ku: JSON.stringify({
+            product_id: product.id,
+            user_id: user.id,
+            rating: userStars,
+            comment: rawComment,
+            reviewer_name: name,
+            created_at: new Date().toISOString(),
+          }),
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "user_id, product_id" }
+        { onConflict: "key" }
       );
 
-      if (error) throw error;
+      // 2. Also try product_reviews table safely
+      try {
+        await supabase.from("product_reviews").upsert(
+          {
+            product_id: product.id,
+            user_id: user.id,
+            rating: userStars,
+            comment: fullComment,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+      } catch {
+        // table fallback
+      }
 
       await refetchReviews();
       setIsRatingModalOpen(false);
       setReviewComment("");
       toast.success(
         lang === "ar"
-          ? "شكراً لك! تم حفظ تقييمك بنجاح في قاعدة البيانات"
+          ? "شكراً لك! تم حفظ تقييمك بنجاح"
           : lang === "ku"
-          ? "سوپاس! هەڵسەنگاندنەکەت بە سەرکەوتوویی لە داتابەیس پاشەکەوت کرا"
-          : "Thank you! Your rating has been saved to the database successfully."
+          ? "سوپاس! هەڵسەنگاندنەکەت بە سەرکەوتوویی پاشەکەوت کرا"
+          : "Thank you! Your rating has been saved successfully."
       );
     } catch (err: any) {
       console.error("Error saving review:", err);

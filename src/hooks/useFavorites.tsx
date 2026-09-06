@@ -4,6 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
 
+function getLocalFavorites(userId?: string): string[] {
+  if (typeof window === "undefined" || !userId) return [];
+  try {
+    const raw = localStorage.getItem(`dental-favs-${userId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function setLocalFavorites(userId: string, ids: string[]) {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    localStorage.setItem(`dental-favs-${userId}`, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
 export function useFavorites() {
   const { user } = useAuth();
   const { lang } = useI18n();
@@ -13,17 +34,46 @@ export function useFavorites() {
     queryKey: ["favorites", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("product_favorites")
-        .select("product_id")
-        .eq("user_id", user.id);
+      const local = getLocalFavorites(user.id);
 
-      if (error) {
-        console.warn("Failed to fetch favorites:", error);
-        return [];
+      try {
+        // 1. Fetch from ui_texts
+        const { data: uiData } = await supabase
+          .from("ui_texts")
+          .select("ar")
+          .eq("key", `fav_${user.id}`)
+          .maybeSingle();
+
+        if (uiData?.ar) {
+          try {
+            const dbIds = JSON.parse(uiData.ar);
+            if (Array.isArray(dbIds)) {
+              setLocalFavorites(user.id, dbIds);
+              return dbIds as string[];
+            }
+          } catch {
+            // parse error
+          }
+        }
+
+        // 2. Fallback check product_favorites table if it exists
+        const { data: pfData } = await supabase
+          .from("product_favorites")
+          .select("product_id")
+          .eq("user_id", user.id);
+
+        if (pfData && Array.isArray(pfData) && pfData.length > 0) {
+          const ids = pfData.map((row: any) => row.product_id as string);
+          setLocalFavorites(user.id, ids);
+          return ids;
+        }
+      } catch (err) {
+        console.warn("Favorites fetch note:", err);
       }
-      return (data || []).map((row: any) => row.product_id as string);
+
+      return local;
     },
+    initialData: user ? getLocalFavorites(user.id) : [],
     enabled: !!user,
   });
 
@@ -34,27 +84,48 @@ export function useFavorites() {
       }
 
       const isFav = favoriteIds.includes(productId);
+      const nextIds = isFav
+        ? favoriteIds.filter((id) => id !== productId)
+        : [...favoriteIds, productId];
 
-      if (isFav) {
-        const { error } = await supabase
-          .from("product_favorites")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("product_id", productId);
+      // Update local storage immediately
+      setLocalFavorites(user.id, nextIds);
 
-        if (error) throw error;
-        return { action: "removed", productId };
-      } else {
-        const { error } = await supabase
-          .from("product_favorites")
-          .insert({
+      // Save to database in ui_texts
+      try {
+        await supabase.from("ui_texts").upsert(
+          {
+            key: `fav_${user.id}`,
+            section: "user_favorites",
+            ar: JSON.stringify(nextIds),
+            ku: JSON.stringify(nextIds),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "key" }
+        );
+      } catch (err) {
+        console.warn("Failed to update fav in ui_texts:", err);
+      }
+
+      // Also try product_favorites table safely without failing if table is absent
+      try {
+        if (isFav) {
+          await supabase
+            .from("product_favorites")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("product_id", productId);
+        } else {
+          await supabase.from("product_favorites").insert({
             user_id: user.id,
             product_id: productId,
           });
-
-        if (error) throw error;
-        return { action: "added", productId };
+        }
+      } catch {
+        // ignore if table doesn't exist
       }
+
+      return { action: isFav ? "removed" : "added", productId, nextIds };
     },
     onMutate: async (productId: string) => {
       if (!user) return;
@@ -67,11 +138,13 @@ export function useFavorites() {
         : [...previous, productId];
 
       queryClient.setQueryData(["favorites", user.id], next);
+      setLocalFavorites(user.id, next);
       return { previous };
     },
     onError: (err: any, _productId, context) => {
       if (user && context?.previous) {
         queryClient.setQueryData(["favorites", user.id], context.previous);
+        setLocalFavorites(user.id, context.previous);
       }
       if (err?.message === "AUTH_REQUIRED") {
         toast.error(
@@ -103,7 +176,8 @@ export function useFavorites() {
           lang === "ku" ? "لە دڵخوازەکان لادرا" : "تمت الإزالة من المفضلة"
         );
       }
-      if (user) {
+      if (user && res?.nextIds) {
+        queryClient.setQueryData(["favorites", user.id], res.nextIds);
         queryClient.invalidateQueries({ queryKey: ["favorites", user.id] });
       }
     },

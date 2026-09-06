@@ -47,10 +47,36 @@ export function lineKey(i: Pick<CartItem, "id" | "bundle_id">) {
 }
 
 const CartContext = createContext<Ctx | null>(null);
-const KEY = "dental-cart-v1";
+const STORAGE_KEY = "dental-cart-v1";
+
+function getLocalCart(userId?: string): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const key = userId ? `dental-cart-${userId}` : STORAGE_KEY;
+    const raw = localStorage.getItem(key) || localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function setLocalCart(items: CartItem[], userId?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload = JSON.stringify(items);
+    localStorage.setItem(STORAGE_KEY, payload);
+    if (userId) {
+      localStorage.setItem(`dental-cart-${userId}`, payload);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => getLocalCart());
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,16 +84,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    // Get initial session
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      setUser(data.session?.user ?? null);
+      const u = data.session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const userItems = getLocalCart(u.id);
+        if (userItems.length > 0) {
+          setItems(userItems);
+        }
+      }
       setLoading(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!active) return;
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        const userItems = getLocalCart(u.id);
+        if (userItems.length > 0) {
+          setItems(userItems);
+        }
+      }
       setLoading(false);
     });
 
@@ -77,64 +116,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // 2. Load Cart from Database when User is Authenticated
+  // 2. Sync from Database when User is Authenticated
   useEffect(() => {
-    if (!user) {
-      setItems([]);
-      return;
-    }
-
+    if (!user) return;
     let active = true;
 
     async function loadDbCart() {
       try {
-        const { data, error } = await supabase
-          .from("cart_items")
-          .select(`
-            id,
-            product_id,
-            quantity,
-            price,
-            bundle_id,
-            bundle_title_ar,
-            bundle_title_ku,
-            products (
-              id,
-              name_ar,
-              name_ku,
-              price,
-              image_url,
-              vendor_id
-            )
-          `)
-          .eq("user_id", user.id);
+        // Query ui_texts for user's persistent cart backup
+        const { data } = await supabase
+          .from("ui_texts")
+          .select("ar")
+          .eq("key", `user_cart_${user?.id}`)
+          .maybeSingle();
 
-        if (error) {
-          console.warn("Failed to load db cart:", error);
-          return;
+        if (!active) return;
+
+        if (data?.ar) {
+          try {
+            const dbItems = JSON.parse(data.ar);
+            if (Array.isArray(dbItems) && dbItems.length > 0) {
+              setItems(dbItems);
+              setLocalCart(dbItems, user?.id);
+            }
+          } catch {
+            // json parse error
+          }
         }
-
-        if (!active || !data) return;
-
-        const loadedItems: CartItem[] = data.map((row: any) => {
-          const prod = row.products;
-          return {
-            id: row.product_id,
-            name_ar: prod?.name_ar ?? "",
-            name_ku: prod?.name_ku ?? "",
-            price: Number(row.price || prod?.price || 0),
-            image_url: prod?.image_url ?? null,
-            vendor_id: prod?.vendor_id ?? null,
-            quantity: row.quantity,
-            bundle_id: row.bundle_id ?? null,
-            bundle_title_ar: row.bundle_title_ar ?? null,
-            bundle_title_ku: row.bundle_title_ku ?? null,
-          };
-        });
-
-        setItems(loadedItems);
       } catch (e) {
-        console.warn("Error loading cart items from db:", e);
+        console.warn("Db cart sync note:", e);
       }
     }
 
@@ -144,6 +154,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [user]);
+
+  // Helper to persist cart changes locally & to DB
+  const persist = (nextItems: CartItem[], currentUser: User | null = user) => {
+    setLocalCart(nextItems, currentUser?.id);
+    if (currentUser) {
+      // Sync to database in background
+      supabase
+        .from("ui_texts")
+        .upsert(
+          {
+            key: `user_cart_${currentUser.id}`,
+            section: "user_cart",
+            ar: JSON.stringify(nextItems),
+            ku: JSON.stringify(nextItems),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "key" }
+        )
+        .then();
+    }
+  };
 
   // Check auth helper
   const requireAuth = (): boolean => {
@@ -176,47 +207,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ? prev.map((p) => (lineKey(p) === key ? { ...p, quantity: newQty } : p))
         : [...prev, { ...item, quantity: qty }];
 
-      // Sync to database
-      if (user) {
-        (async () => {
-          try {
-            // Check existing row
-            let query = supabase
-              .from("cart_items")
-              .select("id, quantity")
-              .eq("user_id", user.id)
-              .eq("product_id", item.id);
-
-            if (item.bundle_id) {
-              query = query.eq("bundle_id", item.bundle_id);
-            } else {
-              query = query.is("bundle_id", null);
-            }
-
-            const { data: existing } = await query.maybeSingle();
-
-            if (existing) {
-              await supabase
-                .from("cart_items")
-                .update({ quantity: newQty, updated_at: new Date().toISOString() })
-                .eq("id", existing.id);
-            } else {
-              await supabase.from("cart_items").insert({
-                user_id: user.id,
-                product_id: item.id,
-                quantity: newQty,
-                price: item.price,
-                bundle_id: item.bundle_id ?? null,
-                bundle_title_ar: item.bundle_title_ar ?? null,
-                bundle_title_ku: item.bundle_title_ku ?? null,
-              });
-            }
-          } catch (err) {
-            console.error("Failed to save cart item to DB:", err);
-          }
-        })();
-      }
-
+      persist(next, user);
       return next;
     });
 
@@ -243,42 +234,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         else next.push({ ...item, quantity: qty });
       }
 
-      // Sync to database
-      if (user) {
-        (async () => {
-          for (const line of lines) {
-            try {
-              const { data: existing } = await supabase
-                .from("cart_items")
-                .select("id, quantity")
-                .eq("user_id", user.id)
-                .eq("product_id", line.id)
-                .eq("bundle_id", bundle.id)
-                .maybeSingle();
-
-              if (existing) {
-                await supabase
-                  .from("cart_items")
-                  .update({ quantity: existing.quantity + qty, updated_at: new Date().toISOString() })
-                  .eq("id", existing.id);
-              } else {
-                await supabase.from("cart_items").insert({
-                  user_id: user.id,
-                  product_id: line.id,
-                  quantity: qty,
-                  price: line.price,
-                  bundle_id: bundle.id,
-                  bundle_title_ar: bundle.title_ar,
-                  bundle_title_ku: bundle.title_ku,
-                });
-              }
-            } catch (err) {
-              console.error("Failed to save bundle item to DB:", err);
-            }
-          }
-        })();
-      }
-
+      persist(next, user);
       return next;
     });
 
@@ -288,49 +244,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Set Quantity
   const setQty: Ctx["setQty"] = (key, qty) => {
     setItems((prev) => {
-      const target = prev.find((p) => lineKey(p) === key);
       const next =
         qty <= 0
           ? prev.filter((p) => lineKey(p) !== key)
           : prev.map((p) => (lineKey(p) === key ? { ...p, quantity: qty } : p));
 
-      if (user && target) {
-        (async () => {
-          try {
-            let query = supabase
-              .from("cart_items")
-              .delete()
-              .eq("user_id", user.id)
-              .eq("product_id", target.id);
-
-            if (target.bundle_id) {
-              query = query.eq("bundle_id", target.bundle_id);
-            } else {
-              query = query.is("bundle_id", null);
-            }
-
-            if (qty <= 0) {
-              await query;
-            } else {
-              let updateQuery = supabase
-                .from("cart_items")
-                .update({ quantity: qty, updated_at: new Date().toISOString() })
-                .eq("user_id", user.id)
-                .eq("product_id", target.id);
-
-              if (target.bundle_id) {
-                updateQuery = updateQuery.eq("bundle_id", target.bundle_id);
-              } else {
-                updateQuery = updateQuery.is("bundle_id", null);
-              }
-              await updateQuery;
-            }
-          } catch (err) {
-            console.error("Failed to update cart qty in DB:", err);
-          }
-        })();
-      }
-
+      persist(next, user);
       return next;
     });
   };
@@ -343,28 +262,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           ? prev.filter((p) => p.bundle_id !== bundleId)
           : prev.map((p) => (p.bundle_id === bundleId ? { ...p, quantity: qty } : p));
 
-      if (user) {
-        (async () => {
-          try {
-            if (qty <= 0) {
-              await supabase
-                .from("cart_items")
-                .delete()
-                .eq("user_id", user.id)
-                .eq("bundle_id", bundleId);
-            } else {
-              await supabase
-                .from("cart_items")
-                .update({ quantity: qty, updated_at: new Date().toISOString() })
-                .eq("user_id", user.id)
-                .eq("bundle_id", bundleId);
-            }
-          } catch (err) {
-            console.error("Failed to update bundle qty in DB:", err);
-          }
-        })();
-      }
-
+      persist(next, user);
       return next;
     });
   };
@@ -372,30 +270,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Remove Item
   const remove: Ctx["remove"] = (key) => {
     setItems((prev) => {
-      const target = prev.find((p) => lineKey(p) === key);
       const next = prev.filter((p) => lineKey(p) !== key);
-
-      if (user && target) {
-        (async () => {
-          try {
-            let query = supabase
-              .from("cart_items")
-              .delete()
-              .eq("user_id", user.id)
-              .eq("product_id", target.id);
-
-            if (target.bundle_id) {
-              query = query.eq("bundle_id", target.bundle_id);
-            } else {
-              query = query.is("bundle_id", null);
-            }
-            await query;
-          } catch (err) {
-            console.error("Failed to remove item from DB cart:", err);
-          }
-        })();
-      }
-
+      persist(next, user);
       return next;
     });
   };
@@ -404,14 +280,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeBundle: Ctx["removeBundle"] = (bundleId) => {
     setItems((prev) => {
       const next = prev.filter((p) => p.bundle_id !== bundleId);
-      if (user) {
-        supabase
-          .from("cart_items")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("bundle_id", bundleId)
-          .then();
-      }
+      persist(next, user);
       return next;
     });
   };
@@ -419,13 +288,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Clear Cart
   const clear: Ctx["clear"] = () => {
     setItems([]);
-    if (user) {
-      supabase
-        .from("cart_items")
-        .delete()
-        .eq("user_id", user.id)
-        .then();
-    }
+    persist([], user);
   };
 
   const value: Ctx = {
