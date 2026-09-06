@@ -36,7 +36,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { adminSetUserPassword } from "@/lib/admin-users.functions";
-import { useServerFn } from "@tanstack/react-start";
 
 type ProfileRow = {
   id: string;
@@ -58,7 +57,6 @@ type OrderRow = {
 export function AdminUsers() {
   const { lang } = useI18n();
   const qc = useQueryClient();
-  const setPasswordFn = useServerFn(adminSetUserPassword);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "ordered" | "new">("all");
@@ -82,16 +80,21 @@ export function AdminUsers() {
   } = useQuery({
     queryKey: ["admin_website_profiles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, phone, lang, created_at, updated_at")
-        .order("created_at", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, phone, lang, created_at, updated_at")
+          .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching profiles:", error);
-        throw error;
+        if (error) {
+          console.warn("Profiles fetch note:", error);
+          return [];
+        }
+        return (data || []) as ProfileRow[];
+      } catch (err) {
+        console.warn("Profiles fetch exception:", err);
+        return [];
       }
-      return (data || []) as ProfileRow[];
     },
   });
 
@@ -99,15 +102,20 @@ export function AdminUsers() {
   const { data: orders = [] } = useQuery({
     queryKey: ["admin_user_orders_summary"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, user_id, total, status, created_at");
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("id, user_id, total, status, created_at");
 
-      if (error) {
-        console.warn("Error fetching orders for users:", error);
+        if (error) {
+          console.warn("Orders fetch note:", error);
+          return [];
+        }
+        return (data || []) as OrderRow[];
+      } catch (err) {
+        console.warn("Orders fetch exception:", err);
         return [];
       }
-      return (data || []) as OrderRow[];
     },
   });
 
@@ -116,12 +124,17 @@ export function AdminUsers() {
     queryKey: ["admin_user_orders", selectedUser?.id],
     queryFn: async () => {
       if (!selectedUser?.id) return [];
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", selectedUser.id)
-        .order("created_at", { ascending: false });
-      return data || [];
+      try {
+        const { data } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("user_id", selectedUser.id)
+          .order("created_at", { ascending: false });
+        return data || [];
+      } catch (err) {
+        console.warn("User orders error:", err);
+        return [];
+      }
     },
     enabled: !!selectedUser?.id && isDetailOpen,
   });
@@ -131,11 +144,16 @@ export function AdminUsers() {
     queryKey: ["admin_user_favorites", selectedUser?.id],
     queryFn: async () => {
       if (!selectedUser?.id) return [];
-      const { data } = await supabase
-        .from("product_favorites")
-        .select("id, product_id, created_at, products(id, name_ar, name_ku, price, image_url)")
-        .eq("user_id", selectedUser.id);
-      return data || [];
+      try {
+        const { data } = await supabase
+          .from("product_favorites")
+          .select("id, product_id, created_at, products(id, name_ar, name_ku, price, image_url)")
+          .eq("user_id", selectedUser.id);
+        return data || [];
+      } catch (err) {
+        console.warn("User favorites error:", err);
+        return [];
+      }
     },
     enabled: !!selectedUser?.id && isDetailOpen,
   });
@@ -145,11 +163,16 @@ export function AdminUsers() {
     queryKey: ["admin_user_reviews", selectedUser?.id],
     queryFn: async () => {
       if (!selectedUser?.id) return [];
-      const { data } = await supabase
-        .from("product_reviews")
-        .select("id, product_id, rating, comment, reviewer_name, created_at, products(id, name_ar, name_ku)")
-        .eq("user_id", selectedUser.id);
-      return data || [];
+      try {
+        const { data } = await supabase
+          .from("product_reviews")
+          .select("id, product_id, rating, comment, reviewer_name, created_at, products(id, name_ar, name_ku)")
+          .eq("user_id", selectedUser.id);
+        return data || [];
+      } catch (err) {
+        console.warn("User reviews error:", err);
+        return [];
+      }
     },
     enabled: !!selectedUser?.id && isDetailOpen,
   });
@@ -278,7 +301,7 @@ export function AdminUsers() {
     }
     setIsSubmitting(true);
     try {
-      await setPasswordFn({
+      await adminSetUserPassword({
         data: {
           targetUserId: selectedUser.id,
           newPassword,
