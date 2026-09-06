@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  Download,
   Eye,
   Heart,
   KeyRound,
@@ -324,34 +323,8 @@ export function AdminUsers() {
     }
   };
 
-  const exportCSV = () => {
-    if (!profiles.length) return;
-    const headers = ["ID", "Full Name", "Phone", "Language", "Created At", "Orders Count", "Total Spent"];
-    const rows = profiles.map((p) => {
-      const st = userOrderStats.get(p.id);
-      return [
-        `"${p.id}"`,
-        `"${p.full_name || ""}"`,
-        `"${p.phone || ""}"`,
-        `"${p.lang || "ar"}"`,
-        `"${p.created_at || ""}"`,
-        st?.count || 0,
-        st?.totalSpent || 0,
-      ];
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `website_users_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full pb-8">
       
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
@@ -384,16 +357,6 @@ export function AdminUsers() {
           >
             <RefreshCw className="size-3.5" />
             <span>{lang === "ku" ? "نوێکردنەوە" : "تحديث"}</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={exportCSV}
-            className="rounded-xl gap-2 font-bold text-xs"
-          >
-            <Download className="size-3.5" />
-            <span>{lang === "ku" ? "داگرتنی CSV" : "تصدير CSV"}</span>
           </Button>
         </div>
       </div>

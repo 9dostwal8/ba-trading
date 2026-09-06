@@ -33,7 +33,7 @@ function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <AdminHeader />
-      <div className="flex-1 p-4 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-3 sm:p-5 w-full">
         <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="size-8 animate-spin text-primary" /></div>}>
           <AdminUsers />
         </Suspense>
