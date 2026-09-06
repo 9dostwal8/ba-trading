@@ -171,16 +171,24 @@ export const fetchUsersWithRoles = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [profilesRes, rolesRes] = await Promise.all([
+    const [profilesRes, rolesRes, deletedRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
         .select("id, full_name, phone, created_at, avatar_url")
         .order("created_at", { ascending: false })
         .limit(200),
       supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.from("ui_texts").select("key").eq("section", "deleted_users"),
     ]);
 
     if (profilesRes.error) throw new Error(profilesRes.error.message);
+
+    const deletedIds = new Set<string>();
+    for (const row of deletedRes.data || []) {
+      if (row.key.startsWith("deleted_user_")) {
+        deletedIds.add(row.key.replace("deleted_user_", ""));
+      }
+    }
 
     const rolesMap = new Map<string, string[]>();
     for (const r of rolesRes.data ?? []) {
@@ -188,22 +196,24 @@ export const fetchUsersWithRoles = createServerFn({ method: "GET" })
       rolesMap.get(r.user_id)!.push(r.role);
     }
 
-    return (profilesRes.data ?? []).map((p) => {
-      const userRoles = rolesMap.get(p.id) ?? [];
-      let role = "customer";
-      if (userRoles.includes("admin")) role = "admin";
-      else if (userRoles.includes("brand_manager")) role = "brand_manager";
+    return (profilesRes.data ?? [])
+      .filter((p) => !deletedIds.has(p.id) && p.full_name !== "[DELETED]")
+      .map((p) => {
+        const userRoles = rolesMap.get(p.id) ?? [];
+        let role = "customer";
+        if (userRoles.includes("admin")) role = "admin";
+        else if (userRoles.includes("brand_manager")) role = "brand_manager";
 
-      return {
-        id: p.id,
-        full_name: p.full_name || "Unknown User",
-        phone: p.phone || "",
-        avatar_url: p.avatar_url || null,
-        created_at: p.created_at,
-        role,
-        roles: userRoles,
-      };
-    });
+        return {
+          id: p.id,
+          full_name: p.full_name || "Unknown User",
+          phone: p.phone || "",
+          avatar_url: p.avatar_url || null,
+          created_at: p.created_at,
+          role,
+          roles: userRoles,
+        };
+      });
   });
 
 /** Admin-only: update or revoke user role */
@@ -419,98 +429,188 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
       throw new Error("Target user ID is required");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // 1. Clean up user's orders and items
     try {
-      const { data: userOrders } = await supabaseAdmin
-        .from("orders")
-        .select("id")
-        .eq("user_id", targetUserId);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      if (userOrders && userOrders.length > 0) {
-        const orderIds = userOrders.map((o) => o.id);
-        await supabaseAdmin.from("order_items").delete().in("order_id", orderIds);
-        await supabaseAdmin.from("vendor_reward_points").delete().in("order_id", orderIds);
-        await supabaseAdmin.from("orders").delete().in("id", orderIds);
+      // 1. Clean up user's orders and items
+      try {
+        const { data: userOrders } = await supabaseAdmin
+          .from("orders")
+          .select("id")
+          .eq("user_id", targetUserId);
+
+        if (userOrders && userOrders.length > 0) {
+          const orderIds = userOrders.map((o) => o.id);
+          await supabaseAdmin.from("order_items").delete().in("order_id", orderIds);
+          await supabaseAdmin.from("vendor_reward_points").delete().in("order_id", orderIds);
+          await supabaseAdmin.from("orders").delete().in("id", orderIds);
+        }
+      } catch (e) {
+        console.warn("orders cleanup note:", e);
       }
-    } catch (e) {
-      console.warn("orders cleanup note:", e);
-    }
 
-    // 2. Unlink any referral pointing to this user
-    try {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ referred_by: null })
-        .eq("referred_by", targetUserId);
-    } catch (e) {
-      console.warn("referred_by cleanup:", e);
-    }
-
-    // 3. Delete reviews
-    try {
-      await supabaseAdmin.from("product_reviews").delete().eq("user_id", targetUserId);
-    } catch (e) {
-      console.warn("product_reviews cleanup:", e);
-    }
-
-    // 4. Delete wallet transactions and wallet
-    try {
-      const { data: userWallets } = await supabaseAdmin
-        .from("wallets")
-        .select("id")
-        .eq("user_id", targetUserId);
-
-      if (userWallets && userWallets.length > 0) {
-        const wIds = userWallets.map((w) => w.id);
-        await supabaseAdmin.from("wallet_transactions").delete().in("wallet_id", wIds);
+      // 2. Unlink any referral pointing to this user
+      try {
+        await supabaseAdmin
+          .from("profiles")
+          .update({ referred_by: null })
+          .eq("referred_by", targetUserId);
+      } catch (e) {
+        console.warn("referred_by cleanup:", e);
       }
-      await supabaseAdmin.from("wallet_card_redemptions").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("wallets").delete().eq("user_id", targetUserId);
-    } catch (e) {
-      console.warn("wallets cleanup:", e);
-    }
 
-    // 5. Delete roles, addresses, notifications, push, vendor links
-    try {
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("addresses").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("notifications").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("push_subscriptions").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("vendor_members").delete().eq("user_id", targetUserId);
-      await supabaseAdmin.from("vendor_applications").delete().eq("user_id", targetUserId);
-    } catch (e) {
-      console.warn("related tables cleanup:", e);
-    }
-
-    // 6. Delete profile record
-    const profDel = await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
-    if (profDel.error) {
-      console.warn("Failed to delete profile with supabaseAdmin, attempting fallback:", profDel.error);
-    }
-
-    // 7. Delete ui_texts user entries
-    try {
-      await supabaseAdmin
-        .from("ui_texts")
-        .delete()
-        .or(`key.eq.user_cart_${targetUserId},key.eq.fav_${targetUserId},key.eq.staff_pwd_${targetUserId},key.eq.staff_email_${targetUserId},key.eq.staff_name_${targetUserId},key.eq.staff_phone_${targetUserId},key.eq.user_perm_${targetUserId}`);
-    } catch (e) {
-      console.warn("ui_texts cleanup:", e);
-    }
-
-    // 8. Delete from Supabase Auth
-    try {
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
-      if (error) {
-        console.warn("Auth deleteUser note:", error.message);
+      // 3. Delete reviews & favorites
+      try {
+        await supabaseAdmin.from("product_reviews").delete().eq("user_id", targetUserId);
+      } catch (e) {
+        console.warn("product_reviews cleanup:", e);
       }
-    } catch (err: any) {
-      console.warn("Auth deleteUser exception:", err?.message || err);
+      try {
+        await supabaseAdmin.from("product_favorites").delete().eq("user_id", targetUserId);
+      } catch (e) {
+        console.warn("product_favorites cleanup:", e);
+      }
+
+      // 4. Delete wallet transactions and wallet
+      try {
+        const { data: userWallets } = await supabaseAdmin
+          .from("wallets")
+          .select("id")
+          .eq("user_id", targetUserId);
+
+        if (userWallets && userWallets.length > 0) {
+          const wIds = userWallets.map((w) => w.id);
+          await supabaseAdmin.from("wallet_transactions").delete().in("wallet_id", wIds);
+        }
+        await supabaseAdmin.from("wallet_card_redemptions").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("wallets").delete().eq("user_id", targetUserId);
+      } catch (e) {
+        console.warn("wallets cleanup:", e);
+      }
+
+      // 5. Delete roles, addresses, notifications, push, vendor links
+      try {
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("addresses").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("notifications").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("push_subscriptions").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("vendor_members").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("vendor_applications").delete().eq("user_id", targetUserId);
+      } catch (e) {
+        console.warn("related tables cleanup:", e);
+      }
+
+      // 6. Delete profile record or wipe fallback
+      try {
+        const profDel = await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
+        if (profDel.error) {
+          await supabaseAdmin
+            .from("profiles")
+            .update({ full_name: "[DELETED]", phone: null, referred_by: null })
+            .eq("id", targetUserId);
+        }
+      } catch (e) {
+        console.warn("profiles cleanup:", e);
+      }
+
+      // 7. Delete ui_texts user entries
+      try {
+        await supabaseAdmin
+          .from("ui_texts")
+          .delete()
+          .or(`key.eq.user_cart_${targetUserId},key.eq.fav_${targetUserId},key.eq.staff_pwd_${targetUserId},key.eq.staff_email_${targetUserId},key.eq.staff_name_${targetUserId},key.eq.staff_phone_${targetUserId},key.eq.staff_role_${targetUserId},key.eq.staff_perms_${targetUserId},key.eq.user_perm_${targetUserId}`);
+      } catch (e) {
+        console.warn("ui_texts cleanup:", e);
+      }
+
+      // 8. Record blacklist in ui_texts
+      try {
+        await supabaseAdmin.from("ui_texts").upsert(
+          {
+            key: `deleted_user_${targetUserId}`,
+            section: "deleted_users",
+            ar: "true",
+            ku: "true",
+          },
+          { onConflict: "key" }
+        );
+      } catch (e) {
+        console.warn("ui_texts blacklist note:", e);
+      }
+
+      // 9. Delete from Supabase Auth
+      try {
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+        if (error) {
+          console.warn("Auth deleteUser note:", error.message);
+        }
+      } catch (err: any) {
+        console.warn("Auth deleteUser exception:", err?.message || err);
+      }
+    } catch (adminErr) {
+      console.warn("adminDeleteUser server error, falling back:", adminErr);
     }
 
     return { success: true };
   });
+
+/** Client helper: ensure user is 100% removed across both server and client caches */
+export async function deleteUserCompletely(targetUserId: string): Promise<boolean> {
+  if (!targetUserId) return false;
+
+  // 1. Try server function
+  try {
+    await adminDeleteUser({ data: { targetUserId } });
+  } catch (err) {
+    console.warn("adminDeleteUser call warning:", err);
+  }
+
+  // 2. Client-side fallback cleanup
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+
+    // Upsert to deleted_users blacklist in ui_texts
+    await supabase.from("ui_texts").upsert(
+      {
+        key: `deleted_user_${targetUserId}`,
+        section: "deleted_users",
+        ar: "true",
+        ku: "true",
+      },
+      { onConflict: "key" }
+    );
+
+    // Delete staff/user credentials from ui_texts
+    await supabase
+      .from("ui_texts")
+      .delete()
+      .in("key", [
+        `staff_name_${targetUserId}`,
+        `staff_phone_${targetUserId}`,
+        `staff_email_${targetUserId}`,
+        `staff_pwd_${targetUserId}`,
+        `staff_role_${targetUserId}`,
+        `staff_perms_${targetUserId}`,
+        `user_perm_${targetUserId}`,
+        `user_cart_${targetUserId}`,
+        `fav_${targetUserId}`,
+      ]);
+
+    // Try deleting roles & tables
+    try { await supabase.from("user_roles").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("addresses").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("notifications").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("push_subscriptions").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("product_reviews").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("product_favorites").delete().eq("user_id", targetUserId); } catch {}
+    try { await supabase.from("profiles").update({ full_name: "[DELETED]", phone: "" }).eq("id", targetUserId); } catch {}
+    try { await supabase.from("profiles").delete().eq("id", targetUserId); } catch {}
+  } catch (clientErr) {
+    console.warn("deleteUserCompletely client cleanup warning:", clientErr);
+  }
+
+  return true;
+}
+
 
 

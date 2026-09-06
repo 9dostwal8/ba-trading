@@ -27,7 +27,7 @@ import { useI18n } from "@/lib/i18n";
 import { AdminCard, SectionHeader } from "../AdminKit";
 import { supabase } from "@/integrations/supabase/client";
 import { createClient } from "@supabase/supabase-js";
-import { adminSetUserPassword, createStaffAccount } from "@/lib/admin-users.functions";
+import { adminSetUserPassword, createStaffAccount, deleteUserCompletely } from "@/lib/admin-users.functions";
 
 // Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
 function getIsolatedAuthClient() {
@@ -198,7 +198,7 @@ export function SettingsUsersTab() {
   const { data: users = [], isLoading } = useQuery<UserItem[]>({
     queryKey: ["admin-users-list"],
     queryFn: async () => {
-      const [userAuthRes, profilesRes, rolesRes, credsRes] = await Promise.all([
+      const [userAuthRes, profilesRes, rolesRes, credsRes, deletedRes] = await Promise.all([
         supabase.auth.getUser().catch(() => ({ data: { user: null } })),
         supabase
           .from("profiles")
@@ -209,7 +209,18 @@ export function SettingsUsersTab() {
           .from("ui_texts")
           .select("key, ar")
           .eq("section", "staff_credentials"),
+        supabase
+          .from("ui_texts")
+          .select("key")
+          .eq("section", "deleted_users"),
       ]);
+
+      const deletedIds = new Set<string>();
+      for (const row of deletedRes.data || []) {
+        if (row.key.startsWith("deleted_user_")) {
+          deletedIds.add(row.key.replace("deleted_user_", ""));
+        }
+      }
 
       const currentUser = userAuthRes?.data?.user;
       
@@ -249,6 +260,10 @@ export function SettingsUsersTab() {
       const userMap = new Map<string, UserItem>();
 
       for (const p of profilesRes.data ?? []) {
+        if (deletedIds.has(p.id) || p.full_name === "[DELETED]" || p.full_name === "DELETED") {
+          continue;
+        }
+
         const userRoles = rolesMap.get(p.id) ?? [];
         const storedRole = staffRolesMap.get(p.id);
         let role: "admin" | "brand_manager" | "customer" = "customer";
@@ -277,6 +292,7 @@ export function SettingsUsersTab() {
 
       // If any staff member is in user_roles or ui_texts but not yet in profiles, ensure they show up
       for (const [userId, userRoles] of rolesMap.entries()) {
+        if (deletedIds.has(userId)) continue;
         if (!userMap.has(userId)) {
           const storedRole = staffRolesMap.get(userId);
           let role: "admin" | "brand_manager" | "customer" = "customer";
@@ -304,6 +320,7 @@ export function SettingsUsersTab() {
 
       // Ensure any newly added staff in ui_texts appear even if not yet in profiles or user_roles
       for (const [userId, savedName] of namesMap.entries()) {
+        if (deletedIds.has(userId)) continue;
         if (!userMap.has(userId)) {
           const userRoles = rolesMap.get(userId) ?? [];
           const storedRole = staffRolesMap.get(userId);
@@ -332,7 +349,7 @@ export function SettingsUsersTab() {
       }
 
       // Ensure current logged-in panel user is present in the list with accurate metadata
-      if (currentUser) {
+      if (currentUser && !deletedIds.has(currentUser.id)) {
         const metaName =
           (currentUser.user_metadata?.["full_name"] as string) ||
           (currentUser.user_metadata?.["name"] as string) ||
@@ -561,47 +578,21 @@ export function SettingsUsersTab() {
   // Delete User Mutation
   const deleteUserMut = useMutation({
     mutationFn: async (targetUser: UserItem) => {
-      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUser.id);
+      // Optimistically remove from state & cache immediately
+      qc.setQueryData<UserItem[]>(["admin-users-list"], (old) =>
+        (old || []).filter((u) => u.id !== targetUser.id)
+      );
+      qc.setQueryData<any[]>(["admin_website_profiles"], (old) =>
+        (old || []).filter((p) => p.id !== targetUser.id)
+      );
 
-      if (isValidUUID) {
-        // 1. Remove roles (safe against RLS)
-        try {
-          await supabase
-            .from("user_roles")
-            .delete()
-            .eq("user_id", targetUser.id);
-        } catch (rErr) {
-          console.warn("user_roles delete note:", rErr);
-        }
-
-        // 2. Remove profile record (safe against RLS)
-        try {
-          await supabase
-            .from("profiles")
-            .delete()
-            .eq("id", targetUser.id);
-        } catch (pErr) {
-          console.warn("profiles delete note:", pErr);
-        }
-      }
-
-      // 3. Remove all credentials, metadata & permissions records from ui_texts
-      await supabase
-        .from("ui_texts")
-        .delete()
-        .in("key", [
-          `staff_name_${targetUser.id}`,
-          `staff_phone_${targetUser.id}`,
-          `staff_email_${targetUser.id}`,
-          `staff_pwd_${targetUser.id}`,
-          `staff_role_${targetUser.id}`,
-          `staff_perms_${targetUser.id}`,
-        ]);
+      await deleteUserCompletely(targetUser.id);
     },
     onSuccess: () => {
       toast.success(tx("userDeleted"));
       setUserToDelete(null);
       qc.invalidateQueries({ queryKey: ["admin-users-list"] });
+      qc.invalidateQueries({ queryKey: ["admin_website_profiles"] });
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to delete user");

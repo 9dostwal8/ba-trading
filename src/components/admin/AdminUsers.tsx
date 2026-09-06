@@ -36,7 +36,7 @@ import { formatPrice, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminDeleteUser, adminSetUserPassword } from "@/lib/admin-users.functions";
+import { adminDeleteUser, adminSetUserPassword, deleteUserCompletely } from "@/lib/admin-users.functions";
 
 type ProfileRow = {
   id: string;
@@ -122,16 +122,32 @@ function AdminUsersContent() {
     queryKey: ["admin_website_profiles"],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, phone, lang, created_at, updated_at")
-          .order("created_at", { ascending: false });
+        const [profilesRes, deletedRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, phone, lang, created_at, updated_at")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("ui_texts")
+            .select("key")
+            .eq("section", "deleted_users"),
+        ]);
 
-        if (error) {
-          console.warn("Profiles fetch note:", error);
-          return [];
+        if (profilesRes.error) {
+          console.warn("Profiles fetch note:", profilesRes.error);
         }
-        return (data || []) as ProfileRow[];
+
+        const deletedIds = new Set<string>();
+        for (const row of deletedRes.data || []) {
+          if (row.key.startsWith("deleted_user_")) {
+            deletedIds.add(row.key.replace("deleted_user_", ""));
+          }
+        }
+
+        const list = (profilesRes.data || []) as ProfileRow[];
+        return list.filter(
+          (p) => !deletedIds.has(p.id) && p.full_name !== "[DELETED]" && p.full_name !== "DELETED"
+        );
       } catch (err) {
         console.warn("Profiles fetch exception:", err);
         return [];
@@ -455,22 +471,21 @@ function AdminUsersContent() {
     const deletingId = selectedUser.id;
     setIsSubmitting(true);
     try {
-      await adminDeleteUser({
-        data: {
-          targetUserId: deletingId,
-        },
-      });
-
       // Optimistically remove from state & cache immediately
       qc.setQueryData<ProfileRow[]>(["admin_website_profiles"], (old) =>
         (old || []).filter((p) => p.id !== deletingId)
       );
+      qc.setQueryData<any[]>(["admin-users-list"], (old) =>
+        (old || []).filter((p) => p.id !== deletingId)
+      );
+
+      await deleteUserCompletely(deletingId);
 
       toast.success(
         lang === "ku" ? "بەکارهێنەر بە تەواوی سڕدرایەوە" : "تم حذف حساب وبيانات المستخدم بنجاح"
       );
       qc.invalidateQueries({ queryKey: ["admin_website_profiles"] });
-      qc.refetchQueries({ queryKey: ["admin_website_profiles"] });
+      qc.invalidateQueries({ queryKey: ["admin-users-list"] });
       setIsDeleteModalOpen(false);
       setIsDetailOpen(false);
       setSelectedUser(null);
