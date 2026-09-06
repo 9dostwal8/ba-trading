@@ -14,7 +14,6 @@ import {
   Package,
   Phone,
   Plus,
-  RefreshCw,
   Search,
   ShieldAlert,
   ShoppingBag,
@@ -327,37 +326,14 @@ export function AdminUsers() {
     <div className="space-y-6 w-full pb-8">
       
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20">
-              <Users className="size-6" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {lang === "ku" ? "بەکارهێنەرانی سایت" : lang === "ar" ? "مستخدمو الموقع والعملاء" : "Website Users & Customers"}
-              </h1>
-              <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-                {lang === "ku"
-                  ? "سەرجەم ئەو دکتۆر و کلینیک و کڕیارانەی لە ماڵپەڕەکە هەژماریان تۆمارکردووە"
-                  : lang === "ar"
-                  ? "جميع الأطباء والعيادات والعملاء المسجلين في المتجر الإلكتروني"
-                  : "All clinic accounts and registered users on the store"}
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchProfiles()}
-            className="rounded-xl gap-2 font-bold text-xs"
-          >
-            <RefreshCw className="size-3.5" />
-            <span>{lang === "ku" ? "نوێکردنەوە" : "تحديث"}</span>
-          </Button>
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20">
+            <Users className="size-5" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+            {lang === "ku" ? "بەکارهێنەرانی سایت" : lang === "ar" ? "مستخدمو الموقع والعملاء" : "Website Users & Customers"}
+          </h1>
         </div>
       </div>
 
