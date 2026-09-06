@@ -421,50 +421,76 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Delete associated data safely (bypasses RLS)
+    // 1. Clean up user's orders and items
     try {
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+      const { data: userOrders } = await supabaseAdmin
+        .from("orders")
+        .select("id")
+        .eq("user_id", targetUserId);
+
+      if (userOrders && userOrders.length > 0) {
+        const orderIds = userOrders.map((o) => o.id);
+        await supabaseAdmin.from("order_items").delete().in("order_id", orderIds);
+        await supabaseAdmin.from("vendor_reward_points").delete().in("order_id", orderIds);
+        await supabaseAdmin.from("orders").delete().in("id", orderIds);
+      }
     } catch (e) {
-      console.warn("user_roles cleanup:", e);
+      console.warn("orders cleanup note:", e);
     }
 
+    // 2. Unlink any referral pointing to this user
     try {
-      await supabaseAdmin.from("addresses").delete().eq("user_id", targetUserId);
+      await supabaseAdmin
+        .from("profiles")
+        .update({ referred_by: null })
+        .eq("referred_by", targetUserId);
     } catch (e) {
-      console.warn("addresses cleanup:", e);
+      console.warn("referred_by cleanup:", e);
     }
 
+    // 3. Delete reviews
     try {
+      await supabaseAdmin.from("product_reviews").delete().eq("user_id", targetUserId);
+    } catch (e) {
+      console.warn("product_reviews cleanup:", e);
+    }
+
+    // 4. Delete wallet transactions and wallet
+    try {
+      const { data: userWallets } = await supabaseAdmin
+        .from("wallets")
+        .select("id")
+        .eq("user_id", targetUserId);
+
+      if (userWallets && userWallets.length > 0) {
+        const wIds = userWallets.map((w) => w.id);
+        await supabaseAdmin.from("wallet_transactions").delete().in("wallet_id", wIds);
+      }
+      await supabaseAdmin.from("wallet_card_redemptions").delete().eq("user_id", targetUserId);
       await supabaseAdmin.from("wallets").delete().eq("user_id", targetUserId);
     } catch (e) {
       console.warn("wallets cleanup:", e);
     }
 
+    // 5. Delete roles, addresses, notifications, push, vendor links
     try {
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+      await supabaseAdmin.from("addresses").delete().eq("user_id", targetUserId);
       await supabaseAdmin.from("notifications").delete().eq("user_id", targetUserId);
-    } catch (e) {
-      console.warn("notifications cleanup:", e);
-    }
-
-    try {
       await supabaseAdmin.from("push_subscriptions").delete().eq("user_id", targetUserId);
-    } catch (e) {
-      console.warn("push_subscriptions cleanup:", e);
-    }
-
-    try {
       await supabaseAdmin.from("vendor_members").delete().eq("user_id", targetUserId);
+      await supabaseAdmin.from("vendor_applications").delete().eq("user_id", targetUserId);
     } catch (e) {
-      console.warn("vendor_members cleanup:", e);
+      console.warn("related tables cleanup:", e);
     }
 
-    try {
-      await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
-    } catch (e) {
-      console.warn("profiles cleanup:", e);
+    // 6. Delete profile record
+    const profDel = await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
+    if (profDel.error) {
+      console.warn("Failed to delete profile with supabaseAdmin, attempting fallback:", profDel.error);
     }
 
-    // Delete ui_texts user entries
+    // 7. Delete ui_texts user entries
     try {
       await supabaseAdmin
         .from("ui_texts")
@@ -474,7 +500,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
       console.warn("ui_texts cleanup:", e);
     }
 
-    // 2. Delete from Supabase Auth
+    // 8. Delete from Supabase Auth
     try {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
       if (error) {

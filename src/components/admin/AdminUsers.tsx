@@ -452,20 +452,28 @@ function AdminUsersContent() {
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
+    const deletingId = selectedUser.id;
     setIsSubmitting(true);
     try {
       await adminDeleteUser({
         data: {
-          targetUserId: selectedUser.id,
+          targetUserId: deletingId,
         },
       });
+
+      // Optimistically remove from state & cache immediately
+      qc.setQueryData<ProfileRow[]>(["admin_website_profiles"], (old) =>
+        (old || []).filter((p) => p.id !== deletingId)
+      );
 
       toast.success(
         lang === "ku" ? "بەکارهێنەر بە تەواوی سڕدرایەوە" : "تم حذف حساب وبيانات المستخدم بنجاح"
       );
       qc.invalidateQueries({ queryKey: ["admin_website_profiles"] });
+      qc.refetchQueries({ queryKey: ["admin_website_profiles"] });
       setIsDeleteModalOpen(false);
       setIsDetailOpen(false);
+      setSelectedUser(null);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to delete user");
