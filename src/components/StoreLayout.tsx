@@ -29,8 +29,6 @@ const rightNavItems = [
 
 export function StoreLayout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
-  const { isStaff, isAdmin } = useCanOrder();
-  const panelTo = (isAdmin ? "/admin/dashboard" : "/brand") as "/admin/dashboard" | "/brand";
   const cart = useCart();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });
@@ -83,43 +81,20 @@ export function StoreLayout({ children }: { children: ReactNode }) {
     </button>
   );
 
-  // Admins and vendors get management navigation instead of the dentist one.
-  // The second slot opens the dentist storefront preview for a quick look.
-  const staffSideItems = [
-    { to: "/" as const, icon: Home, key: "home" },
-    { to: "/" as const, icon: Store, key: "storeView", search: { view: "store" } as never },
-  ];
-  const staffRightItems = [
-    { to: "/offers" as const, icon: Tag, key: "offers" },
-    { to: "/profile" as const, icon: User, key: "account" },
-  ];
   type NavItem = {
     to: string;
     icon: typeof Home;
     key: string;
     search?: never;
   };
-  const leftItems = (isStaff ? staffSideItems : [...sideNavItems]) as NavItem[];
-  const rightItems = (isStaff ? staffRightItems : [...rightNavItems]) as NavItem[];
+  const leftItems = [...sideNavItems] as NavItem[];
+  const rightItems = [...rightNavItems] as NavItem[];
   const isActive = (item: NavItem) => {
     if (item.key === "storeView") return pathname === "/" && storePreview;
     if (item.to === "/") return pathname === "/" && !storePreview;
     return pathname.startsWith(item.to);
   };
-  const staffLabel = (key: string) =>
-    key === "manage"
-      ? lang === "ar"
-        ? "الإدارة"
-        : lang === "ku"
-          ? "بەڕێوەبردن"
-          : "Manage"
-      : key === "storeView"
-        ? lang === "ar"
-          ? "المتجر"
-          : lang === "ku"
-            ? "فرۆشگا"
-            : "Store"
-        : t(key as Parameters<typeof t>[0]);
+  const staffLabel = (key: string) => t(key as Parameters<typeof t>[0]);
 
   const desktopLinks = [...leftItems, ...rightItems];
 
@@ -176,17 +151,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
               })}
             </div>
 
-            {isStaff ? (
-              <li className="relative -top-5 mx-2 flex-none">
-                <Link
-                  to={panelTo}
-                  className="flex h-14 w-16 -translate-y-1 flex-col items-center justify-center rounded-[22px] bg-primary font-display text-[10.5px] font-bold text-primary-foreground shadow-pop transition active:scale-95"
-                >
-                  <LayoutDashboard className="size-6" />
-                  {staffLabel("manage")}
-                </Link>
-              </li>
-            ) : pathname.startsWith("/cart") ? (
+            {pathname.startsWith("/cart") ? (
               <li className="mx-2 w-16 flex-none" aria-hidden />
             ) : (
               <li className="relative -top-5 mx-2 flex-none">

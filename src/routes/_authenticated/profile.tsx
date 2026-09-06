@@ -19,7 +19,7 @@ import { StoreLayout } from "@/components/StoreLayout";
 import { PageBlocks } from "@/components/blocks/PageBlocks";
 import { TwoFactorModal } from "@/components/profile/TwoFactorModal";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useMyVendor } from "@/hooks/useVendor";
 import { formatPrice, useI18n } from "@/lib/i18n";
 import { useMyWallet } from "@/lib/wallet";
@@ -64,7 +64,6 @@ const L = {
 function ProfilePage() {
   const { t, lang } = useI18n();
   const { user } = useAuth();
-  const isAdmin = useIsAdmin(user?.id);
   const { data: vendor } = useMyVendor(user?.id);
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -83,13 +82,6 @@ function ProfilePage() {
     queryKey: ["profile", user?.id],
     queryFn: async () => (await supabase.from("profiles").select("*").maybeSingle()).data,
   });
-
-  // Automatically route Admins to dedicated Admin Profile
-  useEffect(() => {
-    if (user && isAdmin === true) {
-      navigate({ to: "/admin/profile", replace: true });
-    }
-  }, [user, isAdmin, navigate]);
 
   const { data: addresses } = useQuery({
     queryKey: ["addresses", user?.id],
@@ -112,9 +104,6 @@ function ProfilePage() {
       }
     },
   });
-
-
-
 
   async function signOut() {
     await qc.cancelQueries();
@@ -149,21 +138,20 @@ function ProfilePage() {
           </button>
         </div>
 
-        {/* Panel access — admin / vendor only */}
-        {(vendor || isAdmin) && (
+        {/* Panel access — vendor only */}
+        {vendor && (
           <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-card">
             <p className="bg-primary/10 px-4 py-2 text-sm font-extrabold text-primary">
               {L.panel[lang]}
             </p>
             <div className="divide-y divide-border/50">
-              {vendor && <RowLink to="/brand" icon={Store} label={t("brandPortal")} />}
-              {isAdmin && <RowLink to="/admin/dashboard" icon={Shield} label={t("dashboard")} />}
+              <RowLink to="/brand" icon={Store} label={t("brandPortal")} />
             </div>
           </div>
         )}
 
         {/* My Savings — dentists only */}
-        {!isAdmin && !vendor && (
+        {!vendor && (
           <Link
             to="/savings"
             className="relative isolate block overflow-hidden rounded-2xl border border-[var(--primary)]/30 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-deep,var(--primary))] p-4 text-[var(--primary-foreground)] shadow-card"
@@ -247,7 +235,7 @@ function ProfilePage() {
                 hint={L.ordersHint[lang]}
               />
             )}
-            {walletOn && !isAdmin && !vendor && (
+            {walletOn && !vendor && (
               <RowLink
                 to="/profile/wallet"
                 icon={Sparkles}
@@ -299,7 +287,7 @@ function RowLink({
   hint,
   badge,
 }: {
-  to: "/orders" | "/brand" | "/admin" | "/admin/dashboard" | "/profile/edit" | "/profile/wallet" | "/profile/addresses";
+  to: "/orders" | "/brand" | "/profile/edit" | "/profile/wallet" | "/profile/addresses";
   icon: ComponentType<{ className?: string }>;
   label: string;
   hint?: string;

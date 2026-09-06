@@ -212,7 +212,6 @@ function CartPage() {
   const { lang, t } = useI18n();
   const cart = useCart();
   const { user } = useAuth();
-  const { isStaff } = useCanOrder();
   const navigate = useNavigate();
 
   const [code, setCode] = useState("");
@@ -384,10 +383,6 @@ function CartPage() {
   }
 
   async function placeOrder() {
-    if (isStaff) {
-      toast.error(STAFF_COPY[lang].block);
-      return;
-    }
     if (!user) {
       toast.error(t("loginRequired"));
       navigate({ to: "/auth" });
@@ -576,16 +571,6 @@ function CartPage() {
     <StoreLayout>
       <PageBlocks page="cart" />
       <div className="space-y-3 px-3 pb-4 pt-3">
-        {isStaff && (
-          <div className="rounded-xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-3">
-            <p className="text-[13px] font-extrabold text-destructive">
-              {STAFF_COPY[lang].title}
-            </p>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
-              {STAFF_COPY[lang].note}
-            </p>
-          </div>
-        )}
         {/* Items */}
         <section className="dk-block">
           <div className="dk-head border-b border-border/60">
@@ -1142,7 +1127,7 @@ function CartPage() {
               <span className="price-lg text-[19px] text-primary">{formatPrice(total, lang)}</span>
             </div>
             <div className="pt-2">
-              {!isStaff && <RewardEarnNote items={cart.items} orderTotal={total} />}
+              <RewardEarnNote items={cart.items} orderTotal={total} />
             </div>
             <p className="flex items-center gap-1.5 pt-1 text-[11px] font-semibold text-muted-foreground">
               <ShieldCheck className="size-3.5 text-success" />
@@ -1167,12 +1152,10 @@ function CartPage() {
           <Button
             size="lg"
             className="h-12 flex-1 rounded-lg text-[14px] font-extrabold"
-            disabled={placing || isStaff}
+            disabled={placing}
             onClick={placeOrder}
           >
-            {isStaff
-              ? STAFF_COPY[lang].cta
-              : !user
+            {!user
               ? t("loginRequired")
               : payMethod === "qi"
                 ? payCopy.payNow

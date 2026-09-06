@@ -30,8 +30,7 @@ import { toast } from "sonner";
 
 export function GooshiHeader() {
   const { t, lang, setLang } = useI18n();
-  const { isStaff, isAdmin, canOrder } = useCanOrder();
-  const panelTo = (isAdmin ? "/admin/dashboard" : "/brand") as "/admin/dashboard" | "/brand";
+  const { canOrder } = useCanOrder();
   const cart = useCart();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -331,27 +330,15 @@ export function GooshiHeader() {
             <NotificationBell />
 
             {/* User Account / Profile Button (Desktop only — on mobile it is in the bottom bar) */}
-            {isStaff ? (
-              <Link
-                to={panelTo}
-                className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-3.5 text-[12.5px] font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-95"
-              >
-                <LayoutDashboard className="size-4" />
-                <span>
-                  {lang === "ar" ? "لوحة الإدارة" : lang === "ku" ? "داشبۆرد" : "Dashboard"}
-                </span>
-              </Link>
-            ) : (
-              <Link
-                to="/profile"
-                className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3 sm:px-3.5 text-[12.5px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 shadow-sm"
-              >
-                <User className="size-4 text-slate-600" />
-                <span>
-                  {canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
-                </span>
-              </Link>
-            )}
+            <Link
+              to="/profile"
+              className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3 sm:px-3.5 text-[12.5px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 shadow-sm"
+            >
+              <User className="size-4 text-slate-600" />
+              <span>
+                {canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
+              </span>
+            </Link>
 
             {/* Mobile Search Button -> Navigates to dedicated Search Page */}
             <Link

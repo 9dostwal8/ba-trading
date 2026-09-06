@@ -1,18 +1,17 @@
-import { useAuth, useIsAdmin } from "@/hooks/useAuth";
-import { useMyVendor } from "@/hooks/useVendor";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Only dentist / clinic accounts buy on OfferDent.
- * Admins and vendor (brand) members manage the store — they never order
- * and never earn reward points (enforced in the database too).
+ * Main Storefront: Every visitor browses and orders as a regular user/customer.
+ * The Admin Panel is completely isolated from the main website.
  */
 export function useCanOrder() {
   const { user, loading } = useAuth();
-  const isAdmin = useIsAdmin(user?.id);
-  const { data: vendor, isLoading: vendorLoading } = useMyVendor(user?.id);
 
-  const isStaff = isAdmin === true || !!vendor;
-  const ready = !loading && (!user || (isAdmin !== null && !vendorLoading));
-
-  return { isStaff, canOrder: !isStaff, ready, isAdmin: isAdmin === true, vendor };
+  return {
+    isStaff: false,
+    canOrder: true,
+    ready: !loading,
+    isAdmin: false,
+    vendor: null,
+  };
 }
