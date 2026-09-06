@@ -14,6 +14,7 @@ import {
   Package,
   Phone,
   Plus,
+  RefreshCw,
   Search,
   ShieldAlert,
   ShoppingBag,
@@ -28,7 +29,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { Component, type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice, useI18n } from "@/lib/i18n";
@@ -54,7 +55,47 @@ type OrderRow = {
   created_at: string;
 };
 
-export function AdminUsers() {
+class AdminUsersErrorBoundary extends Component<
+  { children: ReactNode; lang?: string },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: ReactNode; lang?: string }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: "" };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, errorMsg: String(error?.message || error) };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("AdminUsers error caught:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/50 space-y-4 max-w-lg mx-auto my-8">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 mx-auto">
+            <ShieldAlert className="size-6" />
+          </div>
+          <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
+            {this.props.lang === "ku"
+              ? "هەڵەیەک ڕوویدا لە پیشاندانی بەکارهێنەران"
+              : "حدث خطأ أثناء تحميل بيانات المستخدمين"}
+          </h3>
+          <p className="text-xs text-rose-500 font-mono">{this.state.errorMsg}</p>
+          <Button
+            onClick={() => this.setState({ hasError: false })}
+            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black"
+          >
+            {this.props.lang === "ku" ? "دووبارە هەوڵبدەرەوە" : "إعادة المحاولة"}
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function AdminUsersContent() {
   const { lang } = useI18n();
   const qc = useQueryClient();
 
@@ -1053,5 +1094,14 @@ export function AdminUsers() {
       )}
 
     </div>
+  );
+}
+
+export function AdminUsers() {
+  const { lang } = useI18n();
+  return (
+    <AdminUsersErrorBoundary lang={lang}>
+      <AdminUsersContent />
+    </AdminUsersErrorBoundary>
   );
 }
