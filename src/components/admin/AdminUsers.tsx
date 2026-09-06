@@ -282,6 +282,31 @@ function AdminUsersContent() {
     enabled: !!selectedUser?.id && isDetailOpen,
   });
 
+  // 6. Fetch Active Cart for Selected User
+  const { data: userCart = [] } = useQuery({
+    queryKey: ["admin_user_cart", selectedUser?.id],
+    queryFn: async () => {
+      if (!selectedUser?.id) return [];
+      try {
+        const { data: uiData } = await supabase
+          .from("ui_texts")
+          .select("ar")
+          .eq("key", `user_cart_${selectedUser.id}`)
+          .maybeSingle();
+
+        if (uiData?.ar) {
+          const items = JSON.parse(uiData.ar);
+          if (Array.isArray(items)) return items;
+        }
+        return [];
+      } catch (err) {
+        console.warn("User cart query error:", err);
+        return [];
+      }
+    },
+    enabled: !!selectedUser?.id && isDetailOpen,
+  });
+
   // Map orders to user statistics
   const userOrderStats = useMemo(() => {
     const map = new Map<string, { count: number; totalSpent: number; lastOrderDate: string | null }>();
@@ -896,6 +921,48 @@ function AdminUsersContent() {
                           {ord.status}
                         </span>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Active Cart Section */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <ShoppingCart className="size-4 text-emerald-600" />
+                <span>{lang === "ku" ? "سەبەتەی کڕینی چالاک" : "سلة التسوق الحالية"} ({userCart.length})</span>
+              </h4>
+
+              {userCart.length === 0 ? (
+                <p className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 text-center text-xs font-bold text-slate-400">
+                  {lang === "ku" ? "سەبەتەی کڕینی بەتاڵە" : "السلة فارغة حالياً"}
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {userCart.map((item: any, idx: number) => (
+                    <div
+                      key={item.id || idx}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-bold"
+                    >
+                      <div className="flex items-center gap-2.5 truncate flex-1">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt="" className="size-8 object-contain rounded-lg shrink-0" />
+                        ) : (
+                          <span className="text-base">🦷</span>
+                        )}
+                        <div className="truncate">
+                          <span className="text-slate-900 dark:text-white truncate block">
+                            {lang === "ku" ? item.name_ku || item.name_ar : item.name_ar || item.name_ku}
+                          </span>
+                          <span className="text-[10.5px] text-slate-400">
+                            {item.quantity} × {formatPrice(item.price, lang)}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-black text-emerald-600 dark:text-emerald-400 shrink-0">
+                        {formatPrice((item.quantity || 1) * (item.price || 0), lang)}
+                      </span>
                     </div>
                   ))}
                 </div>
