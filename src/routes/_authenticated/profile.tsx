@@ -368,7 +368,7 @@ function ProfilePage() {
 
           {/* E. Favorite Items Card */}
           <Link
-            to="/products"
+            to="/profile/favorites"
             className="group relative overflow-hidden rounded-3xl border border-rose-200/80 dark:border-rose-900/40 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent dark:from-rose-950/30 dark:to-slate-900 p-4 sm:p-5 shadow-sm hover:border-rose-400 transition-all active:scale-[0.98]"
           >
             <div className="flex items-center justify-between">
@@ -516,7 +516,17 @@ function ProfilePage() {
                 badge={orders.length > 0 ? `${orders.length}` : undefined}
               />
 
-              {/* 2. Wallet & Rewards */}
+              {/* 2. Favorite Products */}
+              <ModernRowLink
+                to="/profile/favorites"
+                icon={Heart}
+                iconColor="text-rose-600 bg-rose-50 dark:bg-rose-950/50"
+                label={L.favorites[lang]}
+                hint={L.favoritesHint[lang]}
+                badge={favoriteIds.length > 0 ? `${favoriteIds.length}` : undefined}
+              />
+
+              {/* 3. Wallet & Rewards */}
               {walletOn && (
                 <ModernRowLink
                   to="/profile/wallet"

@@ -18,6 +18,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ExpiringRouteImport } from './routes/expiring'
+import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as FeaturedRouteImport } from './routes/featured'
 import { Route as HowDiscountsRouteImport } from './routes/how-discounts'
 import { Route as NewRouteImport } from './routes/new'
@@ -70,6 +71,7 @@ import { Route as VendorSlugRouteImport } from './routes/vendor.$slug'
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders_.$id'
 import { Route as AuthenticatedProfileAddressesRouteImport } from './routes/_authenticated/profile_.addresses'
 import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile_.edit'
+import { Route as AuthenticatedProfileFavoritesRouteImport } from './routes/_authenticated/profile_.favorites'
 import { Route as AuthenticatedProfileWalletRouteImport } from './routes/_authenticated/profile_.wallet'
 import { Route as ApiPublicQiWebhookRouteImport } from './routes/api/public/qi-webhook'
 import { Route as AuthenticatedProfileWalletStatementRouteImport } from './routes/_authenticated/profile_.wallet_.statement'
@@ -116,6 +118,11 @@ const DealsRoute = DealsRouteImport.update({
 const ExpiringRoute = ExpiringRouteImport.update({
   id: '/expiring',
   path: '/expiring',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturedRoute = FeaturedRouteImport.update({
@@ -380,6 +387,12 @@ const AuthenticatedProfileEditRoute =
     path: '/profile/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProfileFavoritesRoute =
+  AuthenticatedProfileFavoritesRouteImport.update({
+    id: '/profile_/favorites',
+    path: '/profile/favorites',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileWalletRoute =
   AuthenticatedProfileWalletRouteImport.update({
     id: '/profile_/wallet',
@@ -407,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/categories': typeof CategoriesRoute
   '/deals': typeof DealsRoute
   '/expiring': typeof ExpiringRoute
+  '/favorites': typeof FavoritesRoute
   '/featured': typeof FeaturedRoute
   '/how-discounts': typeof HowDiscountsRoute
   '/new': typeof NewRoute
@@ -459,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
+  '/profile/favorites': typeof AuthenticatedProfileFavoritesRoute
   '/profile/wallet': typeof AuthenticatedProfileWalletRoute
   '/api/public/qi-webhook': typeof ApiPublicQiWebhookRoute
   '/profile/wallet/statement': typeof AuthenticatedProfileWalletStatementRoute
@@ -472,6 +487,7 @@ export interface FileRoutesByTo {
   '/categories': typeof CategoriesRoute
   '/deals': typeof DealsRoute
   '/expiring': typeof ExpiringRoute
+  '/favorites': typeof FavoritesRoute
   '/featured': typeof FeaturedRoute
   '/how-discounts': typeof HowDiscountsRoute
   '/new': typeof NewRoute
@@ -524,6 +540,7 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/profile/addresses': typeof AuthenticatedProfileAddressesRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
+  '/profile/favorites': typeof AuthenticatedProfileFavoritesRoute
   '/profile/wallet': typeof AuthenticatedProfileWalletRoute
   '/api/public/qi-webhook': typeof ApiPublicQiWebhookRoute
   '/profile/wallet/statement': typeof AuthenticatedProfileWalletStatementRoute
@@ -539,6 +556,7 @@ export interface FileRoutesById {
   '/categories': typeof CategoriesRoute
   '/deals': typeof DealsRoute
   '/expiring': typeof ExpiringRoute
+  '/favorites': typeof FavoritesRoute
   '/featured': typeof FeaturedRoute
   '/how-discounts': typeof HowDiscountsRoute
   '/new': typeof NewRoute
@@ -591,6 +609,7 @@ export interface FileRoutesById {
   '/_authenticated/orders_/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/profile_/addresses': typeof AuthenticatedProfileAddressesRoute
   '/_authenticated/profile_/edit': typeof AuthenticatedProfileEditRoute
+  '/_authenticated/profile_/favorites': typeof AuthenticatedProfileFavoritesRoute
   '/_authenticated/profile_/wallet': typeof AuthenticatedProfileWalletRoute
   '/api/public/qi-webhook': typeof ApiPublicQiWebhookRoute
   '/_authenticated/profile_/wallet_/statement': typeof AuthenticatedProfileWalletStatementRoute
@@ -606,6 +625,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/deals'
     | '/expiring'
+    | '/favorites'
     | '/featured'
     | '/how-discounts'
     | '/new'
@@ -658,6 +678,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
+    | '/profile/favorites'
     | '/profile/wallet'
     | '/api/public/qi-webhook'
     | '/profile/wallet/statement'
@@ -671,6 +692,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/deals'
     | '/expiring'
+    | '/favorites'
     | '/featured'
     | '/how-discounts'
     | '/new'
@@ -723,6 +745,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/profile/addresses'
     | '/profile/edit'
+    | '/profile/favorites'
     | '/profile/wallet'
     | '/api/public/qi-webhook'
     | '/profile/wallet/statement'
@@ -737,6 +760,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/deals'
     | '/expiring'
+    | '/favorites'
     | '/featured'
     | '/how-discounts'
     | '/new'
@@ -789,6 +813,7 @@ export interface FileRouteTypes {
     | '/_authenticated/orders_/$id'
     | '/_authenticated/profile_/addresses'
     | '/_authenticated/profile_/edit'
+    | '/_authenticated/profile_/favorites'
     | '/_authenticated/profile_/wallet'
     | '/api/public/qi-webhook'
     | '/_authenticated/profile_/wallet_/statement'
@@ -804,6 +829,7 @@ export interface RootRouteChildren {
   CategoriesRoute: typeof CategoriesRoute
   DealsRoute: typeof DealsRoute
   ExpiringRoute: typeof ExpiringRoute
+  FavoritesRoute: typeof FavoritesRoute
   FeaturedRoute: typeof FeaturedRoute
   HowDiscountsRoute: typeof HowDiscountsRoute
   NewRoute: typeof NewRoute
@@ -915,6 +941,13 @@ declare module '@tanstack/react-router' {
       path: '/expiring'
       fullPath: '/expiring'
       preLoaderRoute: typeof ExpiringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/featured': {
@@ -1281,6 +1314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile_/favorites': {
+      id: '/_authenticated/profile_/favorites'
+      path: '/profile/favorites'
+      fullPath: '/profile/favorites'
+      preLoaderRoute: typeof AuthenticatedProfileFavoritesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile_/wallet': {
       id: '/_authenticated/profile_/wallet'
       path: '/profile/wallet'
@@ -1313,6 +1353,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrdersIdRoute: typeof AuthenticatedOrdersIdRoute
   AuthenticatedProfileAddressesRoute: typeof AuthenticatedProfileAddressesRoute
   AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
+  AuthenticatedProfileFavoritesRoute: typeof AuthenticatedProfileFavoritesRoute
   AuthenticatedProfileWalletRoute: typeof AuthenticatedProfileWalletRoute
   AuthenticatedProfileWalletStatementRoute: typeof AuthenticatedProfileWalletStatementRoute
 }
@@ -1325,6 +1366,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrdersIdRoute: AuthenticatedOrdersIdRoute,
   AuthenticatedProfileAddressesRoute: AuthenticatedProfileAddressesRoute,
   AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
+  AuthenticatedProfileFavoritesRoute: AuthenticatedProfileFavoritesRoute,
   AuthenticatedProfileWalletRoute: AuthenticatedProfileWalletRoute,
   AuthenticatedProfileWalletStatementRoute:
     AuthenticatedProfileWalletStatementRoute,
@@ -1343,6 +1385,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriesRoute: CategoriesRoute,
   DealsRoute: DealsRoute,
   ExpiringRoute: ExpiringRoute,
+  FavoritesRoute: FavoritesRoute,
   FeaturedRoute: FeaturedRoute,
   HowDiscountsRoute: HowDiscountsRoute,
   NewRoute: NewRoute,
