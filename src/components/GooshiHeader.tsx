@@ -332,12 +332,11 @@ export function GooshiHeader() {
             {/* User Account / Profile Button (Desktop only — on mobile it is in the bottom bar) */}
             <Link
               to="/profile"
-              className="hidden md:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3 sm:px-3.5 text-[12.5px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 shadow-sm"
+              aria-label={canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
+              title={canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
+              className="hidden md:inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
             >
-              <User className="size-4 text-slate-600" />
-              <span>
-                {canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
-              </span>
+              <User className="size-4.5 text-slate-600" />
             </Link>
 
             {/* Mobile Search Button -> Navigates to dedicated Search Page */}
@@ -349,22 +348,23 @@ export function GooshiHeader() {
               <Search className="size-4.5 text-slate-600" />
             </Link>
 
-            {/* Shopping Cart Pill Button — Shown only when logged in */}
+            {/* Shopping Cart Button — Shown only when logged in */}
             {canOrder && (
               <Link
                 to="/cart"
+                aria-label={t("cart")}
+                title={t("cart")}
                 className={cn(
-                  "relative inline-flex h-10 items-center gap-2 rounded-xl px-3 sm:px-4 text-[13px] font-black transition-all shadow-sm active:scale-95",
+                  "relative inline-flex size-10 items-center justify-center rounded-xl transition-all shadow-sm active:scale-95",
                   cart.count > 0
                     ? "bg-primary text-primary-foreground shadow-primary/20 hover:opacity-95"
                     : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 )}
               >
                 <ShoppingBag className="size-4.5" />
-                <span className="hidden sm:inline">{t("cart")}</span>
                 {cart.count > 0 && (
-                  <span className="grid min-w-[20px] place-items-center rounded-full bg-white px-1 text-[11px] font-black text-primary">
-                    {cart.count}
+                  <span className="absolute -top-1.5 -end-1.5 grid min-w-[19px] h-[19px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-white shadow-sm">
+                    {cart.count > 99 ? "99+" : cart.count}
                   </span>
                 )}
               </Link>
