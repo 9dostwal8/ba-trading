@@ -2,9 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Boxes,
-  ChevronDown,
   Globe,
-  LayoutDashboard,
   Menu,
   QrCode,
   Search,
@@ -48,7 +46,7 @@ export function GooshiHeader() {
   const catMenuRef = useRef<HTMLDivElement>(null);
   const qrFileRef = useRef<HTMLInputElement>(null);
 
-  // Close search dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -90,7 +88,13 @@ export function GooshiHeader() {
     try {
       const found = await decodeQrFile(file);
       if (!found) {
-        toast.error(lang === "ar" ? "لم يتم العثور على رمز QR" : lang === "ku" ? "کۆدی QR نەدۆزرا" : "No QR code found");
+        toast.error(
+          lang === "ar"
+            ? "لم يتم العثور على رمز QR"
+            : lang === "ku"
+            ? "کۆدی QR نەدۆزرا"
+            : "No QR code found"
+        );
         return;
       }
       const path = inAppPath(found);
@@ -100,19 +104,31 @@ export function GooshiHeader() {
       }
       const vendor = await fetchVendor(parseVendorScan(found));
       if (!vendor) {
-        toast.error(lang === "ar" ? "الرمز غير معروف" : lang === "ku" ? "کۆد نەناسراوە" : "Unknown QR Code");
+        toast.error(
+          lang === "ar"
+            ? "الرمز غير معروف"
+            : lang === "ku"
+            ? "کۆد نەناسراوە"
+            : "Unknown QR Code"
+        );
         return;
       }
       navigate({ to: "/vendor/$slug", params: { slug: vendor.slug } });
     } catch {
-      toast.error(lang === "ar" ? "خطأ في قراءة الرمز" : lang === "ku" ? "هەڵە لە خوێندنەوە" : "Error reading QR");
+      toast.error(
+        lang === "ar"
+          ? "خطأ في قراءة الرمز"
+          : lang === "ku"
+          ? "هەڵە لە خوێندنەوە"
+          : "Error reading QR"
+      );
     }
   };
 
   // Language cycle (Arabic, Kurdish, English only - strict)
   const order: Array<"ar" | "ku" | "en"> = ["ar", "ku", "en"];
   const enabled = order.filter((l) =>
-    !s ? true : Boolean((s as unknown as Record<string, boolean>)[`lang_${l}_enabled`]),
+    !s ? true : Boolean((s as unknown as Record<string, boolean>)[`lang_${l}_enabled`])
   );
   const activeLangs: Array<"ar" | "ku" | "en"> = enabled.length ? enabled : ["ar"];
   const nextLang = activeLangs[(activeLangs.indexOf(lang) + 1) % activeLangs.length]!;
@@ -136,7 +152,11 @@ export function GooshiHeader() {
           {(s && pick(s.site_name_ar, s.site_name_ku, lang)) || "BA Trading"}
         </span>
         <span className="text-[10px] font-semibold text-muted-foreground hidden sm:block">
-          {lang === "ar" ? "المتجر الطبي التخصصي" : lang === "ku" ? "فرۆشگای پزیشکی تایبەتمەند" : "Dental Supply Store"}
+          {lang === "ar"
+            ? "المتجر الطبي التخصصي"
+            : lang === "ku"
+            ? "فرۆشگای پزیشکی تایبەتمەند"
+            : "Dental Supply Store"}
         </span>
       </div>
     </Link>
@@ -155,7 +175,7 @@ export function GooshiHeader() {
         }}
       />
 
-      {/* Top Promotional Reclaim Strip (GooshiShop Style) */}
+      {/* Top Promotional Reclaim Strip */}
       {!isPromoDismissed && (
         <div className="relative z-40 bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 px-4 py-2 text-white shadow-sm">
           <div className="mx-auto flex max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between gap-3 text-[12px] font-bold">
@@ -176,10 +196,22 @@ export function GooshiHeader() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText("DENTAL10");
-                  toast.success(lang === "ar" ? "تم نسخ الكود DENTAL10" : lang === "ku" ? "کۆدی DENTAL10 کۆپیکرا" : "Code copied: DENTAL10");
+                  toast.success(
+                    lang === "ar"
+                      ? "تم نسخ الكود DENTAL10"
+                      : lang === "ku"
+                      ? "کۆدی DENTAL10 کۆپیکرا"
+                      : "Code copied: DENTAL10"
+                  );
                 }}
                 className="inline-flex items-center gap-1 rounded-lg bg-amber-400 px-2.5 py-0.5 font-mono text-[12.5px] font-black text-slate-950 shadow-sm transition hover:bg-amber-300 active:scale-95 cursor-pointer"
-                title={lang === "ar" ? "اضغط لنسخ الكود" : lang === "ku" ? "کۆپیکردنی کۆد" : "Click to copy"}
+                title={
+                  lang === "ar"
+                    ? "اضغط لنسخ الكود"
+                    : lang === "ku"
+                    ? "کۆپیکردنی کۆد"
+                    : "Click to copy"
+                }
               >
                 <span>DENTAL10</span>
               </button>
@@ -198,223 +230,54 @@ export function GooshiHeader() {
 
       {/* Main Top Header */}
       <header className="sticky top-0 z-30 w-full border-b border-slate-100 bg-white/95 backdrop-blur-md transition-all shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-        <div className="mx-auto flex max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between gap-4 px-4 py-2.5 lg:px-6 lg:py-3.5">
+        <div className="mx-auto flex max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between gap-3 lg:gap-4 px-4 py-2.5 lg:px-6 lg:py-3.5">
           
-          {/* Brand Logo */}
-          {brandLogoNode}
+          {/* Logo & Category Dropdown Button Group */}
+          <div className="flex items-center gap-2.5 lg:gap-3 shrink-0">
+            {brandLogoNode}
 
-          {/* Central Live Search Box (GooshiShop Style) */}
-          <div ref={searchRef} className="relative hidden flex-1 max-w-xl md:block">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative flex items-center rounded-xl bg-slate-100/90 border border-slate-200/80 transition-all focus-within:border-primary focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/10"
-            >
-              <div className="flex h-11 w-10 items-center justify-center text-slate-400">
-                <Search className="size-4.5" />
-              </div>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                placeholder={
-                  lang === "ar"
-                    ? "ابحث في أكثر من 120+ منتج أسنان، ماركة، أو كود..."
-                    : lang === "ku"
-                    ? "گەڕان لە نێوان ١٢٠+ بەرهەمی پزیشکی، براند..."
-                    : "Search 120+ dental products, brands, or SKU..."
-                }
-                className="h-11 w-full bg-transparent pr-2 pl-10 text-[13px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
-              />
-
-              {/* Clear Query or QR Scan Button */}
-              {query ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    setIsSearchOpen(false);
-                  }}
-                  className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700"
-                >
-                  <X className="size-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  title={lang === "ar" ? "مسح رمز QR" : lang === "ku" ? "سکانکردنی QR" : "Scan QR code"}
-                  onClick={() => qrFileRef.current?.click()}
-                  className="mx-1.5 flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200 hover:text-primary"
-                >
-                  <QrCode className="size-4.5" />
-                </button>
-              )}
-            </form>
-
-            {/* Live Search Suggestions Dropdown */}
-            {isSearchOpen && query.trim() && (
-              <div className="absolute top-full mt-2 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl z-50">
-                <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-100">
-                  <span>{lang === "ar" ? "النتائج المقترحة" : lang === "ku" ? "ئەنجامە پێشنیارکراوەکان" : "Suggested Results"}</span>
-                  <button
-                    type="button"
-                    onClick={handleSearchSubmit}
-                    className="text-primary hover:underline"
-                  >
-                    {lang === "ar" ? "عرض الكل" : lang === "ku" ? "بینینی هەمووی" : "View All"}
-                  </button>
-                </div>
-                {suggestions.length > 0 ? (
-                  <div className="divide-y divide-slate-50 py-1">
-                    {suggestions.map((p) => (
-                      <Link
-                        key={p.id}
-                        to="/product/$id"
-                        params={{ id: p.id }}
-                        onClick={() => setIsSearchOpen(false)}
-                        className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50"
-                      >
-                        {p.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt={pickName(p, lang)}
-                            className="size-10 rounded-lg object-contain bg-slate-50 p-1 border border-slate-100"
-                          />
-                        ) : (
-                          <div className="grid size-10 place-items-center rounded-lg bg-slate-50 text-base">🦷</div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[12.5px] font-bold text-slate-800">
-                            {pickName(p, lang)}
-                          </p>
-                          <p className="text-[10.5px] text-slate-400 font-medium">
-                            {p.brand} {p.sku ? `• ${p.sku}` : ""}
-                          </p>
-                        </div>
-                        <div className="text-end">
-                          <span className="text-[12px] font-black text-primary">
-                            {formatPrice(p.price, lang)}
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-6 text-center text-[12px] text-slate-400">
-                    {lang === "ar" ? "لم يتم العثور على منتجات مطابقة" : lang === "ku" ? "هیچ بەرهەمێک نەدۆزرایەوە" : "No matching products found"}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons: Language, Notifications, Account, Cart */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            
-            {/* Language Switcher Pill */}
-            {activeLangs.length > 1 && (
-              <button
-                onClick={() => setLang(nextLang)}
-                className="hidden sm:inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50/80 px-3 text-[12px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 active:scale-95"
-                title={lang === "ar" ? "تغيير اللغة" : lang === "ku" ? "گۆڕینی زمان" : "Change Language"}
-              >
-                <Globe className="size-4 text-slate-500" />
-                <span>{nextLabel}</span>
-              </button>
-            )}
-
-            {/* Notification Bell */}
-            <NotificationBell />
-
-            {/* User Account / Profile Button (Desktop only — on mobile it is in the bottom bar) */}
-            <Link
-              to="/profile"
-              aria-label={canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
-              title={canOrder ? (lang === "ar" ? "حسابي" : lang === "ku" ? "هەژمارەکەم" : "My Account") : (lang === "ar" ? "تسجيل الدخول" : lang === "ku" ? "چوونەژوورەوە" : "Sign In")}
-              className="hidden md:inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-            >
-              <User className="size-4.5 text-slate-600" />
-            </Link>
-
-            {/* Mobile Search Button -> Navigates to dedicated Search Page */}
-            <Link
-              to="/search"
-              aria-label="Search"
-              className="md:hidden inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-            >
-              <Search className="size-4.5 text-slate-600" />
-            </Link>
-
-            {/* Shopping Cart Button — Shown only when logged in */}
-            {canOrder && (
-              <Link
-                to="/cart"
-                aria-label={t("cart")}
-                title={t("cart")}
-                className={cn(
-                  "relative inline-flex size-10 items-center justify-center rounded-xl transition-all shadow-sm active:scale-95",
-                  cart.count > 0
-                    ? "bg-primary text-primary-foreground shadow-primary/20 hover:opacity-95"
-                    : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                )}
-              >
-                <ShoppingBag className="size-4.5" />
-                {cart.count > 0 && (
-                  <span className="absolute -top-1.5 -end-1.5 grid min-w-[19px] h-[19px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-white shadow-sm">
-                    {cart.count > 99 ? "99+" : cart.count}
-                  </span>
-                )}
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Secondary Clean Navigation Bar (Mega Menu Only) */}
-        <div className="hidden border-t border-slate-100/80 bg-white lg:block">
-          <div className="mx-auto flex max-w-[var(--page-max,1600px)] 2xl:max-w-[1720px] items-center justify-between px-6 py-1.5">
-            
-            {/* Category Dropdown Trigger Button */}
+            {/* Category Dropdown Trigger Icon Button (Placed directly next to Logo) */}
             <div ref={catMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-xl px-4 py-2 text-[13px] font-black transition-all shadow-sm active:scale-95",
-                  isCategoryMenuOpen
-                    ? "bg-primary text-white shadow-primary/20"
-                    : "bg-slate-100/90 text-slate-800 hover:bg-primary/10 hover:text-primary border border-slate-200/60"
-                )}
-              >
-                <Menu className="size-4.5" />
-                <span>
-                  {lang === "ar"
-                    ? "القائمة الرئيسية وتصنيفات المنتجات"
+                title={
+                  lang === "ar"
+                    ? "الأقسام وتصنيفات المنتجات"
                     : lang === "ku"
                     ? "هاوپۆلی بەرهەمەکان و بەشەکان"
-                    : "Categories & Menu"}
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "size-3.5 transition-transform",
-                    isCategoryMenuOpen && "rotate-180"
-                  )}
-                />
+                    : "Categories & Menu"
+                }
+                aria-label={
+                  lang === "ar"
+                    ? "الأقسام وتصنيفات المنتجات"
+                    : lang === "ku"
+                    ? "هاوپۆلی بەرهەمەکان و بەشەکان"
+                    : "Categories & Menu"
+                }
+                className={cn(
+                  "flex size-9 lg:size-11 shrink-0 items-center justify-center rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer",
+                  isCategoryMenuOpen
+                    ? "bg-primary text-primary-foreground shadow-primary/20"
+                    : "border border-slate-200/90 bg-slate-50/90 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                )}
+              >
+                <Menu className="size-5" />
               </button>
 
               {/* Beautiful Mega Dropdown Menu */}
               {isCategoryMenuOpen && (
-                <div className="absolute top-full mt-2.5 w-[560px] overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-                  
+                <div className="absolute top-full mt-2.5 rtl:right-0 ltr:left-0 w-[560px] max-w-[90vw] overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
                   {/* Top Section: Quick Features & Special Sections */}
                   <div className="mb-4">
                     <p className="mb-2.5 px-1 text-[11px] font-black uppercase tracking-wider text-slate-400">
-                      {lang === "ar" ? "الأقسام والعروض المميزة" : lang === "ku" ? "بەشە تایبەت و ئۆفەرەکان" : "Featured Sections"}
+                      {lang === "ar"
+                        ? "الأقسام والعروض المميزة"
+                        : lang === "ku"
+                        ? "بەشە تایبەت و ئۆفەرەکان"
+                        : "Featured Sections"}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      
                       {/* Flash Deals */}
                       <Link
                         to="/deals"
@@ -426,10 +289,18 @@ export function GooshiHeader() {
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-[12.5px] font-black text-teal-900">
-                            {lang === "ar" ? "عروض سريعة" : lang === "ku" ? "ئۆفەری خێرا" : "Flash Deals"}
+                            {lang === "ar"
+                              ? "عروض سريعة"
+                              : lang === "ku"
+                              ? "ئۆفەری خێرا"
+                              : "Flash Deals"}
                           </span>
                           <span className="block text-[10px] font-medium text-[#007979]">
-                            {lang === "ar" ? "خصومات قوية" : lang === "ku" ? "داشکاندنی بەهێز" : "Hot discounts"}
+                            {lang === "ar"
+                              ? "خصومات قوية"
+                              : lang === "ku"
+                              ? "داشکاندنی بەهێز"
+                              : "Hot discounts"}
                           </span>
                         </div>
                       </Link>
@@ -445,10 +316,18 @@ export function GooshiHeader() {
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-[12.5px] font-black text-blue-800">
-                            {lang === "ar" ? "تخفيضات خاصة" : lang === "ku" ? "داشکاندنی تایبەت" : "Special Offers"}
+                            {lang === "ar"
+                              ? "تخفيضات خاصة"
+                              : lang === "ku"
+                              ? "داشکاندنی تایبەت"
+                              : "Special Offers"}
                           </span>
                           <span className="block text-[10px] font-medium text-blue-500">
-                            {lang === "ar" ? "عروض حصرية" : lang === "ku" ? "ئۆفەری تایبەت" : "Exclusive deals"}
+                            {lang === "ar"
+                              ? "عروض حصرية"
+                              : lang === "ku"
+                              ? "ئۆفەری تایبەت"
+                              : "Exclusive deals"}
                           </span>
                         </div>
                       </Link>
@@ -464,10 +343,18 @@ export function GooshiHeader() {
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-[12.5px] font-black text-amber-900">
-                            {lang === "ar" ? "باقات العيادات" : lang === "ku" ? "پاکێجی کلینیک" : "Clinic Bundles"}
+                            {lang === "ar"
+                              ? "باقات العيادات"
+                              : lang === "ku"
+                              ? "پاکێجی کلینیک"
+                              : "Clinic Bundles"}
                           </span>
                           <span className="block text-[10px] font-medium text-amber-600">
-                            {lang === "ar" ? "توفير أكبر" : lang === "ku" ? "پاشەکەوتی زۆرتر" : "Save more"}
+                            {lang === "ar"
+                              ? "توفير أكبر"
+                              : lang === "ku"
+                              ? "پاشەکەوتی زۆرتر"
+                              : "Save more"}
                           </span>
                         </div>
                       </Link>
@@ -483,10 +370,18 @@ export function GooshiHeader() {
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-[12.5px] font-black text-purple-900">
-                            {lang === "ar" ? "الماركات العالمية" : lang === "ku" ? "براندە جیهانییەکان" : "Brands"}
+                            {lang === "ar"
+                              ? "الماركات العالمية"
+                              : lang === "ku"
+                              ? "براندە جیهانییەکان"
+                              : "Brands"}
                           </span>
                           <span className="block text-[10px] font-medium text-purple-500">
-                            {lang === "ar" ? "3M, GC, Tokuyama" : lang === "ku" ? "براندی فەرمی" : "Official agents"}
+                            {lang === "ar"
+                              ? "3M, GC, Tokuyama"
+                              : lang === "ku"
+                              ? "براندی فەرمی"
+                              : "Official agents"}
                           </span>
                         </div>
                       </Link>
@@ -502,22 +397,33 @@ export function GooshiHeader() {
                         </div>
                         <div className="min-w-0">
                           <span className="block truncate text-[12.5px] font-black text-emerald-900">
-                            {lang === "ar" ? "انضم كمورد / افتح متجرك" : lang === "ku" ? "وەک فرۆشیار بەشداربە" : "Sell with Us"}
+                            {lang === "ar"
+                              ? "انضم كمورد / افتح متجرك"
+                              : lang === "ku"
+                              ? "وەک فرۆشیار بەشداربە"
+                              : "Sell with Us"}
                           </span>
                           <span className="block text-[10px] font-medium text-emerald-600">
-                            {lang === "ar" ? "سجل كشركة أو مستودع طبي" : lang === "ku" ? "تۆمارکردنی کۆمپانیا" : "Register vendor store"}
+                            {lang === "ar"
+                              ? "سجل كشركة أو مستودع طبي"
+                              : lang === "ku"
+                              ? "تۆمارکردنی کۆمپانیا"
+                              : "Register vendor store"}
                           </span>
                         </div>
                       </Link>
-
                     </div>
                   </div>
 
-                  {/* Divider */}
+                  {/* Divider & Categories Grid */}
                   <div className="border-t border-slate-100 pt-3">
                     <div className="flex items-center justify-between mb-2 px-1">
                       <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                        {lang === "ar" ? "تصنيفات المواد والمستلزمات الطبية" : lang === "ku" ? "هاوپۆلەکانی کەرەستەی پزیشکی" : "Dental Categories"}
+                        {lang === "ar"
+                          ? "تصنيفات المواد والمستلزمات الطبية"
+                          : lang === "ku"
+                          ? "هاوپۆلەکانی کەرەستەی پزیشکی"
+                          : "Dental Categories"}
                       </p>
                       <Link
                         to="/products"
@@ -528,7 +434,6 @@ export function GooshiHeader() {
                       </Link>
                     </div>
 
-                    {/* Categories Grid */}
                     <div className="grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto pr-1">
                       {categories.map((c) => {
                         const Icon = categoryIcon(c.icon);
@@ -575,11 +480,218 @@ export function GooshiHeader() {
                       })}
                     </div>
                   </div>
-
                 </div>
               )}
             </div>
+          </div>
 
+          {/* Central Live Search Box */}
+          <div ref={searchRef} className="relative hidden flex-1 max-w-xl md:block">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative flex items-center rounded-xl bg-slate-100/90 border border-slate-200/80 transition-all focus-within:border-primary focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/10"
+            >
+              <div className="flex h-11 w-10 items-center justify-center text-slate-400">
+                <Search className="size-4.5" />
+              </div>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                onFocus={() => setIsSearchOpen(true)}
+                placeholder={
+                  lang === "ar"
+                    ? "ابحث في أكثر من 120+ منتج أسنان، ماركة، أو كود..."
+                    : lang === "ku"
+                    ? "گەڕان لە نێوان ١٢٠+ بەرهەمی پزیشکی، براند..."
+                    : "Search 120+ dental products, brands, or SKU..."
+                }
+                className="h-11 w-full bg-transparent pr-2 pl-10 text-[13px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+              />
+
+              {/* Clear Query or QR Scan Button */}
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setIsSearchOpen(false);
+                  }}
+                  className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  title={
+                    lang === "ar"
+                      ? "مسح رمز QR"
+                      : lang === "ku"
+                      ? "سکانکردنی QR"
+                      : "Scan QR code"
+                  }
+                  onClick={() => qrFileRef.current?.click()}
+                  className="mx-1.5 flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200 hover:text-primary"
+                >
+                  <QrCode className="size-4.5" />
+                </button>
+              )}
+            </form>
+
+            {/* Live Search Suggestions Dropdown */}
+            {isSearchOpen && query.trim() && (
+              <div className="absolute top-full mt-2 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl z-50">
+                <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-100">
+                  <span>
+                    {lang === "ar"
+                      ? "النتائج المقترحة"
+                      : lang === "ku"
+                      ? "ئەنجامە پێشنیارکراوەکان"
+                      : "Suggested Results"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSearchSubmit}
+                    className="text-primary hover:underline"
+                  >
+                    {lang === "ar" ? "عرض الكل" : lang === "ku" ? "بینینی هەمووی" : "View All"}
+                  </button>
+                </div>
+                {suggestions.length > 0 ? (
+                  <div className="divide-y divide-slate-50 py-1">
+                    {suggestions.map((p) => (
+                      <Link
+                        key={p.id}
+                        to="/product/$id"
+                        params={{ id: p.id }}
+                        onClick={() => setIsSearchOpen(false)}
+                        className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50"
+                      >
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={pickName(p, lang)}
+                            className="size-10 rounded-lg object-contain bg-slate-50 p-1 border border-slate-100"
+                          />
+                        ) : (
+                          <div className="grid size-10 place-items-center rounded-lg bg-slate-50 text-base">
+                            🦷
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[12.5px] font-bold text-slate-800">
+                            {pickName(p, lang)}
+                          </p>
+                          <p className="text-[10.5px] text-slate-400 font-medium">
+                            {p.brand} {p.sku ? `• ${p.sku}` : ""}
+                          </p>
+                        </div>
+                        <div className="text-end">
+                          <span className="text-[12px] font-black text-primary">
+                            {formatPrice(p.price, lang)}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-[12px] text-slate-400">
+                    {lang === "ar"
+                      ? "لم يتم العثور على منتجات مطابقة"
+                      : lang === "ku"
+                      ? "هیچ بەرهەمێک نەدۆزرایەوە"
+                      : "No matching products found"}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons: Language, Notifications, Account, Cart */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Language Switcher Pill */}
+            {activeLangs.length > 1 && (
+              <button
+                onClick={() => setLang(nextLang)}
+                className="hidden sm:inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200/90 bg-slate-50/80 px-3 text-[12px] font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 active:scale-95"
+                title={lang === "ar" ? "تغيير اللغة" : lang === "ku" ? "گۆڕینی زمان" : "Change Language"}
+              >
+                <Globe className="size-4 text-slate-500" />
+                <span>{nextLabel}</span>
+              </button>
+            )}
+
+            {/* Notification Bell */}
+            <NotificationBell />
+
+            {/* User Account / Profile Button */}
+            <Link
+              to="/profile"
+              aria-label={
+                canOrder
+                  ? lang === "ar"
+                    ? "حسابي"
+                    : lang === "ku"
+                    ? "هەژمارەکەم"
+                    : "My Account"
+                  : lang === "ar"
+                  ? "تسجيل الدخول"
+                  : lang === "ku"
+                  ? "چوونەژوورەوە"
+                  : "Sign In"
+              }
+              title={
+                canOrder
+                  ? lang === "ar"
+                    ? "حسابي"
+                    : lang === "ku"
+                    ? "هەژمارەکەم"
+                    : "My Account"
+                  : lang === "ar"
+                  ? "تسجيل الدخول"
+                  : lang === "ku"
+                  ? "چوونەژوورەوە"
+                  : "Sign In"
+              }
+              className="hidden md:inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+            >
+              <User className="size-4.5 text-slate-600" />
+            </Link>
+
+            {/* Mobile Search Button */}
+            <Link
+              to="/search"
+              aria-label="Search"
+              className="md:hidden inline-flex size-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+            >
+              <Search className="size-4.5 text-slate-600" />
+            </Link>
+
+            {/* Shopping Cart Button */}
+            {canOrder && (
+              <Link
+                to="/cart"
+                aria-label={t("cart")}
+                title={t("cart")}
+                className={cn(
+                  "relative inline-flex size-10 items-center justify-center rounded-xl transition-all shadow-sm active:scale-95",
+                  cart.count > 0
+                    ? "bg-primary text-primary-foreground shadow-primary/20 hover:opacity-95"
+                    : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                )}
+              >
+                <ShoppingBag className="size-4.5" />
+                {cart.count > 0 && (
+                  <span className="absolute -top-1.5 -end-1.5 grid min-w-[19px] h-[19px] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-white shadow-sm">
+                    {cart.count > 99 ? "99+" : cart.count}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       </header>
