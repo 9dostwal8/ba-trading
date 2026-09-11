@@ -32,11 +32,6 @@ const L = {
     ku: "براندە باوەڕپێکراوەکان",
     en: "Approved Brands",
   },
-  productsCount: {
-    ar: "منتج",
-    ku: "بەرهەم",
-    en: "products",
-  },
   empty: {
     ar: "لا توجد ماركات حالياً",
     ku: "هیچ براندێک نییە لە ئێستادا",
@@ -121,25 +116,25 @@ function BrandsPage() {
       <PageBlocks page="brands" />
 
       {/* 1. HERO HEADER: ONLY THE TITLE CENTERED */}
-      <div className="border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 py-6 sm:py-8 px-4 text-center">
+      <div className="border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 py-6 sm:py-9 px-4 text-center shadow-2xs">
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
           {L.h1[lang]}
         </h1>
       </div>
 
-      {/* 2. BRANDS GRID (LOGOS & NAMES ONLY) */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10">
+      {/* 2. BRANDS GRID (BIGGER LOGOS & NAMES ONLY) */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
         {/* Loading Skeletons */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {Array.from({ length: 18 }).map((_, i) => (
               <div
                 key={i}
-                className="flex flex-col items-center justify-center p-5 rounded-3xl border border-slate-200 bg-white animate-pulse space-y-3 h-36"
+                className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-200 bg-white animate-pulse space-y-4 h-48"
               >
-                <Skeleton className="size-14 rounded-2xl" />
-                <Skeleton className="h-4 w-20" />
+                <Skeleton className="size-24 rounded-2xl" />
+                <Skeleton className="h-5 w-24" />
               </div>
             ))}
           </div>
@@ -152,22 +147,22 @@ function BrandsPage() {
           </div>
         )}
 
-        {/* Grid of Brand Tiles (Logo + Name + Count) */}
+        {/* Grid of Brand Tiles (Bigger Logo + Name Only) */}
         {!isLoading && brandsList.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {brandsList.map((b) => {
-              const logo = b.card ? brandLogo(b.card, 200) : null;
+              const logo = b.card ? brandLogo(b.card, 240) : null;
 
               return (
                 <Link
                   key={b.id}
                   to="/products"
                   search={{ q: b.name }}
-                  className="group relative flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:border-[#007979] hover:shadow-lg hover:shadow-teal-700/10 hover:-translate-y-1 transition-all duration-200 active:scale-95"
+                  className="group relative flex flex-col items-center justify-center text-center p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:border-[#007979] hover:shadow-xl hover:shadow-teal-700/10 hover:-translate-y-1.5 transition-all duration-200 active:scale-95 min-h-[170px] sm:min-h-[190px]"
                 >
                   
-                  {/* Brand Logo or Initials Icon */}
-                  <div className="flex size-16 sm:size-20 items-center justify-center overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-800/80 p-2.5 group-hover:scale-105 transition-transform duration-200">
+                  {/* Brand Logo or Initials Icon (Larger) */}
+                  <div className="flex size-20 sm:size-24 md:size-28 items-center justify-center overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-800/80 p-3 group-hover:scale-105 transition-transform duration-200">
                     {logo ? (
                       <img
                         src={logo}
@@ -176,32 +171,21 @@ function BrandsPage() {
                         className="h-full w-full object-contain"
                       />
                     ) : (
-                      <span className="font-display text-lg sm:text-xl font-black text-[#007979]">
+                      <span className="font-display text-2xl sm:text-3xl font-black text-[#007979]">
                         {b.mark}
                       </span>
                     )}
                   </div>
 
-                  {/* Brand Name */}
-                  <h3 className="mt-3 line-clamp-1 font-display text-xs sm:text-sm font-black text-slate-900 dark:text-white group-hover:text-[#007979] transition-colors">
+                  {/* Brand Name (Prominent & Clean) */}
+                  <h3 className="mt-3.5 line-clamp-1 font-display text-sm sm:text-base font-black text-slate-900 dark:text-white group-hover:text-[#007979] transition-colors">
                     {b.name}
                   </h3>
 
-                  {/* Products Count Badge */}
-                  {b.count > 0 ? (
-                    <span className="mt-1 inline-block text-[11px] font-bold text-slate-400 group-hover:text-teal-600 transition-colors">
-                      {b.count} {L.productsCount[lang]}
-                    </span>
-                  ) : (
-                    <span className="mt-1 inline-block text-[10px] font-bold text-slate-300 dark:text-slate-600">
-                      —
-                    </span>
-                  )}
-
                   {/* Subtle chevron indicator on hover */}
-                  <div className="absolute top-2.5 end-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="grid size-5 place-items-center rounded-full bg-teal-50 text-[#007979]">
-                      <ChevronLeft className="size-3 rtl:rotate-0 ltr:rotate-180" />
+                  <div className="absolute top-3 end-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="grid size-6 place-items-center rounded-full bg-teal-50 dark:bg-teal-950 text-[#007979]">
+                      <ChevronLeft className="size-3.5 rtl:rotate-0 ltr:rotate-180" />
                     </span>
                   </div>
 
