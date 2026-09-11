@@ -26,6 +26,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { CategoryChipRow } from "@/components/CategoryChips";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { brandLogo } from "@/lib/brands";
 import { useI18n } from "@/lib/i18n";
 import { dedupeByCatalog } from "@/lib/catalog";
 import { monthsLeft } from "@/lib/clearance";
@@ -83,7 +84,25 @@ function ProductsPage() {
     new Set(rows.map((p) => p.brand).filter((b): b is string => Boolean(b))),
   ).slice(0, 10);
 
-  const activeBrand = selectedBrand || brand || null;
+  // Auto-detect if search query 'q' matches an exact brand name
+  const matchedBrandFromQ = useMemo(() => {
+    if (!q || brand) return null;
+    const cleanQ = q.trim().toLowerCase();
+    const found = rows.find((p) => p.brand && p.brand.trim().toLowerCase() === cleanQ);
+    return found?.brand?.trim() || null;
+  }, [q, brand, rows]);
+
+  const activeBrand = brand || selectedBrand || matchedBrandFromQ || null;
+
+  // Find brand card and official logo for active brand
+  const brandCard = useMemo(() => {
+    if (!activeBrand || !data?.brandCards) return null;
+    return data.brandCards.find(
+      (b) => b.name.trim().toLowerCase() === activeBrand.trim().toLowerCase()
+    );
+  }, [activeBrand, data?.brandCards]);
+
+  const activeBrandLogo = brandCard ? brandLogo(brandCard, 240) : null;
 
   const priceOf = (p: Product) =>
     effectivePrice(
@@ -99,9 +118,11 @@ function ProductsPage() {
     if (cat && p.category_id !== cat) return false;
     if (activeBrand && (p.brand || "").toLowerCase().trim() !== activeBrand.toLowerCase().trim()) return false;
     if (onlyInStock && p.stock <= 0) return false;
-    if (!term.trim()) return true;
-    const s = term.trim().toLowerCase();
-    return [p.name_ar, p.name_ku, p.brand, p.sku].some((v) => v?.toLowerCase().includes(s));
+    if (term.trim() && term.trim().toLowerCase() !== activeBrand?.toLowerCase()) {
+      const s = term.trim().toLowerCase();
+      return [p.name_ar, p.name_ku, p.brand, p.sku].some((v) => v?.toLowerCase().includes(s));
+    }
+    return true;
   });
 
   const savingOf = (p: Product) => {
@@ -143,7 +164,7 @@ function ProductsPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const activeCategory = data?.categories?.find((c) => c.id === cat);
-  const hasActiveFilters = Boolean(cat || activeBrand || onlyInStock || sort !== "all" || term.trim());
+  const hasActiveFilters = Boolean(cat || activeBrand || onlyInStock || sort !== "all" || (term.trim() && term.trim().toLowerCase() !== activeBrand?.toLowerCase()));
 
   const clearAllFilters = () => {
     navigate({ search: {} });
@@ -176,11 +197,21 @@ function ProductsPage() {
 
       {/* Dedicated Brand Header when filtering by brand */}
       {activeBrand && (
-        <div className="bg-gradient-to-b from-teal-50/70 via-white to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-b border-teal-500/20 px-4 py-4 sm:py-6 sm:px-6">
+        <div className="bg-gradient-to-b from-teal-50/70 via-white to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-b border-teal-500/20 px-4 py-5 sm:py-6 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-7xl mx-auto">
-            <div className="flex items-center gap-3.5">
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs font-display font-black text-[#007979] text-xl">
-                {activeBrand.slice(0, 3).toUpperCase()}
+            <div className="flex items-center gap-4">
+              <div className="flex size-16 sm:size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 p-2.5 shadow-sm">
+                {activeBrandLogo ? (
+                  <img
+                    src={activeBrandLogo}
+                    alt={activeBrand}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="font-display font-black text-[#007979] text-xl sm:text-2xl">
+                    {activeBrand.slice(0, 3).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -191,7 +222,7 @@ function ProductsPage() {
                     {products.length}
                   </span>
                 </div>
-                <p className="text-xs font-bold text-slate-400 mt-0.5">
+                <p className="text-xs font-bold text-slate-400 mt-1">
                   {lang === "ar" ? "منتجات أصلية معتمدة 100%" : lang === "ku" ? "بەرهەمی ئەسڵی و ١٠٠٪ دڵنیاکراو" : "100% Genuine Certified Products"}
                 </p>
               </div>
@@ -199,7 +230,7 @@ function ProductsPage() {
 
             <Link
               to="/brands"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-black text-[#007979] shadow-xs transition active:scale-95 shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-black text-[#007979] shadow-xs transition active:scale-95 shrink-0 self-start sm:self-auto"
             >
               <span>{lang === "ar" ? "كل الماركات" : lang === "ku" ? "هەموو براندەکان" : "All Brands"}</span>
               <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
