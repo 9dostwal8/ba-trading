@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
+  ChevronLeft,
   Flame,
   Hourglass,
   PackageOpen,
@@ -15,7 +16,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { StoreLayout } from "@/components/StoreLayout";
 import { PageBlocks } from "@/components/blocks/PageBlocks";
 import { BannerSlot } from "@/components/BannerSlot";
@@ -31,10 +32,10 @@ import { monthsLeft } from "@/lib/clearance";
 import { effectivePrice, fetchStoreData, type Product } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-
 type ProductsSearch = {
   cat?: string | undefined;
   q?: string | undefined;
+  brand?: string | undefined;
   clearance?: string | undefined;
 };
 
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/products")({
   validateSearch: (search: Record<string, unknown>): ProductsSearch => ({
     cat: typeof search["cat"] === "string" ? search["cat"] : undefined,
     q: typeof search["q"] === "string" ? search["q"] : undefined,
+    brand: typeof search["brand"] === "string" ? search["brand"] : undefined,
     clearance: typeof search["clearance"] === "string" ? search["clearance"] : undefined,
   }),
   head: () => ({
@@ -61,7 +63,7 @@ export const Route = createFileRoute("/products")({
 type SortKey = "all" | "expiring" | "outlet" | "deals" | "cheapest" | "saving";
 
 function ProductsPage() {
-  const { cat, q, clearance } = Route.useSearch();
+  const { cat, q, brand, clearance } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { t, lang } = useI18n();
   const design = useDesign();
@@ -72,7 +74,7 @@ function ProductsPage() {
   );
 
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(brand ?? null);
 
   const rows = data?.products ?? [];
 
@@ -80,6 +82,8 @@ function ProductsPage() {
   const availableBrands = Array.from(
     new Set(rows.map((p) => p.brand).filter((b): b is string => Boolean(b))),
   ).slice(0, 10);
+
+  const activeBrand = selectedBrand || brand || null;
 
   const priceOf = (p: Product) =>
     effectivePrice(
@@ -90,9 +94,10 @@ function ProductsPage() {
       data?.flashDeals ?? [],
       data?.clearanceRules ?? [],
     );
+
   const filtered = rows.filter((p) => {
     if (cat && p.category_id !== cat) return false;
-    if (selectedBrand && p.brand !== selectedBrand) return false;
+    if (activeBrand && (p.brand || "").toLowerCase().trim() !== activeBrand.toLowerCase().trim()) return false;
     if (onlyInStock && p.stock <= 0) return false;
     if (!term.trim()) return true;
     const s = term.trim().toLowerCase();
@@ -138,30 +143,80 @@ function ProductsPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   const activeCategory = data?.categories?.find((c) => c.id === cat);
-  const hasActiveFilters = Boolean(cat || selectedBrand || onlyInStock || sort !== "all");
+  const hasActiveFilters = Boolean(cat || activeBrand || onlyInStock || sort !== "all" || term.trim());
 
   const clearAllFilters = () => {
     navigate({ search: {} });
     setSelectedBrand(null);
     setOnlyInStock(false);
     setSort("all");
+    setTerm("");
   };
+
+  const pageTitle = useMemo(() => {
+    if (activeBrand) {
+      return lang === "ar"
+        ? `منتجات ${activeBrand}`
+        : lang === "ku"
+        ? `بەرهەمەکانی ${activeBrand}`
+        : `${activeBrand} Products`;
+    }
+    if (activeCategory) {
+      return lang === "ar" ? activeCategory.name_ar : activeCategory.name_ku;
+    }
+    if (term.trim()) {
+      return lang === "ar" ? `نتائج البحث: "${term}"` : lang === "ku" ? `ئەنجامی گەڕان بۆ: "${term}"` : `Search: "${term}"`;
+    }
+    return lang === "ar" ? "فرۆشگای پێداویستی ددان" : lang === "ku" ? "فرۆشگای پێداویستی ددان" : "Dental Store";
+  }, [activeBrand, activeCategory, term, lang]);
 
   return (
     <StoreLayout>
       <PageBlocks page="products" />
 
+      {/* Dedicated Brand Header when filtering by brand */}
+      {activeBrand && (
+        <div className="bg-gradient-to-b from-teal-50/70 via-white to-white dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-b border-teal-500/20 px-4 py-4 sm:py-6 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-7xl mx-auto">
+            <div className="flex items-center gap-3.5">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs font-display font-black text-[#007979] text-xl">
+                {activeBrand.slice(0, 3).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                    {lang === "ar" ? `منتجات ${activeBrand}` : lang === "ku" ? `بەرهەمەکانی ${activeBrand}` : `${activeBrand} Products`}
+                  </h1>
+                  <span className="rounded-full bg-[#007979] px-2.5 py-0.5 text-xs font-black text-white shadow-xs">
+                    {products.length}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-slate-400 mt-0.5">
+                  {lang === "ar" ? "منتجات أصلية معتمدة 100%" : lang === "ku" ? "بەرهەمی ئەسڵی و ١٠٠٪ دڵنیاکراو" : "100% Genuine Certified Products"}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to="/brands"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-black text-[#007979] shadow-xs transition active:scale-95 shrink-0 self-start sm:self-auto"
+            >
+              <span>{lang === "ar" ? "كل الماركات" : lang === "ku" ? "هەموو براندەکان" : "All Brands"}</span>
+              <ChevronLeft className="size-4 rtl:rotate-0 ltr:rotate-180" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Ultra-Clean Single 1-Line Header & Filter Control Bar */}
       <div className="bg-white border-b border-slate-100 px-3.5 py-3 shadow-xs">
         <div className="flex items-center justify-between gap-3">
           
-          {/* Left: Category Title & Count */}
+          {/* Left: Category / Brand Title & Count */}
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-[14.5px] sm:text-[16px] font-black text-slate-900 truncate">
-              {activeCategory
-                ? (lang === "ar" ? activeCategory.name_ar : activeCategory.name_ku)
-                : (lang === "ar" ? "فرۆشگای پێداویستی ددان" : lang === "ku" ? "فرۆشگای پێداویستی ددان" : "Dental Store")}
-            </h1>
+            <h2 className="text-[14.5px] sm:text-[16px] font-black text-slate-900 truncate">
+              {pageTitle}
+            </h2>
             <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-600">
               {products.length}
             </span>
@@ -216,10 +271,17 @@ function ProductsPage() {
                 </button>
               </span>
             )}
-            {selectedBrand && (
+            {activeBrand && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-teal-50 border border-teal-200/80 px-2 py-0.5 text-[11px] font-bold text-[#007979]">
-                <span>{selectedBrand}</span>
-                <button type="button" onClick={() => setSelectedBrand(null)} className="hover:opacity-75">
+                <span>{activeBrand}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBrand(null);
+                    navigate({ search: (prev: any) => ({ ...prev, brand: undefined }) });
+                  }}
+                  className="hover:opacity-75"
+                >
                   <X className="size-3" />
                 </button>
               </span>
@@ -410,9 +472,11 @@ function ProductsPage() {
         </div>
       )}
 
-      <div className="px-3 pt-2.5">
-        <BannerSlot slot="products_top" />
-      </div>
+      {!activeBrand && (
+        <div className="px-3 pt-2.5">
+          <BannerSlot slot="products_top" />
+        </div>
+      )}
 
       <div
         className={`${gridClass(design)} items-stretch px-3 py-2.5 pb-24 lg:pb-8`}

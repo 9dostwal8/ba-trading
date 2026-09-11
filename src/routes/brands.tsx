@@ -147,7 +147,7 @@ function BrandsPage() {
           </div>
         )}
 
-        {/* Grid of Brand Tiles (Bigger Logo + Name Only) */}
+        {/* Grid of Brand Tiles (Bigger Logo + Name Only, links to /products with brand filter) */}
         {!isLoading && brandsList.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {brandsList.map((b) => {
@@ -157,7 +157,7 @@ function BrandsPage() {
                 <Link
                   key={b.id}
                   to="/products"
-                  search={{ q: b.name }}
+                  search={{ brand: b.name }}
                   className="group relative flex flex-col items-center justify-center text-center p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:border-[#007979] hover:shadow-xl hover:shadow-teal-700/10 hover:-translate-y-1.5 transition-all duration-200 active:scale-95 min-h-[170px] sm:min-h-[190px]"
                 >
                   
