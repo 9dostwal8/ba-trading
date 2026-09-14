@@ -27,8 +27,9 @@ import {
   X,
   XCircle,
   AlertCircle,
+  ImageIcon,
 } from "lucide-react";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,9 +44,9 @@ const L = {
     en: "Orders Management",
   },
   ordersSubtitle: {
-    ar: "متابعة الطلبات، تأكيد الدفع، والتواصل السريع مع العملاء",
-    ku: "بەدواداچوونی داواکاریەکان، پەسەندکردنی پارەدان، و پەیوەندی خێرا بە کڕیار",
-    en: "Track orders, confirm payments, and quickly contact customers",
+    ar: "متابعة الطلبات، صور المنتجات، تأكيد الدفع، والتواصل السريع مع العملاء",
+    ku: "بەدواداچوونی داواکاریەکان، وێنەی بەرهەمەکان، پەسەندکردنی پارەدان، و پەیوەندی خێرا بە کڕیار",
+    en: "Track orders, product images, confirm payments, and contact customers",
   },
   refresh: {
     ar: "تحديث",
@@ -127,16 +128,6 @@ const L = {
     ku: "پاککردنەوەی فلتەر",
     en: "Clear filters",
   },
-  approvePrompt: {
-    ar: "قبول وتأكيد الدفع",
-    ku: "پەسەندکردن و پارەدان",
-    en: "Approve & Mark Paid",
-  },
-  rejectPrompt: {
-    ar: "رفض الطلب",
-    ku: "ڕەتکردنەوەی داواکاری",
-    en: "Reject Order",
-  },
   viewDetails: {
     ar: "عرض التفاصيل",
     ku: "بینینی وردەکاری",
@@ -157,26 +148,6 @@ const L = {
     ku: "سڵاو بەڕێزم، سەبارەت بە داواکاریەکەت ژمارە #",
     en: "Hello, regarding your order #",
   },
-  paymentMethod: {
-    ar: "طريقة الدفع",
-    ku: "شێوازی پارەدان",
-    en: "Payment Method",
-  },
-  cashOnDelivery: {
-    ar: "الدفع عند الاستلام",
-    ku: "کاش لەکاتی وەرگرتن",
-    en: "Cash on Delivery",
-  },
-  paid: {
-    ar: "مدفوع",
-    ku: "پارەدراو",
-    en: "Paid",
-  },
-  unpaid: {
-    ar: "غير مدفوع",
-    ku: "پارەنەدراو",
-    en: "Unpaid",
-  },
   customerNote: {
     ar: "ملاحظة العميل",
     ku: "تێبینی کڕیار",
@@ -187,6 +158,21 @@ const L = {
     ku: "داخستن",
     en: "Close",
   },
+};
+
+type OrderItemRecord = {
+  id: string;
+  name_ar?: string;
+  name_ku?: string;
+  quantity: number;
+  unit_price: number;
+  product_id?: string | null;
+  product?: {
+    id: string;
+    image_url: string | null;
+    name_ku?: string;
+    name_ar?: string;
+  } | null;
 };
 
 type OrderRecord = {
@@ -207,20 +193,12 @@ type OrderRecord = {
   latitude: number | null;
   longitude: number | null;
   created_at: string;
-  order_items: {
-    id: string;
-    name_ar?: string;
-    name_ku?: string;
-    quantity: number;
-    unit_price: number;
-    product_id?: string | null;
-  }[];
+  order_items: OrderItemRecord[];
 };
 
 export function AdminOrders() {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
-  const Back = lang === "ar" || lang === "ku" ? ChevronLeft : ChevronRight;
 
   // Search, Filter, Sort & View State
   const [search, setSearch] = useState("");
@@ -229,20 +207,53 @@ export function AdminOrders() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "highest" | "lowest">("newest");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  // Selected Order for Quick Invoice Modal
+  // Selected Order for Quick Invoice Modal & Image Lightbox Modal
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<OrderRecord | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
-  // Fetch orders with order items
+  // Fetch orders with order items and products
   const { data: orders = [], isFetching, refetch } = useQuery<OrderRecord[]>({
     queryKey: ["admin-orders"],
     queryFn: async () =>
       ((
         await supabase
           .from("orders")
-          .select("*, order_items(*)")
+          .select("*, order_items(*, product:products(id, image_url, name_ku, name_ar))")
           .order("created_at", { ascending: false })
       ).data ?? []) as OrderRecord[],
   });
+
+  // Fetch lite catalog products as fallback lookup for images
+  const { data: catalogProducts = [] } = useQuery({
+    queryKey: ["admin-products-lite-lookup"],
+    queryFn: async () =>
+      (await supabase.from("products").select("id, image_url, name_ku, name_ar")).data ?? [],
+  });
+
+  const productLookupMap = useMemo(() => {
+    const map = new Map<string, { image_url: string | null; name_ku?: string; name_ar?: string }>();
+    for (const p of catalogProducts) {
+      if (p.id) map.set(p.id, p);
+      if (p.name_ku) map.set(`ku:${p.name_ku.trim().toLowerCase()}`, p);
+      if (p.name_ar) map.set(`ar:${p.name_ar.trim().toLowerCase()}`, p);
+    }
+    return map;
+  }, [catalogProducts]);
+
+  // Reliable image resolver for any ordered item
+  const getProductImage = (item: OrderItemRecord): string | null => {
+    if (item.product?.image_url) return item.product.image_url;
+    if (item.product_id && productLookupMap.has(item.product_id)) {
+      return productLookupMap.get(item.product_id)?.image_url ?? null;
+    }
+    if (item.name_ku && productLookupMap.has(`ku:${item.name_ku.trim().toLowerCase()}`)) {
+      return productLookupMap.get(`ku:${item.name_ku.trim().toLowerCase()}`)?.image_url ?? null;
+    }
+    if (item.name_ar && productLookupMap.has(`ar:${item.name_ar.trim().toLowerCase()}`)) {
+      return productLookupMap.get(`ar:${item.name_ar.trim().toLowerCase()}`)?.image_url ?? null;
+    }
+    return null;
+  };
 
   // Mutation to update order status
   const setStatus = useMutation({
@@ -861,32 +872,65 @@ export function AdminOrders() {
                     )}
                   </div>
 
-                  {/* Ordered Items Preview */}
-                  <div className="space-y-1.5 py-2 border-t border-slate-100 dark:border-slate-800/80">
+                  {/* Ordered Items with Product Thumbnails */}
+                  <div className="space-y-2 py-3 border-t border-slate-100 dark:border-slate-800/80">
                     <span className="text-[11px] font-bold text-slate-400">
                       {lang === "ku" ? "بەرهەمەکان" : lang === "ar" ? "المنتجات" : "Items"} (
                       {(o.order_items ?? []).reduce((sum, item) => sum + (item.quantity || 1), 0)}
                       )
                     </span>
-                    <div className="space-y-1 max-h-32 overflow-y-auto no-scrollbar">
-                      {(o.order_items ?? []).map((item, idx) => (
-                        <div
-                          key={item.id || idx}
-                          className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-slate-50/70 dark:bg-slate-800/40"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="px-1.5 py-0.2 rounded-md bg-[#007979]/10 text-[#007979] dark:text-teal-400 font-extrabold text-[10px]">
-                              ×{item.quantity}
-                            </span>
-                            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              {pickName(item, lang)}
+                    <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                      {(o.order_items ?? []).map((item, idx) => {
+                        const imgUrl = getProductImage(item);
+                        const title = pickName(item, lang);
+                        return (
+                          <div
+                            key={item.id || idx}
+                            className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700 transition"
+                          >
+                            {/* Product Image Thumbnail + Info */}
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                onClick={() => imgUrl && setPreviewImage({ url: imgUrl, title })}
+                                className={cn(
+                                  "size-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs",
+                                  imgUrl && "cursor-pointer hover:scale-105 transition-transform"
+                                )}
+                              >
+                                {imgUrl ? (
+                                  <img
+                                    src={imgUrl}
+                                    alt={title}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <Package className="size-5 text-slate-300 dark:text-slate-600" />
+                                )}
+                              </div>
+
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.2 rounded-md bg-[#007979]/10 text-[#007979] dark:text-teal-400 font-black text-[11px]">
+                                    ×{item.quantity}
+                                  </span>
+                                  <span className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-[220px]">
+                                    {title}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold block mt-0.5">
+                                  {formatPrice(Number(item.unit_price), lang)} / {lang === "ku" ? "دانە" : "قطعة"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Item Total Price */}
+                            <span className="font-extrabold text-xs text-slate-800 dark:text-slate-200 shrink-0">
+                              {formatPrice(Number(item.unit_price * item.quantity), lang)}
                             </span>
                           </div>
-                          <span className="font-bold text-slate-600 dark:text-slate-300 shrink-0 text-[11px]">
-                            {formatPrice(Number(item.unit_price * item.quantity), lang)}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -963,7 +1007,7 @@ export function AdminOrders() {
         </div>
       ) : (
         /* -------------------------------------------------------------
-            TABLE LIST VIEW (Professional Data Table)
+            TABLE LIST VIEW (Professional Data Table with Thumbnails)
         ------------------------------------------------------------- */
         <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <table className="w-full text-start text-xs border-collapse">
@@ -972,7 +1016,7 @@ export function AdminOrders() {
                 <th className="p-4 text-start">#</th>
                 <th className="p-4 text-start">{lang === "ku" ? "کڕیار و مۆبایل" : "العميل والهاتف"}</th>
                 <th className="p-4 text-start">{lang === "ku" ? "شوێن" : "الموقع"}</th>
-                <th className="p-4 text-start">{lang === "ku" ? "بەرهەمەکان" : "المنتجات"}</th>
+                <th className="p-4 text-start">{lang === "ku" ? "بەرهەم و وێنە" : "المنتجات والصور"}</th>
                 <th className="p-4 text-start">{lang === "ku" ? "بڕی پارە" : "المبلغ"}</th>
                 <th className="p-4 text-start">{lang === "ku" ? "دۆخ" : "الحالة"}</th>
                 <th className="p-4 text-center">{lang === "ku" ? "کردارەکان" : "الإجراءات"}</th>
@@ -1026,13 +1070,39 @@ export function AdminOrders() {
                     </div>
                   </td>
 
-                  {/* Items summary */}
-                  <td className="p-4 max-w-[200px]">
-                    <div className="text-slate-700 dark:text-slate-300 truncate font-semibold">
-                      {(o.order_items ?? []).map((i) => `${pickName(i, lang)} ×${i.quantity}`).join(" · ")}
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
-                      {(o.order_items ?? []).length} {lang === "ku" ? "جۆر" : "عنصر"}
+                  {/* Products Column with Thumbnails Stack */}
+                  <td className="p-4 max-w-[240px]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2 rtl:space-x-reverse overflow-hidden shrink-0">
+                        {(o.order_items ?? []).slice(0, 3).map((item, idx) => {
+                          const imgUrl = getProductImage(item);
+                          const title = pickName(item, lang);
+                          return (
+                            <div
+                              key={item.id || idx}
+                              onClick={() => imgUrl && setPreviewImage({ url: imgUrl, title })}
+                              className="size-8 rounded-lg border-2 border-white dark:border-slate-900 bg-white dark:bg-slate-800 overflow-hidden shadow-2xs shrink-0 cursor-pointer hover:z-10 hover:scale-110 transition"
+                              title={title}
+                            >
+                              {imgUrl ? (
+                                <img src={imgUrl} alt={title} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="w-full h-full grid place-items-center bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-bold">
+                                  <Package className="size-3.5" />
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-slate-800 dark:text-slate-200 truncate font-bold text-xs">
+                          {(o.order_items ?? []).map((i) => `${pickName(i, lang)} ×${i.quantity}`).join(" · ")}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {(o.order_items ?? []).length} {lang === "ku" ? "جۆر" : "عنصر"}
+                        </div>
+                      </div>
                     </div>
                   </td>
 
@@ -1098,7 +1168,7 @@ export function AdminOrders() {
       )}
 
       {/* -------------------------------------------------------------
-          5. QUICK INVOICE / RECEIPT MODAL OVERLAY
+          5. QUICK INVOICE / RECEIPT MODAL OVERLAY (With Product Images)
       ------------------------------------------------------------- */}
       {selectedInvoiceOrder && (
         <div
@@ -1151,20 +1221,33 @@ export function AdminOrders() {
                 )}
               </div>
 
-              {/* Items Table */}
+              {/* Items Table with Images */}
               <div className="space-y-2">
                 <div className="text-xs font-bold text-slate-400">{lang === "ku" ? "بەرهەمەکان" : "قائمة الأصناف"}</div>
-                <div className="space-y-1.5">
-                  {(selectedInvoiceOrder.order_items ?? []).map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {pickName(item, lang)} ×{item.quantity}
-                      </span>
-                      <span className="font-bold text-slate-900 dark:text-white">
-                        {formatPrice(Number(item.unit_price * item.quantity), lang)}
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {(selectedInvoiceOrder.order_items ?? []).map((item, idx) => {
+                    const imgUrl = getProductImage(item);
+                    const title = pickName(item, lang);
+                    return (
+                      <div key={idx} className="flex justify-between items-center gap-2 text-xs bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200/70 dark:border-slate-700">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {imgUrl ? (
+                            <img src={imgUrl} alt={title} className="size-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                          ) : (
+                            <div className="size-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-items-center text-slate-400 shrink-0">
+                              <Package className="size-4" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {title} ×{item.quantity}
+                          </span>
+                        </div>
+                        <span className="font-bold text-slate-900 dark:text-white shrink-0">
+                          {formatPrice(Number(item.unit_price * item.quantity), lang)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1204,6 +1287,41 @@ export function AdminOrders() {
                 <Printer className="size-3.5" />
                 <span>{L.printReceipt[lang]}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------------------------------------------------
+          6. IMAGE PREVIEW LIGHTBOX MODAL
+      ------------------------------------------------------------- */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-lg w-full bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-2xl space-y-3 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-1">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[300px]">
+                {previewImage.title}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-950 max-h-[70vh] flex items-center justify-center border border-slate-200 dark:border-slate-800 p-2">
+              <img
+                src={previewImage.url}
+                alt={previewImage.title}
+                className="max-h-[65vh] w-auto max-w-full object-contain rounded-xl"
+              />
             </div>
           </div>
         </div>
