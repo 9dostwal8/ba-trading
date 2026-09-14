@@ -644,25 +644,11 @@ export function PanelShell({
               </DropdownMenu>
             </div>
 
-            {/* Right: Theme Toggle + Close App Button */}
+            {/* Right: Close App Button */}
             <div className="flex items-center gap-2">
               <button
-                onClick={toggleTheme}
-                type="button"
-                aria-label="Toggle Theme"
-                title={
-                  theme === "dark"
-                    ? (lang === "ku" ? "دۆخی ڕووناک" : lang === "ar" ? "الوضع الفاتح" : "Light Mode")
-                    : (lang === "ku" ? "دۆخی تاریک" : lang === "ar" ? "الوضع الداكن" : "Dark Mode")
-                }
-                className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-[#007979] dark:hover:text-teal-400 transition-colors active:scale-95 cursor-pointer"
-              >
-                {theme === "dark" ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-600" />}
-              </button>
-
-              <button
                 onClick={onClose}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors active:scale-95 cursor-pointer shadow-2xs"
               >
                 <X className="size-4" />
                 <span className="hidden xs:inline">
