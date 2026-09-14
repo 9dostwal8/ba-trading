@@ -93,6 +93,7 @@ interface AdminDashboardProps {
 export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   const { lang } = useI18n();
   const [active, setActive] = useState<string | null>(initialTab ?? null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const handleOpenTab = (key: string) => {
     setActive(key);
@@ -283,8 +284,12 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
 
   return (
     <div className="min-h-screen bg-slate-100/90 dark:bg-slate-950 flex flex-col transition-colors duration-200">
-      {/* Existing Header (no extra duplicate header) */}
-      <AdminHeader />
+      {/* Existing Header with Search and Theme Toggle */}
+      <AdminHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        showSearch={!active}
+      />
       
       {/* Odoo App Launcher Grid */}
       <div className="flex-1">
@@ -293,6 +298,8 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
           active={active}
           onOpen={handleOpenTab}
           onClose={handleCloseTab}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         >
           <Suspense
             fallback={

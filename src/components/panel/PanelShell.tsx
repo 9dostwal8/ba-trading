@@ -42,6 +42,8 @@ export function PanelShell({
   active,
   onOpen,
   onClose,
+  searchQuery = "",
+  onSearchChange,
   children,
 }: {
   title?: string;
@@ -52,12 +54,12 @@ export function PanelShell({
   active: string | null;
   onOpen: (key: string) => void;
   onClose: () => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
   children?: ReactNode;
 }) {
   const { lang } = useI18n();
   const Back = lang === "ar" || lang === "ku" ? ChevronRight : ChevronLeft;
-
-  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // User-specific dark/light mode preference with localStorage persistence
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -144,7 +146,7 @@ export function PanelShell({
             <div className="flex items-center gap-2.5 min-w-0">
               <button
                 onClick={onClose}
-                className="group flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-[#007979] hover:text-white hover:border-[#007979] px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all active:scale-95"
+                className="group flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-[#007979] hover:text-white hover:border-[#007979] px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all active:scale-95 cursor-pointer"
                 title={lang === "ar" ? "العودة للتطبيقات" : lang === "ku" ? "گەڕانەوە بۆ ئەپەکان" : "Back to Apps"}
               >
                 <Grid3X3 className="size-4" />
@@ -158,7 +160,7 @@ export function PanelShell({
 
               {/* Current App with quick switch dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs font-extrabold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs font-extrabold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   <span className={`grid size-6 place-items-center rounded-lg bg-gradient-to-tr ${activeItem.color} text-white shadow-xs`}>
                     <ActiveIcon className="size-3.5" />
                   </span>
@@ -202,14 +204,14 @@ export function PanelShell({
                     ? (lang === "ku" ? "دۆخی ڕووناک" : lang === "ar" ? "الوضع الفاتح" : "Light Mode")
                     : (lang === "ku" ? "دۆخی تاریک" : lang === "ar" ? "الوضع الداكن" : "Dark Mode")
                 }
-                className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-[#007979] dark:hover:text-teal-400 transition-colors active:scale-95"
+                className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-[#007979] dark:hover:text-teal-400 transition-colors active:scale-95 cursor-pointer"
               >
                 {theme === "dark" ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-600" />}
               </button>
 
               <button
                 onClick={onClose}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors active:scale-95 cursor-pointer"
               >
                 <X className="size-4" />
                 <span className="hidden xs:inline">
@@ -229,70 +231,14 @@ export function PanelShell({
   }
 
   // -------------------------------------------------------------
-  // VIEW 2: ODOO APP LAUNCHER GRID (Matching Screenshot)
+  // VIEW 2: ODOO APP LAUNCHER GRID (Clean, without floating control bar)
   // -------------------------------------------------------------
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-100/90 via-indigo-50/20 to-slate-100/90 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col justify-start py-8 sm:py-12 px-4 sm:px-8 font-sans transition-colors duration-200">
       <div className="w-full">
-        
-        {/* Top Control Bar with Theme Toggle on the Left and Search in the Center */}
-        <div className="mb-8 sm:mb-12 flex items-center justify-between gap-4 w-full [direction:ltr]">
-          
-          {/* Physical Left: User Theme Toggle Button (Dark / Light) */}
-          <button
-            onClick={toggleTheme}
-            type="button"
-            aria-label="Toggle Theme"
-            title={
-              theme === "dark"
-                ? (lang === "ku" ? "دۆخی ڕووناک" : lang === "ar" ? "الوضع الفاتح" : "Light Mode")
-                : (lang === "ku" ? "دۆخی تاریک" : lang === "ar" ? "الوضع الداكن" : "Dark Mode")
-            }
-            className="size-11 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:border-[#007979] dark:hover:border-teal-500 hover:text-[#007979] dark:hover:text-teal-400 transition-all active:scale-95 shrink-0"
-          >
-            {theme === "dark" ? (
-              <Sun className="size-5 text-amber-400 transition-transform rotate-0 hover:rotate-45 duration-300" />
-            ) : (
-              <Moon className="size-5 text-slate-600 transition-transform -rotate-12 hover:rotate-0 duration-300" />
-            )}
-          </button>
-
-          {/* Center: Search Bar */}
-          <div
-            className="relative flex-1 max-w-md mx-auto"
-            style={{ direction: lang === "ar" || lang === "ku" ? "rtl" : "ltr" }}
-          >
-            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                lang === "ar"
-                  ? "ابحث عن تطبيق..."
-                  : lang === "ku"
-                  ? "گەڕان لە ئەپەکان..."
-                  : "Search apps..."
-              }
-              className="w-full h-11 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur ps-10 pe-9 text-xs sm:text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-[#007979] focus:outline-none focus:ring-2 focus:ring-[#007979]/20 shadow-xs transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              >
-                <X className="size-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Right: Invisible Counterweight Spacer to keep Search perfectly centered */}
-          <div className="size-11 shrink-0 invisible pointer-events-none" />
-        </div>
-
         {/* Odoo App Tiles Grid */}
         {filteredItems.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur p-12 text-center max-w-md mx-auto">
+          <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur p-12 text-center max-w-md mx-auto my-6">
             <Search className="mx-auto size-8 text-slate-300 dark:text-slate-600 mb-2" />
             <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
               {lang === "ar"
@@ -301,12 +247,14 @@ export function PanelShell({
                 ? "هیچ ئەپێک نەدۆزرایەوە"
                 : "No apps match your search"}
             </p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="mt-3 px-3.5 py-1.5 rounded-xl bg-[#007979] text-white text-xs font-bold shadow-xs"
-            >
-              {lang === "ar" ? "مسح البحث" : lang === "ku" ? "سڕینەوە" : "Clear search"}
-            </button>
+            {onSearchChange && (
+              <button
+                onClick={() => onSearchChange("")}
+                className="mt-3 px-3.5 py-1.5 rounded-xl bg-[#007979] text-white text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
+              >
+                {lang === "ar" ? "مسح البحث" : lang === "ku" ? "سڕینەوە" : "Clear search"}
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 md:gap-x-8 lg:gap-x-10 place-items-center w-full">
@@ -317,7 +265,7 @@ export function PanelShell({
                 <button
                   key={app.key}
                   onClick={() => onOpen(app.key)}
-                  className="group flex flex-col items-center focus:outline-none transition-transform"
+                  className="group flex flex-col items-center focus:outline-none transition-transform cursor-pointer"
                 >
                   {/* Odoo White Squircle Tile */}
                   <div className="relative size-20 sm:size-24 md:size-26 lg:size-28 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 shadow-sm dark:shadow-slate-950/40 group-hover:shadow-xl border border-slate-200/80 dark:border-slate-800 group-hover:border-slate-300 dark:group-hover:border-slate-700 flex items-center justify-center transition-all duration-200 group-hover:-translate-y-2 group-hover:scale-105 active:scale-95">
