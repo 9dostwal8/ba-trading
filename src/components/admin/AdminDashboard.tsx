@@ -29,6 +29,7 @@ import { lazy, Suspense, useState } from "react";
 import { PanelShell, type PanelGroup } from "@/components/panel/PanelShell";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
 
 // Core Admin Modules
 const AdminOrders = lazy(() => import("@/components/admin/AdminOrders").then((m) => ({ default: m.AdminOrders })));
@@ -97,6 +98,7 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   const { lang } = useI18n();
+  const { user } = useAuth();
   const [active, setActive] = useState<string | null>(initialTab ?? null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -266,7 +268,7 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
         showSearch={!active}
       />
       
-      {/* Odoo App Launcher Grid */}
+      {/* Odoo App Launcher Grid with iPhone-style folders and per-user custom layout */}
       <div className="flex-1">
         <PanelShell
           groups={groups}
@@ -275,6 +277,7 @@ export function AdminDashboard({ initialTab }: AdminDashboardProps) {
           onClose={handleCloseTab}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          userId={user?.id}
         >
           <Suspense
             fallback={
