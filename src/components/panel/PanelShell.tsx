@@ -591,21 +591,11 @@ export function PanelShell({
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-slate-100/90 via-indigo-50/20 to-slate-100/90 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col justify-start py-6 sm:py-10 px-4 sm:px-8 font-sans transition-colors duration-200 relative">
       
       {/* Top Helper Toolbar: Reset Layout Button */}
-      <div className="w-full flex items-center justify-between mb-6 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
-            {lang === "ku"
-              ? "دەتوانیت ئەپەکان ڕابکێشیت و لەسەر یەک دایانبنییت بۆ دروستکردنی گرووپ"
-              : lang === "ar"
-              ? "اسحب التطبيقات فوق بعضها لإنشاء مجلدات وترتيب الشاشة"
-              : "Drag apps over each other to group into folders or reorder"}
-          </span>
-        </div>
-
+      <div className="w-full flex items-center justify-end mb-4 px-1">
         <button
           type="button"
           onClick={handleResetLayout}
-          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1 text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/80 transition active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer"
           title={L.resetLayout[lang]}
         >
           <RotateCcw className="size-3.5" />
