@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export type PanelItem = {
   key: string;
@@ -126,6 +127,71 @@ const L = {
   },
 };
 
+function reconcileLayout(rawList: ScreenItem[], items: PanelItem[]): ScreenItem[] {
+  const validKeys = new Set(items.map((i) => i.key));
+  const presentKeys = new Set<string>();
+  const cleaned: ScreenItem[] = [];
+
+  for (const item of rawList) {
+    if (item.type === "app") {
+      if (validKeys.has(item.key) && !presentKeys.has(item.key)) {
+        presentKeys.add(item.key);
+        cleaned.push(item);
+      }
+    } else if (item.type === "folder") {
+      const validAppKeys = (item.appKeys || []).filter(
+        (k) => validKeys.has(k) && !presentKeys.has(k)
+      );
+      validAppKeys.forEach((k) => presentKeys.add(k));
+
+      if (validAppKeys.length > 1) {
+        cleaned.push({
+          type: "folder",
+          id: item.id || `folder_${Date.now()}_${Math.random()}`,
+          name: item.name || "Folder",
+          appKeys: validAppKeys,
+        });
+      } else if (validAppKeys.length === 1) {
+        cleaned.push({ type: "app", key: validAppKeys[0] });
+      }
+    }
+  }
+
+  // Append any newly added apps from code that aren't yet in saved layout
+  const missing = items
+    .filter((i) => !presentKeys.has(i.key))
+    .map((i): AppEntry => ({ type: "app", key: i.key }));
+
+  return [...cleaned, ...missing];
+}
+
+function loadSavedLayout(userId: string | undefined, items: PanelItem[]): ScreenItem[] {
+  if (typeof window === "undefined") {
+    return items.map((i): AppEntry => ({ type: "app", key: i.key }));
+  }
+  try {
+    const keysToTry = [
+      userId ? `admin_dashboard_screen_layout_${userId}` : null,
+      "admin_dashboard_screen_layout_last",
+      "admin_dashboard_screen_layout_default",
+      "admin_dashboard_screen_layout",
+    ].filter(Boolean) as string[];
+
+    for (const key of keysToTry) {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved) as ScreenItem[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return reconcileLayout(parsed, items);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load saved screen layout:", e);
+  }
+  return items.map((i): AppEntry => ({ type: "app", key: i.key }));
+}
+
 export function PanelShell({
   groups,
   active,
@@ -151,9 +217,6 @@ export function PanelShell({
 }) {
   const { lang } = useI18n();
   const Back = lang === "ar" || lang === "ku" ? ChevronRight : ChevronLeft;
-
-  // Storage key per user
-  const storageKey = `admin_dashboard_screen_layout_${userId || "default"}`;
 
   // Dark/Light theme toggle
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -216,44 +279,78 @@ export function PanelShell({
     return map;
   }, [allItems]);
 
-  // Screen Layout State (Per-User)
+  // Screen Layout State (Per-User with instant fallback and cloud sync)
   const [screenItems, setScreenItems] = useState<ScreenItem[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-          const parsed = JSON.parse(saved) as ScreenItem[];
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Reconcile: ensure all current app keys exist
-            const presentKeys = new Set<string>();
-            parsed.forEach((item) => {
-              if (item.type === "app") presentKeys.add(item.key);
-              if (item.type === "folder") item.appKeys.forEach((k) => presentKeys.add(k));
-            });
-
-            // Append any new missing apps from code
-            const missing = allItems
-              .filter((i) => !presentKeys.has(i.key))
-              .map((i): AppEntry => ({ type: "app", key: i.key }));
-
-            return [...parsed, ...missing];
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to load custom screen layout:", e);
-      }
-    }
-    // Default initial layout: plain list of all apps
-    return allItems.map((i): AppEntry => ({ type: "app", key: i.key }));
+    return loadSavedLayout(userId, allItems);
   });
 
-  // Save layout changes to localStorage
+  // Re-sync whenever userId changes (e.g. Supabase session resolves) or allItems change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const loaded = loadSavedLayout(userId, allItems);
+    setScreenItems(loaded);
+
+    // Sync from Supabase ui_texts cloud backup if userId is available
+    if (userId) {
+      const remoteKey = `dashboard_layout_${userId}`;
+      supabase
+        .from("ui_texts")
+        .select("en")
+        .eq("key", remoteKey)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.en) {
+            try {
+              const parsed = JSON.parse(data.en);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const reconciled = reconcileLayout(parsed, allItems);
+                setScreenItems(reconciled);
+                const json = JSON.stringify(reconciled);
+                localStorage.setItem(`admin_dashboard_screen_layout_${userId}`, json);
+                localStorage.setItem("admin_dashboard_screen_layout_last", json);
+              }
+            } catch (err) {
+              console.warn("Cloud layout parse error:", err);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userId, allItems]);
+
+  // Save layout changes to localStorage & Supabase
   const saveLayout = (newLayout: ScreenItem[]) => {
     setScreenItems(newLayout);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(newLayout));
-    } catch (e) {
-      console.warn("Failed to save layout:", e);
+    if (typeof window !== "undefined") {
+      try {
+        const json = JSON.stringify(newLayout);
+        if (userId) {
+          localStorage.setItem(`admin_dashboard_screen_layout_${userId}`, json);
+        }
+        localStorage.setItem("admin_dashboard_screen_layout_last", json);
+        localStorage.setItem("admin_dashboard_screen_layout_default", json);
+        localStorage.setItem("admin_dashboard_screen_layout", json);
+      } catch (e) {
+        console.warn("Failed to save layout to localStorage:", e);
+      }
+    }
+
+    if (userId) {
+      const remoteKey = `dashboard_layout_${userId}`;
+      supabase
+        .from("ui_texts")
+        .upsert(
+          {
+            key: remoteKey,
+            section: "admin_screen_layout",
+            en: JSON.stringify(newLayout),
+            ar: "",
+            ku: "",
+          },
+          { onConflict: "key" }
+        )
+        .then(() => {})
+        .catch((err) => console.warn("Failed to sync layout to cloud:", err));
     }
   };
 
