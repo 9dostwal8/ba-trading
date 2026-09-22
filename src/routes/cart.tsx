@@ -34,6 +34,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CartAuthGate } from "@/components/cart/CartAuthGate";
+import { CartPaymentSection } from "@/components/cart/CartPaymentSection";
+import { CartRewardsCard } from "@/components/cart/CartRewardsCard";
 import { useCanOrder } from "@/hooks/useCanOrder";
 import { lineKey, useCart, type CartItem } from "@/lib/cart";
 import { startQiPayment } from "@/lib/qi.functions";
@@ -928,147 +930,31 @@ function CartPage() {
 
         {/* Reward points */}
         {rewardsOn && user && (
-          <section className="relative overflow-hidden rounded-xl border-2 border-dashed border-info/70 bg-info/[0.06] p-3">
-            <div className="pointer-events-none absolute -end-8 -top-8 size-24 rounded-full bg-info/15 blur-xl" />
-            <div className="relative flex items-center gap-2">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-info text-info-foreground">
-                <Sparkles className="size-4" />
-              </span>
-              <p className="min-w-0 flex-1 text-[13.5px] font-extrabold text-info">
-                {payCopy.coins}
-              </p>
-            </div>
-
-            {coinsFrozen ? (
-              <p className="relative mt-2 text-[11.5px] font-bold leading-relaxed text-muted-foreground">
-                {payCopy.coinsFrozen}
-              </p>
-            ) : (
-              <>
-                <div className="relative mt-2.5 grid gap-1.5 rounded-lg bg-card/70 p-2.5 text-[11.5px] font-bold">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">{payCopy.coinsBal}</span>
-                    <span className="text-foreground">
-                      {formatPoints(coinBalance, lang)} {COIN_WORD[lang]}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">
-                      {payCopy.coinsCap} ({Math.round(allowedPct)}%)
-                    </span>
-                    <span className="text-foreground">
-                      {formatPoints(allowedCoins, lang)} {COIN_WORD[lang]}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">{payCopy.coinsBalValue}</span>
-                    <span className="text-foreground">
-                      {formatPrice(coinsToMoney(allowedCoins, coinRate), lang)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">{payCopy.coinsOrderTotal}</span>
-                    <span className="text-foreground">{formatPrice(gross, lang)}</span>
-                  </div>
-                  <p className="text-[10.5px] font-bold text-muted-foreground">
-                    ↳ {payCopy.coinsWhy}
-                  </p>
-                  <div className="mt-0.5 flex items-center justify-between gap-2 border-t border-dashed border-info/40 pt-1.5">
-                    <span className="text-info">{payCopy.coinsUsable}</span>
-                    <span className="text-end">
-                      <span className="block font-extrabold text-info">
-                        {formatPoints(spendableCoins, lang)} {COIN_WORD[lang]}
-                      </span>
-                      <span className="block text-[11px] text-info">
-                        = {formatPrice(coinsToMoney(spendableCoins, coinRate), lang)}
-                      </span>
-                    </span>
-                  </div>
-                  {useCoins && coinDiscount > 0 && (
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-success">{payCopy.coinsApplied}</span>
-                      <span className="font-extrabold text-success">
-                        − {formatPrice(coinDiscount, lang)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <p className="relative mt-2 text-[10.5px] font-bold leading-relaxed text-muted-foreground">
-                  {payCopy.coinsRule.replace("{p}", String(Math.round(maxRedeemPct)))}
-                </p>
-
-                <Button
-                  type="button"
-                  variant={useCoins ? "default" : "secondary"}
-                  className="relative mt-2.5 h-11 w-full rounded-lg text-[12.5px] font-extrabold"
-                  disabled={!coinsReady}
-                  onClick={() => setUseCoins((v) => !v)}
-                >
-                  {useCoins ? t("cancel") : payCopy.coinsDiscount}
-                </Button>
-              </>
-            )}
-          </section>
+          <CartRewardsCard
+            lang={lang}
+            t={t}
+            payCopy={payCopy}
+            coinsFrozen={coinsFrozen}
+            coinBalance={coinBalance}
+            allowedPct={allowedPct}
+            allowedCoins={allowedCoins}
+            coinRate={coinRate}
+            gross={gross}
+            spendableCoins={spendableCoins}
+            useCoins={useCoins}
+            setUseCoins={setUseCoins}
+            coinDiscount={coinDiscount}
+            maxRedeemPct={maxRedeemPct}
+            coinsReady={coinsReady}
+          />
         )}
 
         {/* Payment method */}
-        <section className="dk-block">
-          <div className="dk-head border-b border-border/60">
-            <span className="step-dot">3</span>
-            <h2 className="min-w-0 flex-1 truncate font-display text-[14.5px] font-extrabold">
-              {payCopy.title}
-            </h2>
-          </div>
-          <div className="grid gap-2 p-3">
-            {(
-              [
-                { key: "cod" as const, icon: Banknote, label: payCopy.cod, note: payCopy.codNote },
-                { key: "qi" as const, icon: CreditCard, label: payCopy.qi, note: payCopy.qiNote },
-              ] as {
-                key: "cod" | "qi";
-                icon: typeof Banknote;
-                label: string;
-                note: string;
-                disabled?: boolean;
-              }[]
-            ).map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                disabled={opt.disabled}
-                onClick={() => setPayMethod(opt.key)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg border p-3 text-start transition active:scale-[0.99] disabled:opacity-60",
-                  payMethod === opt.key
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card",
-                )}
-              >
-                <span
-                  className={cn(
-                    "head-icon",
-                    payMethod === opt.key ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  <opt.icon className="size-4" strokeWidth={2.4} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-extrabold">{opt.label}</span>
-                  <span className="mt-0.5 block text-[11.5px] text-muted-foreground">
-                    {opt.note}
-                  </span>
-                </span>
-                <span
-                  className={cn(
-                    "size-4 shrink-0 rounded-full border-2",
-                    payMethod === opt.key ? "border-primary bg-primary" : "border-border",
-                  )}
-                />
-              </button>
-            ))}
-          </div>
-        </section>
+        <CartPaymentSection
+          payMethod={payMethod}
+          setPayMethod={setPayMethod}
+          payCopy={payCopy}
+        />
 
         {/* Summary */}
         <section className="dk-block">
