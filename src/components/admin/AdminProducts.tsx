@@ -79,22 +79,26 @@ export function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  const { data: products = [] } = useQuery({
+  const { data: rawProducts } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () =>
       (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ??
       [],
   });
 
-  const { data: vendors = [] } = useQuery({
+  const { data: rawVendors } = useQuery({
     queryKey: ["admin-vendors-lite"],
     queryFn: async () => (await supabase.from("vendors").select("id, name").order("name")).data ?? [],
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: rawCategories } = useQuery({
     queryKey: ["admin-categories"],
     queryFn: async () => (await supabase.from("categories").select("*").order("sort_order")).data ?? [],
   });
+
+  const products = useMemo(() => rawProducts ?? [], [rawProducts]);
+  const vendors = useMemo(() => rawVendors ?? [], [rawVendors]);
+  const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
 
   const save = useMutation({
     mutationFn: async (d: Draft) => {
@@ -113,7 +117,7 @@ export function AdminProducts() {
         vendor_id: d.vendor_id || null,
         is_active: d.is_active,
         is_featured: d.is_featured,
-        badges: d.badges,
+        badges: d.badges ?? [],
       };
       const res = d.id
         ? await supabase.from("products").update(payload).eq("id", d.id)
@@ -142,18 +146,19 @@ export function AdminProducts() {
     onError: (e: unknown) => toast.error(e instanceof Error && e.message ? e.message : t("error")),
   });
 
-  // Calculate Summary Metrics
+  // Calculate Summary Metrics safely
   const metrics = useMemo(() => {
     const total = products.length;
-    const active = products.filter((p) => p.is_active).length;
-    const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 5).length;
-    const outOfStock = products.filter((p) => p.stock <= 0).length;
+    const active = products.filter((p) => Boolean(p.is_active)).length;
+    const lowStock = products.filter((p) => Number(p.stock ?? 0) > 0 && Number(p.stock ?? 0) <= 5).length;
+    const outOfStock = products.filter((p) => Number(p.stock ?? 0) <= 0).length;
     return { total, active, lowStock, outOfStock };
   }, [products]);
 
-  // Filtered Products List
+  // Filtered Products List safely
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      if (!p) return false;
       // Vendor filter
       if (filterVendor !== "all") {
         if (filterVendor === "none" && p.vendor_id) return false;
@@ -175,6 +180,8 @@ export function AdminProducts() {
       return true;
     });
   }, [products, filterVendor, filterCategory, searchQuery]);
+
+  const draftBadges = useMemo(() => draft?.badges ?? [], [draft?.badges]);
 
   return (
     <div className="space-y-4">
@@ -326,7 +333,7 @@ export function AdminProducts() {
               }`}
             >
               <Select
-                value={draft.category_id}
+                value={draft.category_id || undefined}
                 onValueChange={(v) => setDraft({ ...draft, category_id: v })}
               >
                 <SelectTrigger
@@ -349,7 +356,7 @@ export function AdminProducts() {
 
           <Field label={t("brandManager")}>
             <Select
-              value={draft.vendor_id}
+              value={draft.vendor_id || undefined}
               onValueChange={(v) =>
                 setDraft({
                   ...draft,
@@ -399,7 +406,7 @@ export function AdminProducts() {
           <Field label={lang === "ar" ? "ملصقات ترويجية للمنتج" : "ستیکەرەکانی بەرهەم"}>
             <div className="flex flex-wrap gap-1.5">
               {PRODUCT_BADGES.map((b) => {
-                const on = draft.badges.includes(b.key);
+                const on = draftBadges.includes(b.key);
                 const Icon = b.icon;
                 return (
                   <button
@@ -409,8 +416,8 @@ export function AdminProducts() {
                       setDraft({
                         ...draft,
                         badges: on
-                          ? draft.badges.filter((x) => x !== b.key)
-                          : [...draft.badges, b.key],
+                          ? draftBadges.filter((x) => x !== b.key)
+                          : [...draftBadges, b.key],
                       })
                     }
                     style={
@@ -598,8 +605,9 @@ export function AdminProducts() {
           {filteredProducts.map((p) => {
             const vendorObj = vendors.find((v) => v.id === p.vendor_id);
             const vendorName = vendorObj?.name ?? p.brand ?? t("noBrand");
-            const isLowStock = p.stock > 0 && p.stock <= 5;
-            const isOutStock = p.stock <= 0;
+            const stockVal = Number(p.stock ?? 0);
+            const isLowStock = stockVal > 0 && stockVal <= 5;
+            const isOutStock = stockVal <= 0;
 
             return (
               <div
@@ -644,7 +652,7 @@ export function AdminProducts() {
                     </span>
                     <span>•</span>
                     <span className="font-extrabold text-primary">
-                      {formatPrice(Number(p.price), lang)}
+                      {formatPrice(Number(p.price || 0), lang)}
                     </span>
                     {p.compare_price && Number(p.compare_price) > Number(p.price) && (
                       <span className="line-through opacity-50 text-[11px]">
@@ -668,7 +676,7 @@ export function AdminProducts() {
                       />
                       {isOutStock
                         ? t("outOfStock")
-                        : `${t("stock")}: ${p.stock}`}
+                        : `${t("stock")}: ${p.stock ?? 0}`}
                     </span>
                   </div>
 
@@ -695,14 +703,14 @@ export function AdminProducts() {
                         description_ku: p.description_ku ?? "",
                         brand: p.brand ?? "",
                         sku: p.sku ?? "",
-                        price: String(p.price),
+                        price: String(p.price ?? "0"),
                         compare_price: p.compare_price ? String(p.compare_price) : "",
-                        stock: String(p.stock),
+                        stock: String(p.stock ?? "0"),
                         image_url: p.image_url ?? "",
                         category_id: p.category_id ?? "",
                         vendor_id: p.vendor_id ?? "",
-                        is_active: p.is_active,
-                        is_featured: p.is_featured,
+                        is_active: Boolean(p.is_active),
+                        is_featured: Boolean(p.is_featured),
                         badges: p.badges ?? [],
                       })
                     }
@@ -751,14 +759,14 @@ export function AdminProducts() {
                       {pickName(p, lang)}
                     </h4>
                     <p className="text-xs font-black text-primary">
-                      {formatPrice(Number(p.price), lang)}
+                      {formatPrice(Number(p.price || 0), lang)}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
                   <span className="text-xs font-bold text-slate-500">
-                    {t("stock")}: {p.stock}
+                    {t("stock")}: {p.stock ?? 0}
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
@@ -774,14 +782,14 @@ export function AdminProducts() {
                           description_ku: p.description_ku ?? "",
                           brand: p.brand ?? "",
                           sku: p.sku ?? "",
-                          price: String(p.price),
+                          price: String(p.price ?? "0"),
                           compare_price: p.compare_price ? String(p.compare_price) : "",
-                          stock: String(p.stock),
+                          stock: String(p.stock ?? "0"),
                           image_url: p.image_url ?? "",
                           category_id: p.category_id ?? "",
                           vendor_id: p.vendor_id ?? "",
-                          is_active: p.is_active,
-                          is_featured: p.is_featured,
+                          is_active: Boolean(p.is_active),
+                          is_featured: Boolean(p.is_featured),
                           badges: p.badges ?? [],
                         })
                       }
