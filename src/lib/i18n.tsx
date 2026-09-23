@@ -22,6 +22,7 @@ const dict = {
   admin: { ar: "الإدارة", ku: "بەڕێوەبردن" },
   search: { ar: "ابحث عن منتج...", ku: "بەدوای بەرهەمدا بگەڕێ..." },
   categories: { ar: "الأقسام", ku: "بەشەکان" },
+  allCategories: { ar: "جميع الأقسام", ku: "هەموو بەشەکان" },
   all: { ar: "الكل", ku: "هەموو" },
   featured: { ar: "الأكثر مبيعاً", ku: "زۆرترین فرۆشتن" },
   dealsTitle: { ar: "عروض وخصومات", ku: "ئۆفەر و داشکاندن" },
@@ -980,9 +981,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   const t = (k: TKey) => {
+    if (!k) return "";
     const custom = overrides[k]?.[lang];
-    const base = lang === "en" ? enTexts[k] || dict[k].ar : dict[k][lang];
-    return (custom && custom.trim()) || base;
+    const item = dict[k];
+    if (!item) {
+      return String(k);
+    }
+    const base = lang === "en" ? (enTexts[k] || item.ar) : (item[lang] || item.ar);
+    return (custom && custom.trim()) || base || String(k);
   };
 
   return (
