@@ -11,6 +11,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  Table as TableIcon,
   Tag,
   Trash2,
   X,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { AdminCard, Field, SectionHeader, TextField, ToggleField } from "./AdminKit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -77,7 +79,7 @@ export function AdminProducts() {
   const [filterVendor, setFilterVendor] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"table" | "list" | "grid">("table");
 
   const { data: rawProducts } = useQuery({
     queryKey: ["admin-products"],
@@ -127,6 +129,18 @@ export function AdminProducts() {
     onSuccess: () => {
       toast.success(t("saved"));
       setDraft(null);
+      qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error && e.message ? e.message : t("error")),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("products").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["products"] });
     },
@@ -187,7 +201,7 @@ export function AdminProducts() {
     <div className="space-y-4">
       {/* Page Header & Actions */}
       <SectionHeader
-        title={lang === "ar" ? "إدارة منتجات العيادات والفرۆشیاران" : lang === "ku" ? "بەڕێوەبردنی بەرهەمەکان" : "Product Management"}
+        title={lang === "ar" ? "جدول إدارة منتجات العيادات والفرۆشیاران" : lang === "ku" ? "خشتەی بەڕێوەبردنی بەرهەمەکان" : "Product CRUD Table"}
         action={
           <Button
             size="sm"
@@ -474,7 +488,7 @@ export function AdminProducts() {
         </AdminCard>
       )}
 
-      {/* Control Bar: Search, Category Filter, Grid/List Switcher */}
+      {/* Control Bar: Search, Category Filter, Grid/Table/List Switcher */}
       <div className="flex flex-col gap-2.5 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
         {/* Live Search */}
         <div className="relative flex-1">
@@ -519,8 +533,22 @@ export function AdminProducts() {
             </SelectContent>
           </Select>
 
-          {/* View Mode Toggle */}
+          {/* View Mode Toggle: Table vs List vs Grid */}
           <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 dark:border-slate-800 dark:bg-slate-800/80">
+            <button
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition ${
+                viewMode === "table"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+              }`}
+              title="CRUD Table View"
+            >
+              <TableIcon className="size-3.5" />
+              <span className="hidden sm:inline">
+                {lang === "ar" ? "جدول البيانات" : lang === "ku" ? "خشتە" : "Table"}
+              </span>
+            </button>
             <button
               onClick={() => setViewMode("list")}
               className={`rounded-lg p-1.5 transition ${
@@ -587,7 +615,7 @@ export function AdminProducts() {
         })}
       </div>
 
-      {/* Products Display List / Grid */}
+      {/* Products Display: Table / List / Grid */}
       {filteredProducts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
           <Package className="mx-auto size-10 text-slate-300 dark:text-slate-700" />
@@ -600,7 +628,206 @@ export function AdminProducts() {
               : "No products match the selected filters."}
           </p>
         </div>
+      ) : viewMode === "table" ? (
+        /* Standard High-Performance CRUD Data Table */
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <table className="w-full text-start text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/80 bg-slate-50/80 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider w-14">
+                  {lang === "ar" ? "الصورة" : lang === "ku" ? "وێنە" : "Image"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider min-w-[180px]">
+                  {lang === "ar" ? "اسم المنتج" : lang === "ku" ? "ناوی بەرهەم" : "Product Name"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider">
+                  {lang === "ar" ? "الماركة والرمز" : lang === "ku" ? "براند و بارکۆد" : "Brand / SKU"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider">
+                  {lang === "ar" ? "القسم" : lang === "ku" ? "بەش" : "Category"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider">
+                  {lang === "ar" ? "السعر" : lang === "ku" ? "نرخ" : "Price"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider">
+                  {lang === "ar" ? "المخزون" : lang === "ku" ? "مەخزون" : "Stock"}
+                </th>
+                <th className="p-3.5 text-start font-extrabold uppercase tracking-wider">
+                  {lang === "ar" ? "الملصقات" : lang === "ku" ? "ستیکەر" : "Badges"}
+                </th>
+                <th className="p-3.5 text-center font-extrabold uppercase tracking-wider w-20">
+                  {lang === "ar" ? "الحالة" : lang === "ku" ? "دۆخ" : "Active"}
+                </th>
+                <th className="p-3.5 text-end font-extrabold uppercase tracking-wider w-24">
+                  {lang === "ar" ? "إجراءات" : lang === "ku" ? "کردەوە" : "Actions"}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {filteredProducts.map((p) => {
+                const vendorObj = vendors.find((v) => v.id === p.vendor_id);
+                const vendorName = vendorObj?.name ?? p.brand ?? t("noBrand");
+                const catObj = categories.find((c) => c.id === p.category_id);
+                const catName = catObj ? pickName(catObj, lang) : "—";
+                const stockVal = Number(p.stock ?? 0);
+                const isLowStock = stockVal > 0 && stockVal <= 5;
+                const isOutStock = stockVal <= 0;
+
+                return (
+                  <tr
+                    key={p.id}
+                    className="group transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                  >
+                    {/* Thumbnail Image */}
+                    <td className="p-3">
+                      <div className="relative size-11 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-800">
+                        <img
+                          src={p.image_url ?? "/placeholder.svg"}
+                          alt={pickName(p, lang)}
+                          loading="lazy"
+                          className="size-full object-contain rounded-lg transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                    </td>
+
+                    {/* Product Title */}
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-slate-900 dark:text-white text-xs line-clamp-2">
+                          {pickName(p, lang)}
+                        </p>
+                        {p.is_featured && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-amber-600 dark:text-amber-400">
+                            <Sparkles className="size-2.5" />
+                            {t("isFeatured")}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Brand / SKU */}
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
+                          {vendorName}
+                        </span>
+                        {p.sku && (
+                          <span className="text-[10.5px] font-mono text-slate-400 block">
+                            {p.sku}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Category */}
+                    <td className="p-3 font-semibold text-slate-600 dark:text-slate-400">
+                      {catName}
+                    </td>
+
+                    {/* Price */}
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <span className="font-extrabold text-primary block text-xs">
+                          {formatPrice(Number(p.price || 0), lang)}
+                        </span>
+                        {p.compare_price && Number(p.compare_price) > Number(p.price) && (
+                          <span className="line-through text-slate-400 text-[10.5px] block">
+                            {formatPrice(Number(p.compare_price), lang)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Stock Status Badge */}
+                    <td className="p-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-black ${
+                          isOutStock
+                            ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400"
+                            : isLowStock
+                            ? "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
+                            : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400"
+                        }`}
+                      >
+                        <span
+                          className={`size-1.5 rounded-full ${
+                            isOutStock ? "bg-rose-500" : isLowStock ? "bg-amber-500" : "bg-emerald-500"
+                          }`}
+                        />
+                        {isOutStock ? t("outOfStock") : `${stockVal}`}
+                      </span>
+                    </td>
+
+                    {/* Badges */}
+                    <td className="p-3">
+                      {p.badges && p.badges.length > 0 ? (
+                        <ProductBadges badges={p.badges} lang={lang} max={2} size="sm" />
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">—</span>
+                      )}
+                    </td>
+
+                    {/* Inline Active Switch */}
+                    <td className="p-3 text-center">
+                      <Switch
+                        checked={Boolean(p.is_active)}
+                        disabled={toggleActive.isPending}
+                        onCheckedChange={(is_active) =>
+                          toggleActive.mutate({ id: p.id, is_active })
+                        }
+                      />
+                    </td>
+
+                    {/* CRUD Actions */}
+                    <td className="p-3 text-end">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 rounded-lg border border-slate-200/80 bg-slate-50 text-slate-700 hover:bg-primary/10 hover:text-primary dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                          onClick={() =>
+                            setDraft({
+                              id: p.id,
+                              name_ar: p.name_ar,
+                              name_ku: p.name_ku,
+                              description_ar: p.description_ar ?? "",
+                              description_ku: p.description_ku ?? "",
+                              brand: p.brand ?? "",
+                              sku: p.sku ?? "",
+                              price: String(p.price ?? "0"),
+                              compare_price: p.compare_price ? String(p.compare_price) : "",
+                              stock: String(p.stock ?? "0"),
+                              image_url: p.image_url ?? "",
+                              category_id: p.category_id ?? "",
+                              vendor_id: p.vendor_id ?? "",
+                              is_active: Boolean(p.is_active),
+                              is_featured: Boolean(p.is_featured),
+                              badges: p.badges ?? [],
+                            })
+                          }
+                          title={t("edit")}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-8 rounded-lg border border-rose-100 bg-rose-50/50 text-rose-600 hover:bg-rose-100 dark:border-rose-950 dark:bg-rose-950/40 dark:text-rose-400"
+                          onClick={() => remove.mutate(p.id)}
+                          title={t("delete")}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       ) : viewMode === "list" ? (
+        /* Compact Cards List View */
         <div className="space-y-2">
           {filteredProducts.map((p) => {
             const vendorObj = vendors.find((v) => v.id === p.vendor_id);
