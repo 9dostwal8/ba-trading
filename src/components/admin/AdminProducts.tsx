@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, Field, SectionHeader, TextField, ToggleField } from "./AdminKit";
 import { Button } from "@/components/ui/button";
@@ -197,6 +197,20 @@ export function AdminProducts() {
 
   const draftBadges = useMemo(() => draft?.badges ?? [], [draft?.badges]);
 
+  useEffect(() => {
+    if (!draft) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDraft(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [draft]);
+
   return (
     <div className="space-y-4">
       {/* Page Header & Actions */}
@@ -269,223 +283,255 @@ export function AdminProducts() {
         </div>
       </div>
 
-      {/* Product Form Modal / Section */}
+      {/* Product Form Modal Popup Overlay */}
       {draft && (
-        <AdminCard className="border-primary/30 bg-card/95 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-1">
-            <h3 className="text-sm font-extrabold flex items-center gap-2 text-primary">
-              <Sparkles className="size-4" />
-              {draft.id
-                ? lang === "ar"
-                  ? "تعديل تفاصيل المنتج"
-                  : lang === "ku"
-                  ? "دەستکاریی بەرهەم"
-                  : "Edit Product"
-                : lang === "ar"
-                ? "إضافة منتج جديد للعيادات"
-                : lang === "ku"
-                ? "زیاکردنی بەرهەمی نوێ"
-                : "New Product Form"}
-            </h3>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-7 rounded-lg"
-              onClick={() => setDraft(null)}
-            >
-              <X className="size-4 text-muted-foreground" />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <TextField
-                label={lang === "ar" ? "اسم المنتج *" : lang === "ku" ? "ناوی بەرهەم *" : "Product Name *"}
-                value={draft.name_ar}
-                onChange={(v) => setDraft({ ...draft, name_ar: v, name_ku: v })}
-                placeholder={lang === "ar" ? "مثال: كوزموبوليتان حشوة أسنان 3M" : "e.g. 3M Composite Resin"}
-              />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setDraft(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-200/80 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    {draft.id
+                      ? lang === "ar"
+                        ? "تعديل تفاصيل المنتج"
+                        : lang === "ku"
+                        ? "دەستکاریی بەرهەم"
+                        : "Edit Product"
+                      : lang === "ar"
+                      ? "إضافة منتج جديد للعيادات"
+                      : lang === "ku"
+                      ? "زیاکردنی بەرهەمی نوێ"
+                      : "New Product Form"}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {draft.id
+                      ? lang === "ar"
+                        ? "قم بتحديث معلومات المنتج أو الأسعار أو الأقسام"
+                        : lang === "ku"
+                        ? "زانیارییەکانی بەرهەم، نرخ یان بەشەکان نوێ بکەرەوە"
+                        : "Update product details, pricing, or categories"
+                      : lang === "ar"
+                      ? "أدخل تفاصيل المنتج الجديد لإضافته للمتجر"
+                      : lang === "ku"
+                      ? "زانیاریی بەرهەمی نوێ بنووسە بۆ زیادکردن"
+                      : "Fill in product details to add to catalog"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
+                onClick={() => setDraft(null)}
+              >
+                <X className="size-4 text-slate-500" />
+              </Button>
             </div>
 
-            <TextField
-              label={t("price")}
-              type="number"
-              value={draft.price}
-              onChange={(v) => setDraft({ ...draft, price: v })}
-              placeholder="0"
-            />
-            <TextField
-              label={t("oldPrice")}
-              type="number"
-              value={draft.compare_price}
-              onChange={(v) => setDraft({ ...draft, compare_price: v })}
-              placeholder="0"
-            />
-            <TextField
-              label={t("stock")}
-              type="number"
-              value={draft.stock}
-              onChange={(v) => setDraft({ ...draft, stock: v })}
-              placeholder="0"
-            />
-            <TextField
-              label={t("brand")}
-              value={draft.brand}
-              onChange={(v) => setDraft({ ...draft, brand: v })}
-              placeholder="3M, GC, Tokuyama..."
-            />
-            <TextField
-              label={t("sku")}
-              value={draft.sku}
-              onChange={(v) => setDraft({ ...draft, sku: v })}
-              placeholder="SKU-1002"
-            />
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <TextField
+                    label={lang === "ar" ? "اسم المنتج *" : lang === "ku" ? "ناوی بەرهەم *" : "Product Name *"}
+                    value={draft.name_ar}
+                    onChange={(v) => setDraft({ ...draft, name_ar: v, name_ku: v })}
+                    placeholder={lang === "ar" ? "مثال: كوزموبوليتان حشوة أسنان 3M" : "e.g. 3M Composite Resin"}
+                  />
+                </div>
 
-            <Field
-              label={`${t("category")} ${
-                lang === "ar" ? "(إلزامي)" : lang === "ku" ? "(پێویست)" : "(required)"
-              }`}
-            >
-              <Select
-                value={draft.category_id || undefined}
-                onValueChange={(v) => setDraft({ ...draft, category_id: v })}
-              >
-                <SelectTrigger
-                  className={`h-9 rounded-xl ${
-                    draft.category_id ? "" : "border-destructive ring-1 ring-destructive/30"
+                <TextField
+                  label={t("price")}
+                  type="number"
+                  value={draft.price}
+                  onChange={(v) => setDraft({ ...draft, price: v })}
+                  placeholder="0"
+                />
+                <TextField
+                  label={t("oldPrice")}
+                  type="number"
+                  value={draft.compare_price}
+                  onChange={(v) => setDraft({ ...draft, compare_price: v })}
+                  placeholder="0"
+                />
+                <TextField
+                  label={t("stock")}
+                  type="number"
+                  value={draft.stock}
+                  onChange={(v) => setDraft({ ...draft, stock: v })}
+                  placeholder="0"
+                />
+                <TextField
+                  label={t("brand")}
+                  value={draft.brand}
+                  onChange={(v) => setDraft({ ...draft, brand: v })}
+                  placeholder="3M, GC, Tokuyama..."
+                />
+                <TextField
+                  label={t("sku")}
+                  value={draft.sku}
+                  onChange={(v) => setDraft({ ...draft, sku: v })}
+                  placeholder="SKU-1002"
+                />
+
+                <Field
+                  label={`${t("category")} ${
+                    lang === "ar" ? "(إلزامي)" : lang === "ku" ? "(پێویست)" : "(required)"
                   }`}
                 >
-                  <SelectValue placeholder={t("category")} />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {pickName(c, lang)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <Field label={t("brandManager")}>
-            <Select
-              value={draft.vendor_id || undefined}
-              onValueChange={(v) =>
-                setDraft({
-                  ...draft,
-                  vendor_id: v,
-                  brand: vendors.find((x) => x.id === v)?.name ?? draft.brand,
-                })
-              }
-            >
-              <SelectTrigger className="h-9 rounded-xl">
-                <SelectValue placeholder={t("brandManager")} />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {vendors.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <PhotoField
-            value={draft.image_url}
-            vendorId={draft.vendor_id || null}
-            onChange={(v) => setDraft({ ...draft, image_url: v })}
-          />
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label={t("descAr")}>
-              <Textarea
-                rows={3}
-                className="rounded-xl"
-                value={draft.description_ar}
-                onChange={(e) => setDraft({ ...draft, description_ar: e.target.value })}
-              />
-            </Field>
-            <Field label={t("descKu")}>
-              <Textarea
-                rows={3}
-                className="rounded-xl"
-                value={draft.description_ku}
-                onChange={(e) => setDraft({ ...draft, description_ku: e.target.value })}
-              />
-            </Field>
-          </div>
-
-          <Field label={lang === "ar" ? "ملصقات ترويجية للمنتج" : "ستیکەرەکانی بەرهەم"}>
-            <div className="flex flex-wrap gap-1.5">
-              {PRODUCT_BADGES.map((b) => {
-                const on = draftBadges.includes(b.key);
-                const Icon = b.icon;
-                return (
-                  <button
-                    key={b.key}
-                    type="button"
-                    onClick={() =>
-                      setDraft({
-                        ...draft,
-                        badges: on
-                          ? draftBadges.filter((x) => x !== b.key)
-                          : [...draftBadges, b.key],
-                      })
-                    }
-                    style={
-                      on
-                        ? { backgroundColor: b.ink, borderColor: b.ink }
-                        : {
-                            backgroundColor: `color-mix(in oklab, ${b.ink} 8%, white)`,
-                            borderColor: `color-mix(in oklab, ${b.ink} 20%, white)`,
-                            color: b.ink,
-                          }
-                    }
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] font-bold tracking-tight transition-all active:scale-95 ${
-                      on ? "text-white shadow-md" : ""
-                    }`}
+                  <Select
+                    value={draft.category_id || undefined}
+                    onValueChange={(v) => setDraft({ ...draft, category_id: v })}
                   >
-                    <Icon className="size-3.5" strokeWidth={2.7} />
-                    {badgeLabel(b, lang)}
-                  </button>
-                );
-              })}
+                    <SelectTrigger
+                      className={`h-10 rounded-xl ${
+                        draft.category_id ? "" : "border-destructive ring-1 ring-destructive/30"
+                      }`}
+                    >
+                      <SelectValue placeholder={t("category")} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {pickName(c, lang)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              <Field label={t("brandManager")}>
+                <Select
+                  value={draft.vendor_id || undefined}
+                  onValueChange={(v) =>
+                    setDraft({
+                      ...draft,
+                      vendor_id: v,
+                      brand: vendors.find((x) => x.id === v)?.name ?? draft.brand,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue placeholder={t("brandManager")} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {vendors.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <PhotoField
+                value={draft.image_url}
+                vendorId={draft.vendor_id || null}
+                onChange={(v) => setDraft({ ...draft, image_url: v })}
+              />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label={t("descAr")}>
+                  <Textarea
+                    rows={3}
+                    className="rounded-xl"
+                    value={draft.description_ar}
+                    onChange={(e) => setDraft({ ...draft, description_ar: e.target.value })}
+                  />
+                </Field>
+                <Field label={t("descKu")}>
+                  <Textarea
+                    rows={3}
+                    className="rounded-xl"
+                    value={draft.description_ku}
+                    onChange={(e) => setDraft({ ...draft, description_ku: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <Field label={lang === "ar" ? "ملصقات ترويجية للمنتج" : "ستیکەرەکانی بەرهەم"}>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_BADGES.map((b) => {
+                    const on = draftBadges.includes(b.key);
+                    const Icon = b.icon;
+                    return (
+                      <button
+                        key={b.key}
+                        type="button"
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            badges: on
+                              ? draftBadges.filter((x) => x !== b.key)
+                              : [...draftBadges, b.key],
+                          })
+                        }
+                        style={
+                          on
+                            ? { backgroundColor: b.ink, borderColor: b.ink }
+                            : {
+                                backgroundColor: `color-mix(in oklab, ${b.ink} 8%, white)`,
+                                borderColor: `color-mix(in oklab, ${b.ink} 20%, white)`,
+                                color: b.ink,
+                              }
+                        }
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold tracking-tight transition-all active:scale-95 ${
+                          on ? "text-white shadow-md" : ""
+                        }`}
+                      >
+                        <Icon className="size-3.5" strokeWidth={2.7} />
+                        {badgeLabel(b, lang)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+                <ToggleField
+                  label={t("active")}
+                  checked={draft.is_active}
+                  onChange={(v) => setDraft({ ...draft, is_active: v })}
+                />
+                <ToggleField
+                  label={t("isFeatured")}
+                  checked={draft.is_featured}
+                  onChange={(v) => setDraft({ ...draft, is_featured: v })}
+                />
+              </div>
             </div>
-          </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <ToggleField
-              label={t("active")}
-              checked={draft.is_active}
-              onChange={(v) => setDraft({ ...draft, is_active: v })}
-            />
-            <ToggleField
-              label={t("isFeatured")}
-              checked={draft.is_featured}
-              onChange={(v) => setDraft({ ...draft, is_featured: v })}
-            />
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 px-5 py-4 sm:px-6 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 backdrop-blur-md shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDraft(null)}
+                className="rounded-xl px-5 h-10 font-bold"
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                className="rounded-xl px-6 h-10 font-bold bg-primary text-white shadow-md shadow-primary/20 hover:opacity-95"
+                disabled={save.isPending || !draft.category_id}
+                onClick={() => save.mutate(draft)}
+              >
+                {save.isPending ? t("saving") : t("save")}
+              </Button>
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDraft(null)}
-              className="flex-1 rounded-xl h-10 font-bold"
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              className="flex-1 rounded-xl h-10 font-bold bg-primary text-white shadow-md shadow-primary/20"
-              disabled={save.isPending || !draft.category_id}
-              onClick={() => save.mutate(draft)}
-            >
-              {save.isPending ? t("saving") : t("save")}
-            </Button>
-          </div>
-        </AdminCard>
+        </div>
       )}
 
       {/* Control Bar: Search, Category Filter, Grid/Table/List Switcher */}
