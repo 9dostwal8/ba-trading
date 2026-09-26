@@ -80,6 +80,11 @@ export function AdminProducts() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"table" | "list" | "grid">("table");
+  const [isAddingBrand, setIsAddingBrand] = useState(false);
+
+  useEffect(() => {
+    if (!draft) setIsAddingBrand(false);
+  }, [draft]);
 
   const { data: rawProducts } = useQuery({
     queryKey: ["admin-products"],
@@ -377,18 +382,64 @@ export function AdminProducts() {
                   onChange={(v) => setDraft({ ...draft, stock: v })}
                   placeholder="0"
                 />
-                <TextField
-                  label={t("brand")}
-                  value={draft.brand}
-                  onChange={(v) => setDraft({ ...draft, brand: v })}
-                  placeholder="3M, GC, Tokuyama..."
-                  list="brand-list"
-                />
-                <datalist id="brand-list">
-                  {uniqueBrands.map((b) => (
-                    <option key={b} value={b} />
-                  ))}
-                </datalist>
+                <Field label={t("brand")}>
+                  {isAddingBrand ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={draft.brand}
+                        onChange={(e) => setDraft({ ...draft, brand: e.target.value })}
+                        placeholder="Type new brand name..."
+                        className="h-10 rounded-xl bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700"
+                        autoFocus
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIsAddingBrand(false);
+                          setDraft({ ...draft, brand: "" });
+                        }}
+                        className="h-10 px-3 rounded-xl shrink-0"
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select
+                      value={draft.brand || ""}
+                      onValueChange={(v) => {
+                        if (v === "___ADD_NEW___") {
+                          setIsAddingBrand(true);
+                          setDraft({ ...draft, brand: "" });
+                        } else {
+                          setDraft({ ...draft, brand: v });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-800/90">
+                        <SelectValue placeholder={t("brand")} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {uniqueBrands.map((b) => (
+                          <SelectItem key={b} value={b}>
+                            {b}
+                          </SelectItem>
+                        ))}
+                        {draft.brand && !uniqueBrands.includes(draft.brand) && (
+                          <SelectItem value={draft.brand}>
+                            {draft.brand}
+                          </SelectItem>
+                        )}
+                        <SelectItem value="___ADD_NEW___" className="font-bold text-[#007979]">
+                          <div className="flex items-center gap-2">
+                            <Plus className="size-4" />
+                            {lang === "ar" ? "إضافة براند جديد..." : lang === "ku" ? "زیادکردنی براندی نوێ..." : "Add New Brand..."}
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </Field>
                 <TextField
                   label={t("sku")}
                   value={draft.sku}
