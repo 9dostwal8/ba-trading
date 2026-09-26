@@ -4,6 +4,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: 'K24KurdishBold';
+  src: url('/fonts/k24/K24KurdishBold-Bold.woff') format('woff'),
+       url('/fonts/k24/K24KurdishBold-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'K24KurdishBold';
+  src: url('/fonts/k24/K24KurdishBold-Bold.woff') format('woff'),
+       url('/fonts/k24/K24KurdishBold-Bold.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * Dental store design system — clean, high-contrast, conversion focused.
  * Colors are oklch semantic tokens only. Never hardcode colors in components.
@@ -15,8 +33,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --font-sans: "Vazirmatn", "IRANSans", system-ui, sans-serif;
-  --font-display: "Vazirmatn", "IRANSans", system-ui, sans-serif;
+  --font-sans: "K24KurdishBold", "Vazirmatn", "IRANSans", system-ui, sans-serif;
+  --font-display: "K24KurdishBold", "Vazirmatn", "IRANSans", system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
