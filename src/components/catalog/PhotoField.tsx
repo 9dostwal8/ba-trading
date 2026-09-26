@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
-import { uploadMessage, uploadProductImage } from "@/lib/upload";
+import { deleteStorageFile, uploadMessage, uploadProductImage } from "@/lib/upload";
 
 /**
  * Photo picker for product forms: upload a file (validated, downscaled and
@@ -23,9 +23,14 @@ export function PhotoField({
 
   async function pick(file: File | undefined) {
     if (!file) return;
+    const oldUrl = value;
     setBusy(true);
     try {
-      onChange(await uploadProductImage(file, vendorId));
+      const newUrl = await uploadProductImage(file, vendorId);
+      onChange(newUrl);
+      if (oldUrl && oldUrl !== newUrl) {
+        deleteStorageFile(oldUrl);
+      }
       toast.success(t("saved"));
     } catch (e) {
       toast.error(uploadMessage(e, lang));
@@ -65,7 +70,11 @@ export function PhotoField({
             <button
               type="button"
               aria-label={t("delete")}
-              onClick={() => onChange("")}
+              onClick={async () => {
+                const oldUrl = value;
+                onChange("");
+                if (oldUrl) deleteStorageFile(oldUrl);
+              }}
               className="absolute end-1.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground"
             >
               <X className="size-3.5" />

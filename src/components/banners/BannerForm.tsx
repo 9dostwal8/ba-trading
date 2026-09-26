@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, TextField, ToggleField } from "@/components/admin/AdminKit";
-import { uploadBannerImage } from "@/lib/upload";
+import { deleteStorageFile, uploadBannerImage } from "@/lib/upload";
 import { formatPrice, useI18n } from "@/lib/i18n";
 import {
   BANNER_THEMES,
@@ -216,7 +216,11 @@ export function BannerForm({
               <img src={draft.image_url} alt="" className="block max-h-40 w-full object-contain" />
               <button
                 type="button"
-                onClick={() => set("image_url", "")}
+                onClick={async () => {
+                  const oldUrl = draft.image_url;
+                  set("image_url", "");
+                  if (oldUrl) deleteStorageFile(oldUrl);
+                }}
                 className="absolute end-1.5 top-1.5 rounded-full bg-foreground/60 p-1 text-background"
               >
                 <X className="size-3.5" />
@@ -235,9 +239,12 @@ export function BannerForm({
                 const file = e.target.files?.[0];
                 e.target.value = "";
                 if (!file) return;
+                const oldUrl = draft.image_url;
                 setBusy(true);
                 try {
-                  set("image_url", await uploadBannerImage(file));
+                  const newUrl = await uploadBannerImage(file);
+                  set("image_url", newUrl);
+                  if (oldUrl && oldUrl !== newUrl) deleteStorageFile(oldUrl);
                 } catch (err) {
                   toast.error((err as Error).message);
                 } finally {

@@ -127,9 +127,9 @@ export async function uploadBannerImage(file: File, prefix = "banners") {
  * name ourselves so nothing from the original name can escape the folder.
  */
 export async function uploadProductImage(file: File, vendorId?: string | null) {
-  const body = await prepare(file, PRESETS.product);
+  const { body, mime } = await prepare(file, PRESETS.product);
   const folder = vendorId && /^[0-9a-f-]{36}$/i.test(vendorId) ? vendorId : "admin";
-  return put("products", `${folder}/${crypto.randomUUID()}.webp`, body);
+  return put("products", `${folder}/${crypto.randomUUID()}.webp`, body, mime);
 }
 
 /** Friendly bilingual reason an upload was refused. */
@@ -143,3 +143,31 @@ export function uploadMessage(e: unknown, lang: Lang) {
       : "فایل وێنەی دروست نییە (تەنها JPG، PNG، WEBP)";
   return lang === "ar" ? "فشل رفع الصورة" : "بارکردنی وێنە سەرکەوتوو نەبوو";
 }
+
+/**
+ * Deletes a file from Supabase storage if the provided URL is hosted on Supabase Storage.
+ * Handles public URLs, signed URLs, authenticated URLs, and render URLs across any bucket.
+ */
+export async function deleteStorageFile(url: string | null | undefined): Promise<boolean> {
+  if (!url || typeof url !== "string") return false;
+  if (!url.includes("supabase.co") && !url.includes("/storage/v1/")) return false;
+
+  try {
+    const match = url.match(/\/storage\/v1\/(?:object|render\/image)\/(?:public\/|sign\/|authenticated\/)?([^/?#]+)\/([^?#]+)/);
+    if (match && match[1] && match[2]) {
+      const bucket = match[1];
+      const filePath = decodeURIComponent(match[2]);
+      console.log(`[Storage] Deleting file from bucket '${bucket}':`, filePath);
+      const { error } = await supabase.storage.from(bucket).remove([filePath]);
+      if (error) {
+        console.warn(`[Storage] Failed to delete file '${filePath}' from bucket '${bucket}':`, error);
+        return false;
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn("[Storage] Error parsing or deleting file URL:", err);
+  }
+  return false;
+}
+

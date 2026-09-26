@@ -24,7 +24,7 @@ import { AdminCard, SectionHeader, TextField, ToggleField } from "./AdminKit";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { uploadBannerImage, uploadMessage } from "@/lib/upload";
+import { deleteStorageFile, uploadBannerImage, uploadMessage } from "@/lib/upload";
 import type { StoreSettings } from "@/lib/store";
 import { setDocumentFavicon } from "@/components/SiteMeta";
 import { SettingsUsersTab } from "./settings/SettingsUsersTab";
@@ -167,10 +167,14 @@ function ImageUploadField({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const previousUrl = value;
     setIsUploading(true);
     try {
       const url = await uploadBannerImage(file, "branding");
       onChange(url);
+      if (previousUrl && previousUrl !== url) {
+        deleteStorageFile(previousUrl);
+      }
       toast.success(
         lang === "ku"
           ? "وێنەکە بە سەرکەوتوویی بارکرا (تکایە 'پاشەکەوتکردنی ڕێکخستنەکان' داگرە)"
@@ -188,6 +192,9 @@ function ImageUploadField({
           reader.readAsDataURL(file);
         });
         onChange(dataUrl);
+        if (previousUrl && previousUrl !== dataUrl) {
+          deleteStorageFile(previousUrl);
+        }
         toast.success(
           lang === "ku"
             ? "وێنەکە ئامادەکرا (تکایە 'پاشەکەوتکردنی ڕێکخستنەکان' داگرە)"
@@ -264,7 +271,13 @@ function ImageUploadField({
 
               <button
                 type="button"
-                onClick={() => onChange("")}
+                onClick={async () => {
+                  const oldUrl = value;
+                  onChange("");
+                  if (oldUrl) {
+                    await deleteStorageFile(oldUrl);
+                  }
+                }}
                 disabled={isUploading}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 text-xs font-bold text-rose-600 dark:text-rose-400 transition-all active:scale-95"
               >
