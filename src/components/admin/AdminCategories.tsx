@@ -163,60 +163,102 @@ export function AdminCategories() {
         </AdminCard>
       )}
 
-      <div className="space-y-2">
-        {(categories ?? []).map((c) => {
-          const Icon = categoryIcon(c.icon as string);
-          return (
-            <div
-              key={c.id}
-              style={tintStyle(c.hue as number, c.chroma as number)}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card p-2 shadow-card"
-            >
-              <span
-                className="grid size-10 shrink-0 place-items-center rounded-lg"
-                style={{ background: "var(--tint-soft)", color: "var(--tint-strong)" }}
-              >
-                <Icon className="size-5" strokeWidth={2.2} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 text-sm font-bold">
-                  {lang === "ar" ? c.name_ar : c.name_ku}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  #{c.sort_order} · {c.is_active ? t("active") : t("hidden")}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8"
-                onClick={() =>
-                  setDraft({
-                    id: c.id,
-                    slug: c.slug,
-                    name_ar: c.name_ar,
-                    name_ku: c.name_ku,
-                    icon: (c.icon as string) ?? "smile",
-                    hue: String(c.hue ?? 250),
-                    chroma: String(c.chroma ?? 0.16),
-                    sort_order: String(c.sort_order ?? 0),
-                    is_active: c.is_active,
-                  })
-                }
-              >
-                {t("edit")}
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 text-destructive"
-                onClick={() => remove.mutate(c.id)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          );
-        })}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800">
+              <th className="px-4 py-3 font-semibold w-16">{t("icon")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("categories")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("slug")}</th>
+              <th className="px-4 py-3 font-semibold text-center w-24">{t("sortOrder")}</th>
+              <th className="px-4 py-3 font-semibold text-center w-24">{t("active")}</th>
+              <th className="px-4 py-3 font-semibold text-end w-32"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {(categories ?? []).map((c) => {
+              const Icon = categoryIcon(c.icon as string);
+              return (
+                <tr key={c.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                  <td className="px-4 py-3">
+                    <div
+                      style={tintStyle(c.hue as number, c.chroma as number)}
+                      className="grid size-10 place-items-center rounded-xl"
+                    >
+                      <span
+                        className="grid size-full place-items-center rounded-xl"
+                        style={{ background: "var(--tint-soft)", color: "var(--tint-strong)" }}
+                      >
+                        <Icon className="size-5" strokeWidth={2.2} />
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {lang === "ar" ? c.name_ar : c.name_ku}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      {lang === "ar" ? c.name_ku : c.name_ar}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
+                      {c.slug}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                      #{c.sort_order}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        c.is_active
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      }`}
+                    >
+                      {c.is_active ? t("active") : t("hidden")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-end">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-3 rounded-lg text-xs font-bold"
+                        onClick={() =>
+                          setDraft({
+                            id: c.id,
+                            slug: c.slug,
+                            name_ar: c.name_ar,
+                            name_ku: c.name_ku,
+                            icon: (c.icon as string) ?? "smile",
+                            hue: String(c.hue ?? 250),
+                            chroma: String(c.chroma ?? 0.16),
+                            sort_order: String(c.sort_order ?? 0),
+                            is_active: c.is_active,
+                          })
+                        }
+                      >
+                        {t("edit")}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white"
+                        onClick={() => remove.mutate(c.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
