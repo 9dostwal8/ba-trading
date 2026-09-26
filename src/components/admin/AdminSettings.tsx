@@ -362,10 +362,10 @@ export function AdminSettings() {
   });
 
   useEffect(() => {
-    if (data) {
-      setDraft((prev) => prev ? { ...data, ...prev, logo_url: prev.logo_url || data.logo_url, favicon_url: prev.favicon_url || data.favicon_url } : (data as unknown as Row));
+    if (data && !draft) {
+      setDraft(data as unknown as Row);
     }
-  }, [data]);
+  }, [data, draft]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -374,13 +374,6 @@ export function AdminSettings() {
         created_at?: string;
         updated_at?: string;
       };
-
-      // Auto-fallback: if logo_url is set but favicon_url is empty, sync favicon_url to logo_url (and vice versa)
-      if (patch.logo_url && !patch.favicon_url) {
-        patch.favicon_url = patch.logo_url;
-      } else if (patch.favicon_url && !patch.logo_url) {
-        patch.logo_url = patch.favicon_url;
-      }
 
       const now = new Date().toISOString();
 
@@ -415,7 +408,7 @@ export function AdminSettings() {
       if (updatedRow) {
         setDraft(updatedRow);
       }
-      const fav = updatedRow?.favicon_url || draft?.favicon_url || draft?.logo_url;
+      const fav = updatedRow?.favicon_url || updatedRow?.logo_url;
       if (fav) {
         setDocumentFavicon(String(fav));
       }
@@ -592,17 +585,7 @@ export function AdminSettings() {
                   label={tx("logoUpload")}
                   hint={tx("logoHint")}
                   value={str("logo_url")}
-                  onChange={(url) => {
-                    setDraft((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            logo_url: url,
-                            favicon_url: prev["favicon_url"] ? String(prev["favicon_url"]) : url,
-                          }
-                        : prev
-                    );
-                  }}
+                  onChange={(url) => set("logo_url", url)}
                   shape="square"
                 />
 
@@ -612,15 +595,7 @@ export function AdminSettings() {
                   hint={tx("faviconHint")}
                   value={str("favicon_url")}
                   onChange={(url) => {
-                    setDraft((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            favicon_url: url,
-                            logo_url: prev["logo_url"] ? String(prev["logo_url"]) : url,
-                          }
-                        : prev
-                    );
+                    set("favicon_url", url);
                     if (url) setDocumentFavicon(url);
                   }}
                   shape="square"
