@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Pencil, FolderTree } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ColorField, AdminCard, SectionHeader, TextField, ToggleField } from "./AdminKit";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORY_ICON_KEYS, categoryIcon, tintStyle } from "@/lib/category-icons";
 import { useI18n } from "@/lib/i18n";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Draft = {
   id?: string;
@@ -85,83 +86,96 @@ export function AdminCategories() {
       <SectionHeader
         title={t("categories")}
         action={
-          <Button size="sm" onClick={() => setDraft(draft ? null : empty)}>
-            {draft ? <X className="size-4" /> : <Plus className="size-4" />}
-            {draft ? t("cancel") : t("add")}
+          <Button size="sm" onClick={() => setDraft(empty)}>
+            <Plus className="size-4" />
+            {t("add")}
           </Button>
         }
       />
 
-      {draft && (
-        <AdminCard>
-          <div className="grid grid-cols-2 gap-2">
-            <TextField
-              label={t("nameAr")}
-              value={draft.name_ar}
-              onChange={(v) => setDraft({ ...draft, name_ar: v })}
-            />
-            <TextField
-              label={t("nameKu")}
-              value={draft.name_ku}
-              onChange={(v) => setDraft({ ...draft, name_ku: v })}
-            />
-            <div className="col-span-2">
-              <ColorField
-                label={t("cardColor")}
-                hue={draft.hue}
-                chroma={draft.chroma}
-                onChange={(hue, chroma) => setDraft({ ...draft, hue, chroma })}
-              />
-            </div>
-            <TextField
-              label={t("sortOrder")}
-              type="number"
-              value={draft.sort_order}
-              onChange={(v) => setDraft({ ...draft, sort_order: v })}
-            />
-            <TextField
-              label={t("slug")}
-              value={draft.slug}
-              onChange={(v) => setDraft({ ...draft, slug: v })}
-            />
-          </div>
+      <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              {draft?.id ? <Pencil className="size-4 text-[#007979]" /> : <FolderTree className="size-4 text-[#007979]" />}
+              <span>{draft?.id ? t("edit") : t("add")}</span>
+            </DialogTitle>
+          </DialogHeader>
 
-          <div className="space-y-1.5">
-            <Label className="text-[11px] text-muted-foreground">{t("icon")}</Label>
-            <div className="grid grid-cols-8 gap-1.5">
-              {CATEGORY_ICON_KEYS.map((key) => {
-                const Icon = categoryIcon(key);
-                const active = draft.icon === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setDraft({ ...draft, icon: key })}
-                    style={{
-                      ...tintStyle(draft.hue, draft.chroma),
-                      ...(active
-                        ? { background: "var(--tint-soft)", borderColor: "var(--tint-strong)" }
-                        : {}),
-                    }}
-                    className="grid aspect-square place-items-center rounded-lg border border-border"
-                  >
-                    <Icon className="size-4" style={{ color: "var(--tint-strong)" }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {draft && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label={t("nameAr")}
+                  value={draft.name_ar}
+                  onChange={(v) => setDraft({ ...draft, name_ar: v })}
+                />
+                <TextField
+                  label={t("nameKu")}
+                  value={draft.name_ku}
+                  onChange={(v) => setDraft({ ...draft, name_ku: v })}
+                />
+                <div className="col-span-2">
+                  <ColorField
+                    label={t("cardColor")}
+                    hue={draft.hue}
+                    chroma={draft.chroma}
+                    onChange={(hue, chroma) => setDraft({ ...draft, hue, chroma })}
+                  />
+                </div>
+                <TextField
+                  label={t("sortOrder")}
+                  type="number"
+                  value={draft.sort_order}
+                  onChange={(v) => setDraft({ ...draft, sort_order: v })}
+                />
+                <TextField
+                  label={t("slug")}
+                  value={draft.slug}
+                  onChange={(v) => setDraft({ ...draft, slug: v })}
+                />
+              </div>
 
-          <ToggleField
-            label={t("active")}
-            checked={draft.is_active}
-            onChange={(v) => setDraft({ ...draft, is_active: v })}
-          />
-          <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate(draft)}>
-            {t("save")}
-          </Button>
-        </AdminCard>
-      )}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] text-muted-foreground">{t("icon")}</Label>
+                <div className="grid grid-cols-8 gap-1.5">
+                  {CATEGORY_ICON_KEYS.map((key) => {
+                    const Icon = categoryIcon(key);
+                    const active = draft.icon === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, icon: key })}
+                        style={{
+                          ...tintStyle(draft.hue, draft.chroma),
+                          ...(active
+                            ? { background: "var(--tint-soft)", borderColor: "var(--tint-strong)" }
+                            : {}),
+                        }}
+                        className="grid aspect-square place-items-center rounded-lg border border-border"
+                      >
+                        <Icon className="size-4" style={{ color: "var(--tint-strong)" }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <ToggleField
+                  label={t("active")}
+                  checked={draft.is_active}
+                  onChange={(v) => setDraft({ ...draft, is_active: v })}
+                />
+                <Button disabled={save.isPending} onClick={() => save.mutate(draft)} className="rounded-xl font-bold px-6 bg-[#007979] hover:bg-teal-700 text-white">
+                  {t("save")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full text-start text-sm">
