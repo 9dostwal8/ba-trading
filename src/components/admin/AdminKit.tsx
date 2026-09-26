@@ -27,12 +27,14 @@ export function TextField({
   onChange,
   type = "text",
   placeholder,
+  list,
 }: {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  list?: string;
 }) {
   return (
     <Field label={label}>
@@ -41,6 +43,7 @@ export function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        list={list}
         className="h-9 bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 rounded-xl"
       />
     </Field>

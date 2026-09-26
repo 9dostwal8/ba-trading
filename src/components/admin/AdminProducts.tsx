@@ -102,6 +102,12 @@ export function AdminProducts() {
   const vendors = useMemo(() => rawVendors ?? [], [rawVendors]);
   const categories = useMemo(() => rawCategories ?? [], [rawCategories]);
 
+  const uniqueBrands = useMemo(() => {
+    if (!rawProducts) return [];
+    const brands = rawProducts.map((p) => p.brand?.trim()).filter(Boolean);
+    return Array.from(new Set(brands)).sort((a, b) => a.localeCompare(b));
+  }, [rawProducts]);
+
   const save = useMutation({
     mutationFn: async (d: Draft) => {
       const payload = {
@@ -376,7 +382,13 @@ export function AdminProducts() {
                   value={draft.brand}
                   onChange={(v) => setDraft({ ...draft, brand: v })}
                   placeholder="3M, GC, Tokuyama..."
+                  list="brand-list"
                 />
+                <datalist id="brand-list">
+                  {uniqueBrands.map((b) => (
+                    <option key={b} value={b} />
+                  ))}
+                </datalist>
                 <TextField
                   label={t("sku")}
                   value={draft.sku}
