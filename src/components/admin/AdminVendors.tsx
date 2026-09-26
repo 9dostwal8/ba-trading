@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, KeyRound, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, KeyRound, Pencil, Plus, Trash2, X, Store } from "lucide-react";
+import { useState, Fragment } from "react";
 import { toast } from "sonner";
 import { AdminCard, ColorField, Field, SectionHeader, TextField, ToggleField } from "./AdminKit";
 import { VendorApplications } from "./VendorApplications";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { createBrandManager } from "@/lib/admin-users.functions";
@@ -197,16 +198,25 @@ export function AdminVendors() {
       <SectionHeader
         title={t("vendorList")}
         action={
-          <Button size="sm" onClick={() => setDraft(draft ? null : empty)}>
-            {draft ? <X className="size-4" /> : <Plus className="size-4" />}
-            {draft ? t("cancel") : t("addVendor")}
+          <Button size="sm" onClick={() => setDraft(empty)}>
+            <Plus className="size-4" />
+            {t("addVendor")}
           </Button>
         }
       />
       <p className="text-[11px] text-muted-foreground">{t("vendorsHint")}</p>
 
-      {draft && (
-        <AdminCard>
+      <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              {draft?.id ? <Pencil className="size-4 text-[#007979]" /> : <Store className="size-4 text-[#007979]" />}
+              <span>{draft?.id ? t("edit") : t("addVendor")}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {draft && (
+            <div className="space-y-4 pt-2">
           <TextField
             label={t("vendorName")}
             value={draft.name}
@@ -331,167 +341,221 @@ export function AdminVendors() {
           <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate(draft)}>
             {t("save")}
           </Button>
-        </AdminCard>
-      )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      <div className="space-y-2">
-        {(vendors ?? []).map((v) => {
-          const totals = totalsFor(v.id);
-          const team = (members ?? []).filter((m) => m.vendor_id === v.id);
-          const open = openId === v.id;
-          const l = login[v.id] ?? emptyLogin;
-          const setL = (patch: Partial<Login>) =>
-            setLogin((s) => ({ ...s, [v.id]: { ...l, ...patch } }));
-          return (
-            <div
-              key={v.id}
-              className="space-y-2 rounded-xl border border-border bg-card p-3 shadow-card"
-            >
-              <div className="flex items-center gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold">
-                    {v.name}
-                    {!v.is_active && (
-                      <span className="ms-1.5 text-[10px] font-bold text-destructive">
-                        ({t("inactive")})
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800">
+              <th className="px-4 py-3 font-semibold text-start">{t("vendorName")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("commission")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("mySales")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("commissionDue")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("netPayout")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("accounts")}</th>
+              <th className="px-4 py-3 font-semibold text-end"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {(vendors ?? []).map((v) => {
+              const totals = totalsFor(v.id);
+              const team = (members ?? []).filter((m) => m.vendor_id === v.id);
+              const open = openId === v.id;
+              const l = login[v.id] ?? emptyLogin;
+              const setL = (patch: Partial<Login>) =>
+                setLogin((s) => ({ ...s, [v.id]: { ...l, ...patch } }));
+              return (
+                <Fragment key={v.id}>
+                  <tr className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          {v.name}
+                          {!v.is_active && (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                              {t("inactive")}
+                            </span>
+                          )}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {(v.brands ?? []).map((b) => (
+                            <span
+                              key={b}
+                              className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-400"
+                            >
+                              {b}
+                            </span>
+                          ))}
+                          {(v.brands ?? []).length === 0 && (
+                            <span className="text-[10px] text-muted-foreground">{t("noBrandsYet")}</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs font-bold text-[#007979]">
+                        {commissionLabel(v.commission_type, v.commission_value)}
                       </span>
-                    )}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("commission")}: {commissionLabel(v.commission_type, v.commission_value)} ·{" "}
-                    {t("accounts")}: {team.length}
-                  </p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8"
-                  onClick={() =>
-                    setDraft({
-                      id: v.id,
-                      name: v.name,
-                      brandsRaw: (v.brands ?? []).join(", "),
-                      logo_domain: v.logo_domain ?? "",
-                      logo_url: v.logo_url ?? "",
-                      cover_url: v.cover_url ?? "",
-                      tagline_ar: v.tagline_ar ?? "",
-                      tagline_ku: v.tagline_ku ?? "",
-                      about_ar: v.about_ar ?? "",
-                      about_ku: v.about_ku ?? "",
-                      city: v.city ?? "",
-                      phone: v.phone ?? "",
-                      hue: Number(v.hue) || 250,
-                      chroma: Number(v.chroma) || 0.14,
-                      commission_type: v.commission_type,
-                      commission_value: String(v.commission_value),
-                      is_active: v.is_active,
-                      is_verified: Boolean((v as { is_verified?: boolean }).is_verified),
-                    })
-                  }
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 text-destructive"
-                  onClick={() => remove.mutate(v.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                {(v.brands ?? []).map((b) => (
-                  <span
-                    key={b}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground"
-                  >
-                    {b}
-                  </span>
-                ))}
-                {(v.brands ?? []).length === 0 && (
-                  <span className="text-[10px] text-muted-foreground">{t("noBrandsYet")}</span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-1.5 rounded-lg bg-muted p-2 text-center">
-                <Mini label={t("mySales")} value={formatPrice(totals.sales, lang)} />
-                <Mini label={t("commissionDue")} value={formatPrice(totals.commission, lang)} />
-                <Mini label={t("netPayout")} value={formatPrice(totals.net, lang)} />
-              </div>
-
-              <button
-                onClick={() => setOpenId(open ? null : v.id)}
-                className="flex w-full items-center justify-between rounded-lg border border-border px-2 py-1.5 text-[11px] font-bold"
-              >
-                {t("vendorAccounts")}
-                <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
-              </button>
-
-              {open && (
-                <div className="space-y-1.5">
-                  {team.map((m) => {
-                    const p = (profiles ?? []).find((x) => x.id === m.user_id);
-                    return (
-                      <div
-                        key={m.id}
-                        className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5"
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">
+                        {formatPrice(totals.sales, lang)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatPrice(totals.commission, lang)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-300">
+                        {formatPrice(totals.net, lang)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => setOpenId(open ? null : v.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                       >
-                        <KeyRound className="size-3.5 shrink-0 text-primary" />
-                        <span className="min-w-0 flex-1 truncate text-xs font-bold">
-                          {p?.full_name || p?.phone || m.user_id}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">{p?.phone}</span>
+                        {team.length} {t("accounts")}
+                        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-3 rounded-lg text-xs font-bold"
+                          onClick={() =>
+                            setDraft({
+                              id: v.id,
+                              name: v.name,
+                              brandsRaw: (v.brands ?? []).join(", "),
+                              logo_domain: v.logo_domain ?? "",
+                              logo_url: v.logo_url ?? "",
+                              cover_url: v.cover_url ?? "",
+                              tagline_ar: v.tagline_ar ?? "",
+                              tagline_ku: v.tagline_ku ?? "",
+                              about_ar: v.about_ar ?? "",
+                              about_ku: v.about_ku ?? "",
+                              city: v.city ?? "",
+                              phone: v.phone ?? "",
+                              hue: Number(v.hue) || 250,
+                              chroma: Number(v.chroma) || 0.14,
+                              commission_type: v.commission_type,
+                              commission_value: String(v.commission_value),
+                              is_active: v.is_active,
+                              is_verified: Boolean((v as { is_verified?: boolean }).is_verified),
+                            })
+                          }
+                        >
+                          <Pencil className="size-3.5 sm:hidden" />
+                          <span className="hidden sm:inline">{t("edit")}</span>
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="size-7 text-destructive"
-                          onClick={() => removeLogin.mutate(m.id)}
+                          className="size-8 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white"
+                          onClick={() => remove.mutate(v.id)}
                         >
-                          <Trash2 className="size-3.5" />
+                          <Trash2 className="size-4" />
                         </Button>
                       </div>
-                    );
-                  })}
-
-                  <div className="space-y-1.5 rounded-lg border border-dashed border-border p-2">
-                    <TextField
-                      label={t("fullName")}
-                      value={l.fullName}
-                      onChange={(x) => setL({ fullName: x })}
-                    />
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <TextField
-                        label={t("managerPhone")}
-                        value={l.phone}
-                        onChange={(x) => setL({ phone: x })}
-                        placeholder="0770..."
-                      />
-                      <TextField
-                        label={t("password")}
-                        value={l.password}
-                        onChange={(x) => setL({ password: x })}
-                      />
-                    </div>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      disabled={addLogin.isPending}
-                      onClick={() => addLogin.mutate({ vendorId: v.id, l })}
-                    >
-                      <Plus className="size-4" />
-                      {t("createVendorLogin")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        {(vendors ?? []).length === 0 && (
-          <p className="py-10 text-center text-sm text-muted-foreground">{t("noResults")}</p>
-        )}
+                    </td>
+                  </tr>
+                  {open && (
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/20">
+                      <td colSpan={7} className="px-4 py-4 border-b border-slate-100 dark:border-slate-800/50">
+                        <div className="max-w-2xl">
+                          <div className="grid sm:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t("vendorAccounts")}</h4>
+                              <div className="space-y-1.5">
+                                {team.map((m) => {
+                                  const p = (profiles ?? []).find((x) => x.id === m.user_id);
+                                  return (
+                                    <div
+                                      key={m.id}
+                                      className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 shadow-xs"
+                                    >
+                                      <div className="grid size-8 place-items-center rounded-lg bg-teal-50 dark:bg-teal-900/20 text-[#007979]">
+                                        <KeyRound className="size-4" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
+                                          {p?.full_name || p?.phone || m.user_id}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{p?.phone}</p>
+                                      </div>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="size-7 rounded-lg text-red-600 hover:bg-red-500/10"
+                                        onClick={() => removeLogin.mutate(m.id)}
+                                      >
+                                        <Trash2 className="size-3.5" />
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
+                                {team.length === 0 && (
+                                  <p className="text-xs text-slate-500">{t("noResults")}</p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-4">
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <Plus className="size-3.5 text-[#007979]" /> {t("createVendorLogin")}
+                              </h4>
+                              <div className="space-y-2">
+                                <TextField
+                                  label={t("fullName")}
+                                  value={l.fullName}
+                                  onChange={(x) => setL({ fullName: x })}
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <TextField
+                                    label={t("managerPhone")}
+                                    value={l.phone}
+                                    onChange={(x) => setL({ phone: x })}
+                                    placeholder="0770..."
+                                  />
+                                  <TextField
+                                    label={t("password")}
+                                    value={l.password}
+                                    onChange={(x) => setL({ password: x })}
+                                  />
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="w-full rounded-lg bg-[#007979] hover:bg-teal-700 text-white font-bold"
+                                  disabled={addLogin.isPending}
+                                  onClick={() => addLogin.mutate({ vendorId: v.id, l })}
+                                >
+                                  {t("createVendorLogin")}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+            {(vendors ?? []).length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">{t("noResults")}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
