@@ -356,11 +356,13 @@ export function AdminDesign() {
 
       {tab !== "theme" && (
         <AdminCard>
-          <p className="flex items-center gap-1.5 text-[11.5px] font-extrabold">
+          <p className="flex items-center gap-1.5 text-[11.5px] font-extrabold mb-4">
             <Eye className="size-3.5 text-primary" strokeWidth={2.8} />
             {L.preview[lang]}
           </p>
-          <Preview design={draft} lang={lang} />
+          <div className="max-w-md mx-auto w-full rounded-2xl overflow-hidden ring-1 ring-border/50 shadow-sm bg-background/50 p-4">
+            <Preview design={draft} lang={lang} />
+          </div>
         </AdminCard>
       )}
 
