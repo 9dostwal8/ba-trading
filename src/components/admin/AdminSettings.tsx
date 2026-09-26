@@ -368,6 +368,8 @@ export function AdminSettings() {
       }
       qc.invalidateQueries({ queryKey: ["admin-store-settings"] });
       qc.invalidateQueries({ queryKey: ["store"] });
+      qc.refetchQueries({ queryKey: ["store"] });
+      qc.refetchQueries({ queryKey: ["admin-store-settings"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -502,7 +504,34 @@ export function AdminSettings() {
         {activeTab === "branding" && (
           <div className="space-y-4 animate-in fade-in-50 duration-200">
             <AdminCard>
-              <SectionHeader title={tx("brandingFiles")} />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <SectionHeader title={tx("brandingFiles")} />
+                <Button
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending}
+                  className="h-9 px-4 rounded-xl bg-[#007979] hover:bg-teal-700 text-white font-extrabold text-xs shadow-md shadow-teal-700/20 gap-2 shrink-0 active:scale-95 transition-all self-start sm:self-auto"
+                >
+                  {save.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                  <span>{tx("save")}</span>
+                </Button>
+              </div>
+
+              <div className="rounded-2xl border border-teal-200/60 bg-teal-50/50 p-3.5 dark:border-teal-900/40 dark:bg-teal-950/20 my-3">
+                <div className="flex items-start gap-2.5">
+                  <CheckCircle2 className="size-4.5 text-[#007979] shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-teal-900 dark:text-teal-200 leading-relaxed">
+                    {lang === "ku"
+                      ? "تێبینی: دوای بارکردنی وێنەی لۆگۆ یان فایڤئایکۆن، تکایە دوگمەی 'پاشەکەوتکردنی ڕێکخستنەکان' داگرە بۆ ئەوەی بە هەردوو لەسەر ماڵپەڕ، سەرپەڕەی دێشبۆرد و تابی وێبگەڕ ڕاستەوخۆ کاراببێت."
+                      : lang === "ar"
+                      ? "ملاحظة: بعد اختيار أو رفع صورة الشعار أو الأيقونة، يرجى النقر على زر 'حفظ الإعدادات' ليتم تطبيق الشعار الجديد فوراً على المتجر ولوحة التحكم وتسييس المتصفح."
+                      : "Note: After selecting or uploading your logo/favicon, make sure to click 'Save Settings' to apply the changes across the store, admin header, and browser tab."}
+                  </p>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 {/* 1. Logo Upload with live preview */}
@@ -527,8 +556,22 @@ export function AdminSettings() {
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
-                {text("logo_emoji", "logoEmoji")}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  {text("logo_emoji", "logoEmoji")}
+                </div>
+                <Button
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending}
+                  className="h-10 px-6 rounded-xl bg-[#007979] hover:bg-teal-700 text-white font-extrabold text-xs shadow-md shadow-teal-700/20 gap-2 shrink-0 active:scale-95 transition-all"
+                >
+                  {save.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Save className="size-4" />
+                  )}
+                  <span>{tx("save")}</span>
+                </Button>
               </div>
             </AdminCard>
           </div>

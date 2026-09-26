@@ -16,7 +16,8 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useI18n } from "@/lib/i18n";
+import { pick, useI18n } from "@/lib/i18n";
+import { fetchStoreData } from "@/lib/store";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -99,6 +100,13 @@ export function AdminHeader({
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
+  // Fetch store settings for logo and name
+  const { data: storeData } = useQuery({
+    queryKey: ["store"],
+    queryFn: fetchStoreData,
+  });
+  const s = storeData?.settings;
+
   // Fetch admin profile safely
   const { data: profile } = useQuery({
     queryKey: ["admin-profile", user?.id],
@@ -152,13 +160,21 @@ export function AdminHeader({
           className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 group"
           title="Dashboard"
         >
-          <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#007979] to-teal-500 text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
-            <ShieldCheck className="size-5 sm:size-6" />
-          </div>
+          {s?.logo_url ? (
+            <img
+              src={s.logo_url}
+              alt={pick(s.site_name_ar, s.site_name_ku, lang) || "BA Trading"}
+              className="size-9 sm:size-10 rounded-xl object-contain group-hover:scale-105 transition-transform"
+            />
+          ) : (
+            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#007979] to-teal-500 text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
+              <ShieldCheck className="size-5 sm:size-6" />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white">
-                BA Trading
+                {(s && pick(s.site_name_ar, s.site_name_ku, lang)) || "BA Trading"}
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 dark:text-slate-500 hidden md:block">

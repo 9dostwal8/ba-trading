@@ -93,9 +93,17 @@ export function GooshiFooter() {
           {/* Column 1: Store Intro */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary text-lg text-white">
-                {s?.logo_emoji || "🦷"}
-              </span>
+              {s?.logo_url ? (
+                <img
+                  src={s.logo_url}
+                  alt={(s && pick(s.site_name_ar, s.site_name_ku, lang)) || "BA Trading"}
+                  className="size-9 rounded-xl object-contain"
+                />
+              ) : (
+                <span className="grid size-9 place-items-center rounded-xl bg-primary text-lg text-white">
+                  {s?.logo_emoji || "🦷"}
+                </span>
+              )}
               <span className="font-display text-[17px] font-black text-slate-800">
                 {(s && pick(s.site_name_ar, s.site_name_ku, lang)) || "BA Trading"}
               </span>
