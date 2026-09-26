@@ -379,33 +379,32 @@ export function AdminSettings() {
       const now = new Date().toISOString();
       const updateData = { ...patch, updated_at: now };
 
-      // 1. Try update by id first if patch.id exists
+      // 1. Update by ID if present
       if (patch.id) {
         const res = await supabase
           .from("store_settings")
           .update(updateData as never)
-          .eq("id", patch.id)
-          .select();
-        
+          .eq("id", patch.id);
         if (res.error) throw new Error(res.error.message);
-        if (res.data && res.data.length > 0) {
-          return res.data[0] as unknown as Row;
-        }
       }
 
-      // 2. Update by singleton=true (guaranteed to match the single store_settings row without triggering INSERT RLS)
+      // 2. Update by singleton = true (matches singleton settings row)
       const resSingleton = await supabase
         .from("store_settings")
         .update(updateData as never)
-        .eq("singleton", true)
-        .select();
+        .eq("singleton", true);
 
       if (resSingleton.error) throw new Error(resSingleton.error.message);
-      if (resSingleton.data && resSingleton.data.length > 0) {
-        return resSingleton.data[0] as unknown as Row;
-      }
 
-      throw new Error("No settings record found in database to update.");
+      // 3. Re-read updated settings row (public read policy allows anyone to read)
+      const { data: fresh, error: freshErr } = await supabase
+        .from("store_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+
+      if (freshErr) throw new Error(freshErr.message);
+      return (fresh as unknown as Row) || draft;
     },
     onSuccess: (updatedRow) => {
       toast.success(tx("saved"));
