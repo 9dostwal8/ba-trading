@@ -114,11 +114,9 @@ export function AdminStorefrontStudio({
 
   return (
     <div className="w-full space-y-6">
-      {/* Studio Header & Tab Switcher Bar */}
+      {/* Studio Header */}
       <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-4 sm:p-6 shadow-sm backdrop-blur-md">
-        
-        {/* Title & Description */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-rose-600 text-white shadow-md shadow-pink-500/20">
               <Palette className="size-6" />
@@ -140,82 +138,86 @@ export function AdminStorefrontStudio({
             </span>
           </div>
         </div>
-
-        {/* Sub-Tabs Grid Selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-4">
-          {subTabsList.map((tabKey) => {
-            const meta = L.tabs[tabKey];
-            const Icon = meta.icon;
-            const isActive = activeSubTab === tabKey;
-
-            return (
-              <button
-                key={tabKey}
-                type="button"
-                onClick={() => setActiveSubTab(tabKey)}
-                className={cn(
-                  "group flex flex-col items-start p-3 rounded-2xl border text-start transition-all duration-200 active:scale-95 cursor-pointer relative overflow-hidden",
-                  isActive
-                    ? "bg-[#007979] text-white border-[#007979] shadow-md shadow-teal-700/20"
-                    : "bg-slate-50/80 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                )}
-              >
-                <div className="flex items-center justify-between w-full mb-1.5">
-                  <div
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-xl transition-colors",
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                    )}
-                  >
-                    <Icon className="size-4" />
-                  </div>
-                  {isActive && (
-                    <span className="size-2 rounded-full bg-emerald-300 animate-pulse" />
-                  )}
-                </div>
-
-                <span
-                  className={cn(
-                    "text-xs font-black truncate w-full",
-                    isActive ? "text-white" : "text-slate-900 dark:text-white"
-                  )}
-                >
-                  {meta.label[lang]}
-                </span>
-
-                <span
-                  className={cn(
-                    "text-[10px] truncate w-full font-medium mt-0.5",
-                    isActive ? "text-teal-100/90" : "text-slate-400 dark:text-slate-500"
-                  )}
-                >
-                  {meta.desc[lang]}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
       </div>
 
-      {/* Active Sub-Module Content */}
-      <div className="min-h-[500px]">
-        <Suspense
-          fallback={
-            <div className="flex h-64 w-full items-center justify-center py-12">
-              <Loader2 className="size-8 animate-spin text-[#007979]" />
-            </div>
-          }
-        >
-          {activeSubTab === "theme" && <AdminDesign />}
-          {activeSubTab === "home" && <AdminHome />}
-          {activeSubTab === "banners" && <AdminBanners />}
-          {activeSubTab === "usp" && <AdminUsp />}
-          {activeSubTab === "texts" && <AdminTexts />}
-          {activeSubTab === "promo" && <PromoStudio />}
-        </Suspense>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left Sidebar Navigation */}
+        <div className="w-full lg:w-64 shrink-0">
+          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 sticky top-24 no-scrollbar">
+            {subTabsList.map((tabKey) => {
+              const meta = L.tabs[tabKey];
+              const Icon = meta.icon;
+              const isActive = activeSubTab === tabKey;
+
+              return (
+                <button
+                  key={tabKey}
+                  type="button"
+                  onClick={() => setActiveSubTab(tabKey)}
+                  className={cn(
+                    "group flex items-center gap-3 p-3 rounded-2xl border text-start transition-all duration-200 active:scale-95 cursor-pointer relative overflow-hidden min-w-[200px] lg:min-w-0 shrink-0",
+                    isActive
+                      ? "bg-[#007979] text-white border-[#007979] shadow-md shadow-teal-700/20"
+                      : "bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 shadow-sm"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                    )}
+                  >
+                    <Icon className="size-5" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between w-full">
+                      <span
+                        className={cn(
+                          "text-sm font-black truncate w-full",
+                          isActive ? "text-white" : "text-slate-900 dark:text-white"
+                        )}
+                      >
+                        {meta.label[lang]}
+                      </span>
+                      {isActive && (
+                        <span className="size-2 rounded-full bg-emerald-300 animate-pulse shrink-0 ml-2" />
+                      )}
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[10px] truncate w-full font-medium block mt-0.5",
+                        isActive ? "text-teal-100/90" : "text-slate-400 dark:text-slate-500"
+                      )}
+                    >
+                      {meta.desc[lang]}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Sub-Module Content */}
+        <div className="flex-1 min-w-0 min-h-[500px]">
+          <Suspense
+            fallback={
+              <div className="flex h-64 w-full items-center justify-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                <Loader2 className="size-8 animate-spin text-[#007979]" />
+              </div>
+            }
+          >
+            {activeSubTab === "theme" && <AdminDesign />}
+            {activeSubTab === "home" && <AdminHome />}
+            {activeSubTab === "banners" && <AdminBanners />}
+            {activeSubTab === "usp" && <AdminUsp />}
+            {activeSubTab === "texts" && <AdminTexts />}
+            {activeSubTab === "promo" && <PromoStudio />}
+          </Suspense>
+        </div>
       </div>
     </div>
   );
