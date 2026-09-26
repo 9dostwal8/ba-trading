@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X, Tag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, Field, SectionHeader, TextField, ToggleField } from "./AdminKit";
@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { pickName, useI18n } from "@/lib/i18n";
 
@@ -175,15 +177,24 @@ export function AdminOffers() {
       <SectionHeader
         title={t("offers")}
         action={
-          <Button size="sm" onClick={() => setDraft(draft ? null : empty)}>
-            {draft ? <X className="size-4" /> : <Plus className="size-4" />}
-            {draft ? t("cancel") : t("add")}
+          <Button size="sm" onClick={() => setDraft(empty)}>
+            <Plus className="size-4" />
+            {t("add")}
           </Button>
         }
       />
 
-      {draft && (
-        <AdminCard>
+      <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              {draft?.id ? <Pencil className="size-4 text-[#007979]" /> : <Tag className="size-4 text-[#007979]" />}
+              <span>{draft?.id ? t("edit") : t("add")}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {draft && (
+            <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-2">
             <TextField label={t("titleAr")} value={draft.title_ar} onChange={(v) => setDraft({ ...draft, title_ar: v })} />
             <TextField label={t("titleKu")} value={draft.title_ku} onChange={(v) => setDraft({ ...draft, title_ku: v })} />
@@ -323,76 +334,119 @@ export function AdminOffers() {
           <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate(draft)}>
             {t("save")}
           </Button>
-        </AdminCard>
-      )}
-
-      <div className="space-y-2">
-        {(offers ?? []).map((o) => (
-          <div key={o.id} className="rounded-xl border border-border bg-card p-3 shadow-card">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="line-clamp-1 text-sm font-bold">
-                  {lang === "ar" ? o.title_ar : o.title_ku}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {o.discount_type === "percent"
-                    ? `${o.discount_value}%`
-                    : `${o.discount_value} ${t("currency")}`}{" "}
-                  · {o.is_active ? t("active") : t("cancel")}
-                  {o.ends_at ? ` · ${new Date(o.ends_at).toLocaleDateString("ar-IQ")}` : ""}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t("offerProducts")}: {(o.offer_products ?? []).length}
-                </p>
-              </div>
-              <div className="flex shrink-0">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8"
-                  onClick={() =>
-                    setDraft({
-                      id: o.id,
-                      title_ar: o.title_ar,
-                      title_ku: o.title_ku,
-                      subtitle_ar: o.subtitle_ar ?? "",
-                      subtitle_ku: o.subtitle_ku ?? "",
-                      badge_ar: o.badge_ar ?? "",
-                      badge_ku: o.badge_ku ?? "",
-                      discount_type: o.discount_type,
-                      discount_value: String(o.discount_value),
-                      image_url: o.image_url ?? "",
-                      starts_at: toLocal(o.starts_at),
-                      ends_at: toLocal(o.ends_at),
-                      is_active: o.is_active,
-                      productIds: (o.offer_products ?? []).map((x) => x.product_id),
-                      scope: o.scope ?? "products",
-                      category_id: o.category_id ?? "",
-                      brand: o.brand ?? "",
-                      min_qty: String(o.min_qty ?? 1),
-                      max_discount: o.max_discount == null ? "" : String(o.max_discount),
-                      buy_qty: String(o.buy_qty || 2),
-                      get_qty: String(o.get_qty || 1),
-                      priority: String(o.priority ?? 0),
-                      hue: String(o.hue ?? 250),
-                      chroma: String(o.chroma ?? 0.14),
-                    })
-                  }
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 text-destructive"
-                  onClick={() => remove.mutate(o.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
             </div>
-          </div>
-        ))}
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800">
+              <th className="px-4 py-3 font-semibold text-start">{t("titleAr")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("discountValue")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("offerProducts")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("active")}</th>
+              <th className="px-4 py-3 font-semibold text-end"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {(offers ?? []).map((o) => (
+              <tr key={o.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {lang === "ar" ? o.title_ar : o.title_ku}
+                    </p>
+                    {o.ends_at && (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {new Date(o.ends_at).toLocaleDateString("ar-IQ")}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs font-bold text-[#007979]">
+                    {o.discount_type === "percent"
+                      ? `${o.discount_value}%`
+                      : `${o.discount_value} ${t("currency")}`}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    {(o.offer_products ?? []).length}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {o.is_active ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      {t("active")}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {t("inactive")}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-end">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 rounded-lg text-xs font-bold"
+                      onClick={() =>
+                        setDraft({
+                          id: o.id,
+                          title_ar: o.title_ar,
+                          title_ku: o.title_ku,
+                          subtitle_ar: o.subtitle_ar ?? "",
+                          subtitle_ku: o.subtitle_ku ?? "",
+                          badge_ar: o.badge_ar ?? "",
+                          badge_ku: o.badge_ku ?? "",
+                          discount_type: o.discount_type,
+                          discount_value: String(o.discount_value),
+                          image_url: o.image_url ?? "",
+                          starts_at: toLocal(o.starts_at),
+                          ends_at: toLocal(o.ends_at),
+                          is_active: o.is_active,
+                          productIds: (o.offer_products ?? []).map((x) => x.product_id),
+                          scope: o.scope ?? "products",
+                          category_id: o.category_id ?? "",
+                          brand: o.brand ?? "",
+                          min_qty: String(o.min_qty ?? 1),
+                          max_discount: o.max_discount == null ? "" : String(o.max_discount),
+                          buy_qty: String(o.buy_qty || 2),
+                          get_qty: String(o.get_qty || 1),
+                          priority: String(o.priority ?? 0),
+                          hue: String(o.hue ?? 250),
+                          chroma: String(o.chroma ?? 0.14),
+                        })
+                      }
+                    >
+                      <Pencil className="size-3.5 sm:hidden" />
+                      <span className="hidden sm:inline">{t("edit")}</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white"
+                      onClick={() => remove.mutate(o.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {(offers ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-10 text-center text-sm text-slate-500">
+                  {t("noResults")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
