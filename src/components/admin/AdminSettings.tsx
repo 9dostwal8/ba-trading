@@ -376,6 +376,13 @@ export function AdminSettings() {
         singleton?: boolean;
       };
 
+      // Auto-fallback: if logo_url is provided but favicon_url is empty, sync favicon_url to logo_url (and vice versa)
+      if (patch.logo_url && !patch.favicon_url) {
+        patch.favicon_url = patch.logo_url;
+      } else if (patch.favicon_url && !patch.logo_url) {
+        patch.logo_url = patch.favicon_url;
+      }
+
       const now = new Date().toISOString();
       const updateData = { ...patch, updated_at: now };
 
@@ -588,7 +595,17 @@ export function AdminSettings() {
                   label={tx("logoUpload")}
                   hint={tx("logoHint")}
                   value={str("logo_url")}
-                  onChange={(url) => set("logo_url", url)}
+                  onChange={(url) => {
+                    setDraft((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            logo_url: url,
+                            favicon_url: prev["favicon_url"] ? String(prev["favicon_url"]) : url,
+                          }
+                        : prev
+                    );
+                  }}
                   shape="square"
                 />
 
@@ -598,7 +615,15 @@ export function AdminSettings() {
                   hint={tx("faviconHint")}
                   value={str("favicon_url")}
                   onChange={(url) => {
-                    set("favicon_url", url);
+                    setDraft((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            favicon_url: url,
+                            logo_url: prev["logo_url"] ? String(prev["logo_url"]) : url,
+                          }
+                        : prev
+                    );
                     if (url) setDocumentFavicon(url);
                   }}
                   shape="square"
