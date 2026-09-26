@@ -370,38 +370,42 @@ export function AdminSettings() {
   const save = useMutation({
     mutationFn: async () => {
       if (!draft) return null;
-      const { created_at: _c, updated_at: _u, ...patch } = draft as Row & {
+      const { created_at: _c, updated_at: _u, singleton: _s, ...patch } = draft as Row & {
         created_at?: string;
         updated_at?: string;
+        singleton?: boolean;
       };
 
       const now = new Date().toISOString();
+      const updateData = { ...patch, updated_at: now };
 
-      // 1. Try update first if patch.id exists
+      // 1. Try update by id first if patch.id exists
       if (patch.id) {
         const res = await supabase
           .from("store_settings")
-          .update({ ...patch, updated_at: now } as never)
+          .update(updateData as never)
           .eq("id", patch.id)
           .select();
         
-        if (res.error) throw res.error;
+        if (res.error) throw new Error(res.error.message);
         if (res.data && res.data.length > 0) {
           return res.data[0] as unknown as Row;
         }
       }
 
-      // 2. Upsert fallback if no id or if update matched 0 rows
-      const upsertRes = await supabase
+      // 2. Update by singleton=true (guaranteed to match the single store_settings row without triggering INSERT RLS)
+      const resSingleton = await supabase
         .from("store_settings")
-        .upsert({ ...patch, singleton: true, updated_at: now } as never)
+        .update(updateData as never)
+        .eq("singleton", true)
         .select();
 
-      if (upsertRes.error) throw upsertRes.error;
-      if (!upsertRes.data || upsertRes.data.length === 0) {
-        throw new Error("Failed to save settings: No database rows updated.");
+      if (resSingleton.error) throw new Error(resSingleton.error.message);
+      if (resSingleton.data && resSingleton.data.length > 0) {
+        return resSingleton.data[0] as unknown as Row;
       }
-      return upsertRes.data[0] as unknown as Row;
+
+      throw new Error("No settings record found in database to update.");
     },
     onSuccess: (updatedRow) => {
       toast.success(tx("saved"));
