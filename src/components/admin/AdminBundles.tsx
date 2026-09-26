@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, SectionHeader, TextField, ToggleField } from "./AdminKit";
@@ -140,15 +141,24 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
       <SectionHeader
         title={t("bundles")}
         action={
-          <Button size="sm" onClick={() => setDraft(draft ? null : { ...empty })}>
-            {draft ? <X className="size-4" /> : <Plus className="size-4" />}
-            {draft ? t("cancel") : t("add")}
+          <Button size="sm" onClick={() => setDraft({ ...empty })}>
+            <Plus className="size-4" />
+            {t("add")}
           </Button>
         }
       />
 
-      {draft && (
-        <AdminCard>
+      <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              {draft?.id ? <Pencil className="size-4 text-[#007979]" /> : <Package className="size-4 text-[#007979]" />}
+              <span>{draft?.id ? t("edit") : t("add")}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {draft && (
+            <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-2">
             <TextField
               label={t("titleAr")}
@@ -232,31 +242,85 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
           <Button className="w-full" onClick={() => save.mutate(draft)}>
             {t("save")}
           </Button>
-        </AdminCard>
-      )}
-
-      <div className="space-y-2">
-        {(bundles ?? []).map((b) => (
-          <div
-            key={b.id}
-            className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-card"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-extrabold">{b.title_ar || "—"}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {formatPrice(Number(b.price), lang)} · {(b.product_ids ?? []).length}{" "}
-                {t("bundleItems")}
-                {b.is_active ? "" : ` · ${t("hidden")}`}
-              </p>
             </div>
-            <Button size="icon" variant="ghost" onClick={() => setDraft(toDraft(b))}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button size="icon" variant="ghost" onClick={() => remove.mutate(b.id)}>
-              <Trash2 className="size-4 text-destructive" />
-            </Button>
-          </div>
-        ))}
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800">
+              <th className="px-4 py-3 font-semibold text-start">{t("titleAr")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("bundlePrice")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("bundleItems")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("active")}</th>
+              <th className="px-4 py-3 font-semibold text-end"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {(bundles ?? []).map((b) => (
+              <tr key={b.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {lang === "ar" ? b.title_ar : b.title_ku || "—"}
+                    </p>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs font-bold text-[#007979]">
+                    {formatPrice(Number(b.price), lang)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className="inline-flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    {(b.product_ids ?? []).length}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {b.is_active ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      {t("active")}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {t("inactive")}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-end">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 rounded-lg text-xs font-bold"
+                      onClick={() => setDraft(toDraft(b))}
+                    >
+                      <Pencil className="size-3.5 sm:hidden" />
+                      <span className="hidden sm:inline">{t("edit")}</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white"
+                      onClick={() => remove.mutate(b.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {(bundles ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-10 text-center text-sm text-slate-500">
+                  {t("noResults")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
     </div>
