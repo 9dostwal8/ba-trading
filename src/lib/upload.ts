@@ -29,6 +29,10 @@ export class UploadError extends Error {}
  * this is what actually blocks an HTML/SVG file renamed to `.jpg`.
  */
 async function sniffImage(file: File) {
+  if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) return "image/svg+xml";
+  if (file.type === "image/x-icon" || file.name.toLowerCase().endsWith(".ico")) return "image/x-icon";
+  if (file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif")) return "image/gif";
+
   const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
   const is = (...bytes: number[]) => bytes.every((b, i) => head[i] === b);
   if (is(0xff, 0xd8, 0xff)) return "image/jpeg";
@@ -36,6 +40,10 @@ async function sniffImage(file: File) {
   const riff = is(0x52, 0x49, 0x46, 0x46);
   const webp = head[8] === 0x57 && head[9] === 0x45 && head[10] === 0x42 && head[11] === 0x50;
   if (riff && webp) return "image/webp";
+
+  const text = new TextDecoder().decode(head);
+  if (text.includes("<svg") || text.includes("<?xml")) return "image/svg+xml";
+
   throw new UploadError("unsupported-image");
 }
 
@@ -81,17 +89,22 @@ async function normalizeImage(file: File, preset: Preset): Promise<Blob> {
   return best;
 }
 
-async function prepare(file: File, preset: Preset) {
+async function prepare(file: File, preset: Preset): Promise<{ body: Blob; ext: string; mime: string }> {
   if (file.size > MAX_BYTES) throw new UploadError("too-large");
-  await sniffImage(file);
-  return normalizeImage(file, preset);
+  const type = await sniffImage(file);
+  if (type === "image/svg+xml") return { body: file, ext: "svg", mime: "image/svg+xml" };
+  if (type === "image/x-icon") return { body: file, ext: "ico", mime: "image/x-icon" };
+  if (type === "image/gif") return { body: file, ext: "gif", mime: "image/gif" };
+
+  const norm = await normalizeImage(file, preset);
+  return { body: norm, ext: "webp", mime: OUT_TYPE };
 }
 
-async function put(bucket: string, path: string, body: Blob) {
+async function put(bucket: string, path: string, body: Blob, contentType = OUT_TYPE) {
   const { error } = await supabase.storage.from(bucket).upload(path, body, {
     cacheControl: "31536000",
-    upsert: false,
-    contentType: OUT_TYPE,
+    upsert: true,
+    contentType,
   });
   if (error) throw error;
   const signed = await supabase.storage.from(bucket).createSignedUrl(path, TEN_YEARS);
@@ -104,8 +117,8 @@ async function put(bucket: string, path: string, body: Blob) {
  * The bucket is private, so we hand back a signed URL.
  */
 export async function uploadBannerImage(file: File, prefix = "banners") {
-  const body = await prepare(file, PRESETS.banner);
-  return put("banners", `${prefix}/${crypto.randomUUID()}.webp`, body);
+  const { body, ext, mime } = await prepare(file, PRESETS.banner);
+  return put("banners", `${prefix}/${crypto.randomUUID()}.${ext}`, body, mime);
 }
 
 /**

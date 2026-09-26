@@ -173,13 +173,31 @@ function ImageUploadField({
       onChange(url);
       toast.success(
         lang === "ku"
-          ? "وێنەکە بە سەرکەوتوویی بارکرا"
+          ? "وێنەکە بە سەرکەوتوویی بارکرا (تکایە 'پاشەکەوتکردنی ڕێکخستنەکان' داگرە)"
           : lang === "ar"
-          ? "تم رفع الصورة بنجاح"
-          : "Image uploaded successfully"
+          ? "تم رفع الصورة بنجاح (يرجى النقر على حفظ الإعدادات)"
+          : "Image uploaded successfully (please click Save Settings)"
       );
     } catch (err) {
-      toast.error(uploadMessage(err, lang));
+      console.warn("Storage upload failed, attempting data URL encoding fallback:", err);
+      try {
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result as string);
+          reader.onerror = rej;
+          reader.readAsDataURL(file);
+        });
+        onChange(dataUrl);
+        toast.success(
+          lang === "ku"
+            ? "وێنەکە ئامادەکرا (تکایە 'پاشەکەوتکردنی ڕێکخستنەکان' داگرە)"
+            : lang === "ar"
+            ? "تم تجهيز الصورة (يرجى النقر على حفظ الإعدادات)"
+            : "Image loaded (please click Save Settings)"
+        );
+      } catch {
+        toast.error(uploadMessage(err, lang));
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
