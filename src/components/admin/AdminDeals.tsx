@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { HelpCircle, Pencil, Plus, Trash2, X } from "lucide-react";
+import { HelpCircle, Pencil, Plus, Trash2, X, Zap } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminCard, SectionHeader, TextField, ToggleField } from "./AdminKit";
@@ -209,15 +210,24 @@ export function AdminDeals({ vendorId }: { vendorId?: string }) {
       <SectionHeader
         title={t("flashDeals")}
         action={
-          <Button size="sm" onClick={() => setDraft(draft ? null : { ...empty })}>
-            {draft ? <X className="size-4" /> : <Plus className="size-4" />}
-            {draft ? t("cancel") : t("add")}
+          <Button size="sm" onClick={() => setDraft({ ...empty })}>
+            <Plus className="size-4" />
+            {t("add")}
           </Button>
         }
       />
 
-      {draft && (
-        <AdminCard>
+      <Dialog open={!!draft} onOpenChange={(open) => !open && setDraft(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              {draft?.id ? <Pencil className="size-4 text-[#007979]" /> : <Zap className="size-4 text-[#007979]" />}
+              <span>{draft?.id ? t("edit") : t("add")}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {draft && (
+            <div className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-2">
             <TextField
               label={t("titleAr")}
@@ -391,39 +401,80 @@ export function AdminDeals({ vendorId }: { vendorId?: string }) {
           >
             {t("save")}
           </Button>
-        </AdminCard>
-      )}
-
-      <div className="space-y-2">
-        {(deals ?? []).map((d) => (
-          <div
-            key={d.id}
-            className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-card"
-          >
-            <span
-              className="size-8 shrink-0 rounded-lg"
-              style={{
-                backgroundImage: `linear-gradient(120deg, oklch(0.32 ${Number(d.chroma) * 0.9} ${d.hue}), oklch(0.5 ${d.chroma} ${d.hue}))`,
-              }}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-extrabold">{d.title_ar || "—"}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {d.discount_type === "percent" ? `-${d.discount_value}%` : `-${d.discount_value}`}{" "}
-                {d.ends_at ? `· ${new Date(d.ends_at).toLocaleString()}` : ""}
-                {d.is_active ? "" : ` · ${t("hidden")}`}
-              </p>
-              <StatusChip deal={d} />
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            <Button size="icon" variant="ghost" onClick={() => setDraft(toDraft(d))}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button size="icon" variant="ghost" onClick={() => remove.mutate(d.id)}>
-              <Trash2 className="size-4 text-destructive" />
-            </Button>
-          </div>
-        ))}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800">
+              <th className="px-4 py-3 font-semibold text-start w-10"></th>
+              <th className="px-4 py-3 font-semibold text-start">{t("titleAr")}</th>
+              <th className="px-4 py-3 font-semibold text-start">{t("discountValue")}</th>
+              <th className="px-4 py-3 font-semibold text-center">{t("status")}</th>
+              <th className="px-4 py-3 font-semibold text-end"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {(deals ?? []).map((d) => (
+              <tr key={d.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                <td className="px-4 py-3">
+                  <span
+                    className="block size-8 rounded-lg shadow-sm"
+                    style={{
+                      backgroundImage: `linear-gradient(120deg, oklch(0.32 ${Number(d.chroma) * 0.9} ${d.hue}), oklch(0.5 ${d.chroma} ${d.hue}))`,
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {lang === "ar" ? d.title_ar : d.title_ku || "—"}
+                    </p>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs font-bold text-[#007979]">
+                    {d.discount_type === "percent" ? `-${d.discount_value}%` : `-${d.discount_value}`}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <StatusChip deal={d} />
+                </td>
+                <td className="px-4 py-3 text-end">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 rounded-lg text-xs font-bold"
+                      onClick={() => setDraft(toDraft(d))}
+                    >
+                      <Pencil className="size-3.5 sm:hidden" />
+                      <span className="hidden sm:inline">{t("edit")}</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white"
+                      onClick={() => remove.mutate(d.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {(deals ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-10 text-center text-sm text-slate-500">
+                  {t("noResults")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
