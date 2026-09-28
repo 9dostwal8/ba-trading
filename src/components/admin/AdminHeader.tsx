@@ -107,20 +107,61 @@ export function AdminHeader({
   });
   const s = storeData?.settings;
 
-  // Fetch admin profile safely
+  // Fetch admin profile and role safely
   const { data: profile } = useQuery({
     queryKey: ["admin-profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
       try {
         if (!user?.id) return null;
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("full_name, phone")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (error) return null;
-        return data;
+        const [profRes, roleRes, uiNameRes, uiPhoneRes, uiRoleRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("full_name, phone")
+            .eq("id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("ui_texts")
+            .select("ar")
+            .eq("key", `staff_name_${user.id}`)
+            .maybeSingle(),
+          supabase
+            .from("ui_texts")
+            .select("ar")
+            .eq("key", `staff_phone_${user.id}`)
+            .maybeSingle(),
+          supabase
+            .from("ui_texts")
+            .select("ar")
+            .eq("key", `staff_role_${user.id}`)
+            .maybeSingle(),
+        ]);
+
+        const fullName =
+          profRes.data?.full_name ||
+          uiNameRes.data?.ar ||
+          (user?.user_metadata?.["full_name"] as string) ||
+          (user?.user_metadata?.["name"] as string) ||
+          null;
+
+        const phone =
+          profRes.data?.phone ||
+          uiPhoneRes.data?.ar ||
+          (user?.user_metadata?.["phone"] as string) ||
+          user?.phone ||
+          null;
+
+        const role =
+          roleRes.data?.role ||
+          uiRoleRes.data?.ar ||
+          "admin";
+
+        return { full_name: fullName, phone, role };
       } catch {
         return null;
       }
@@ -143,6 +184,19 @@ export function AdminHeader({
     (lang === "ar" ? "مدير المتجر" : lang === "ku" ? "بەڕێوەبەری کۆگا" : "Admin");
 
   const displayPhoneOrEmail = profile?.phone || user?.phone || user?.email || "";
+
+  const roleText =
+    profile?.role === "brand_manager"
+      ? lang === "ar"
+        ? "مدير براند"
+        : lang === "ku"
+        ? "بەڕێوەبەری براند"
+        : "Brand Manager"
+      : lang === "ar"
+      ? "مدير النظام"
+      : lang === "ku"
+      ? "بەڕێوەبەر"
+      : "Administrator";
 
   const langNames: Record<string, string> = {
     ku: "کوردی",
@@ -298,7 +352,7 @@ export function AdminHeader({
                     {displayName}
                   </p>
                   <p className="text-[9.5px] font-extrabold text-[#007979] dark:text-teal-400 leading-tight">
-                    {lang === "ar" ? "مدير النظام" : lang === "ku" ? "بەڕێوەبەر" : "Administrator"}
+                    {roleText}
                   </p>
                 </div>
                 <ChevronDown className="size-3.5 text-slate-400 opacity-80" />

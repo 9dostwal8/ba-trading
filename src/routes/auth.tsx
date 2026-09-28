@@ -210,13 +210,70 @@ function AuthPage() {
     // Direct Login (No OTP needed for Login)
     if (mode === "in") {
       setBusy(true);
-      const email = `${phone}@${PHONE_DOMAIN}`;
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: form.password,
-      });
+      const candidates: string[] = [
+        `${phone}@${PHONE_DOMAIN}`,
+        `0${phone}@${PHONE_DOMAIN}`,
+        `${phone}@batrading.com`,
+      ];
+
+      // Check if user has custom email stored in ui_texts staff records
+      try {
+        const { data: staffPhones } = await supabase
+          .from("ui_texts")
+          .select("key, ar")
+          .eq("section", "staff_credentials")
+          .like("key", "staff_phone_%");
+
+        for (const sp of staffPhones ?? []) {
+          const pDigits = (sp.ar || "").replace(/\D/g, "");
+          if (pDigits.endsWith(phone) || phone.endsWith(pDigits)) {
+            const uId = sp.key.replace("staff_phone_", "");
+            const { data: emRow } = await supabase
+              .from("ui_texts")
+              .select("ar")
+              .eq("key", `staff_email_${uId}`)
+              .maybeSingle();
+            if (emRow?.ar && emRow.ar.includes("@")) {
+              candidates.unshift(emRow.ar.toLowerCase().trim());
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("auth candidate email lookup:", e);
+      }
+
+      let signedIn = false;
+      let lastErr: any = null;
+
+      for (const candEmail of Array.from(new Set(candidates))) {
+        try {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: candEmail,
+            password: form.password,
+          });
+          if (!error) {
+            signedIn = true;
+            break;
+          }
+          lastErr = error;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+
+      if (!signedIn) {
+        // Native phone fallback
+        try {
+          const { error } = await supabase.auth.signInWithPassword({
+            phone: `+964${phone}`,
+            password: form.password,
+          });
+          if (!error) signedIn = true;
+        } catch {}
+      }
+
       setBusy(false);
-      if (error) {
+      if (!signedIn) {
         toast.error(lang === "ar" ? "بيانات الدخول غير صحيحة، يرجى التأكد من الرقم وكلمة المرور" : lang === "ku" ? "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" : "Invalid phone number or password");
         return;
       }
