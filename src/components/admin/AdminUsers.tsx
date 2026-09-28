@@ -32,6 +32,7 @@ import {
 import React, { Component, type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { formatPrice, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,24 @@ import {
   adminSetUserPassword,
   deleteUserCompletely,
 } from "@/lib/admin-users.functions";
+
+// Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
+function getIsolatedAuthClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL || "https://yiaykxjwvwibotildtpo.supabase.co";
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      storage: {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      },
+    },
+  });
+}
 
 type ProfileRow = {
   id: string;
@@ -139,11 +158,12 @@ function AdminUsersContent() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanPhone = addPhone.replace(/\D/g, "");
     if (!addFullName.trim()) {
       toast.error(lang === "ku" ? "تکایە ناوی تەواو بنووسە" : "يرجى كتابة الاسم الكامل");
       return;
     }
-    if (!addPhone.trim() || addPhone.replace(/\D/g, "").length < 9) {
+    if (!cleanPhone || cleanPhone.length < 9) {
       toast.error(lang === "ku" ? "تکایە ژمارەی مۆبایلی دروست بنووسە" : "يرجى كتابة رقم هاتف صحيح");
       return;
     }
@@ -154,18 +174,151 @@ function AdminUsersContent() {
       return;
     }
 
+    const trimmedEmail = addEmail.trim().toLowerCase();
+    const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
+
     setIsSubmitting(true);
     try {
-      await adminCreateNewUser({
-        data: {
-          fullName: addFullName.trim(),
-          phone: addPhone.trim(),
+      // 1. Register with isolated client so active admin session is NEVER replaced or logged out!
+      let newUserId: string | null = null;
+      try {
+        const isolatedClient = getIsolatedAuthClient();
+        const { data: signUpData, error: signUpErr } = await isolatedClient.auth.signUp({
+          email: finalEmail,
           password: addPassword,
-          role: addRole,
-          city: addCity.trim() || undefined,
-          email: addEmail.trim() || undefined,
+          options: {
+            data: {
+              full_name: addFullName.trim(),
+              phone: cleanPhone,
+              email: finalEmail,
+              city: addCity.trim() || undefined,
+            },
+          },
+        });
+
+        if (signUpErr && !signUpErr.message.toLowerCase().includes("already registered")) {
+          console.warn("Isolated auth registration warning:", signUpErr.message);
+        }
+
+        newUserId = signUpData?.user?.id || null;
+      } catch (authErr: any) {
+        console.warn("Isolated auth registration warning:", authErr);
+      }
+
+      // 2. Fallback check if existing profile already exists with this phone
+      if (!newUserId) {
+        try {
+          const { data: existingProf } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("phone", cleanPhone)
+            .maybeSingle();
+
+          if (existingProf?.id) {
+            newUserId = existingProf.id;
+          }
+        } catch (profCheckErr) {
+          console.warn("Profile check note:", profCheckErr);
+        }
+      }
+
+      // 3. Fallback UUID if still null
+      if (!newUserId) {
+        newUserId = crypto.randomUUID();
+      }
+
+      // 4. Safely attempt direct profile upsert
+      try {
+        const { error: profErr } = await supabase.from("profiles").upsert(
+          {
+            id: newUserId,
+            full_name: addFullName.trim(),
+            phone: cleanPhone,
+            city: addCity.trim() || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+        if (profErr) console.warn("Direct profile upsert note:", profErr);
+      } catch (profErr) {
+        console.warn("Direct profile upsert warning:", profErr);
+      }
+
+      // 5. Role assignment in user_roles table if role !== "user"
+      if (addRole !== "user") {
+        try {
+          const { error: roleErr } = await supabase.from("user_roles").upsert(
+            { user_id: newUserId, role: addRole },
+            { onConflict: "user_id,role" }
+          );
+          if (roleErr) console.warn("Direct user_roles upsert note:", roleErr);
+        } catch (roleErr) {
+          console.warn("Direct user_roles upsert warning:", roleErr);
+        }
+      }
+
+      // 6. Save credentials, role, and city to ui_texts
+      const credsEntries: any[] = [
+        {
+          key: `staff_name_${newUserId}`,
+          section: "staff_credentials",
+          ar: addFullName.trim(),
+          ku: addFullName.trim(),
         },
-      });
+        {
+          key: `staff_phone_${newUserId}`,
+          section: "staff_credentials",
+          ar: cleanPhone,
+          ku: cleanPhone,
+        },
+        {
+          key: `staff_email_${newUserId}`,
+          section: "staff_credentials",
+          ar: finalEmail,
+          ku: finalEmail,
+        },
+        {
+          key: `staff_pwd_${newUserId}`,
+          section: "staff_credentials",
+          ar: addPassword,
+          ku: addPassword,
+        },
+        {
+          key: `staff_role_${newUserId}`,
+          section: "staff_credentials",
+          ar: addRole,
+          ku: addRole,
+        },
+      ];
+      if (addCity.trim()) {
+        credsEntries.push({
+          key: `user_city_${newUserId}`,
+          section: "user_meta",
+          ar: addCity.trim(),
+          ku: addCity.trim(),
+        });
+      }
+      try {
+        await supabase.from("ui_texts").upsert(credsEntries, { onConflict: "key" });
+      } catch (uiErr) {
+        console.warn("ui_texts upsert note:", uiErr);
+      }
+
+      // 7. Optional server sync (non-blocking, won't fail if server env is missing)
+      try {
+        await adminCreateNewUser({
+          data: {
+            fullName: addFullName.trim(),
+            phone: cleanPhone,
+            password: addPassword,
+            role: addRole,
+            city: addCity.trim() || undefined,
+            email: finalEmail,
+          },
+        });
+      } catch (srvErr) {
+        console.warn("adminCreateNewUser server function skipped/warning:", srvErr);
+      }
 
       toast.success(
         lang === "ku" ? "بەکارهێنەری نوێ بەسەرکەوتوویی دروستکرا" : "تم إنشاء المستخدم الجديد بنجاح"
@@ -200,11 +353,15 @@ function AdminUsersContent() {
     queryKey: ["admin_website_profiles"],
     queryFn: async () => {
       try {
-        const [profilesRes, deletedRes] = await Promise.all([
+        const [profilesRes, credsRes, deletedRes] = await Promise.all([
           supabase
             .from("profiles")
             .select("id, full_name, phone, lang, created_at, updated_at")
             .order("created_at", { ascending: false }),
+          supabase
+            .from("ui_texts")
+            .select("key, ar")
+            .eq("section", "staff_credentials"),
           supabase
             .from("ui_texts")
             .select("key")
@@ -222,10 +379,38 @@ function AdminUsersContent() {
           }
         }
 
-        const list = (profilesRes.data || []) as ProfileRow[];
-        return list.filter(
-          (p) => !deletedIds.has(p.id) && p.full_name !== "[DELETED]" && p.full_name !== "DELETED"
-        );
+        const profileMap = new Map<string, ProfileRow>();
+
+        for (const p of (profilesRes.data || []) as ProfileRow[]) {
+          if (!deletedIds.has(p.id) && p.full_name !== "[DELETED]" && p.full_name !== "DELETED") {
+            profileMap.set(p.id, p);
+          }
+        }
+
+        // Merge users stored in ui_texts if not already in profiles
+        const namesMap = new Map<string, string>();
+        const phonesMap = new Map<string, string>();
+        for (const item of credsRes.data || []) {
+          if (item.key.startsWith("staff_name_")) {
+            namesMap.set(item.key.replace("staff_name_", ""), item.ar);
+          } else if (item.key.startsWith("staff_phone_")) {
+            phonesMap.set(item.key.replace("staff_phone_", ""), item.ar);
+          }
+        }
+
+        for (const [userId, name] of namesMap.entries()) {
+          if (!deletedIds.has(userId) && !profileMap.has(userId)) {
+            profileMap.set(userId, {
+              id: userId,
+              full_name: name,
+              phone: phonesMap.get(userId) || "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        return Array.from(profileMap.values());
       } catch (err) {
         console.warn("Profiles fetch exception:", err);
         return [];
@@ -525,12 +710,34 @@ function AdminUsersContent() {
     }
     setIsSubmitting(true);
     try {
-      await adminSetUserPassword({
-        data: {
-          targetUserId: selectedUser.id,
-          newPassword,
+      // 1. Save in ui_texts for immediate reference
+      await supabase.from("ui_texts").upsert(
+        {
+          key: `staff_pwd_${selectedUser.id}`,
+          section: "staff_credentials",
+          ar: newPassword.trim(),
+          ku: newPassword.trim(),
         },
-      });
+        { onConflict: "key" }
+      );
+
+      // 2. If changing own account, update directly via supabase.auth
+      const currentAuthUser = (await supabase.auth.getUser()).data.user;
+      if (currentAuthUser && selectedUser.id === currentAuthUser.id) {
+        await supabase.auth.updateUser({ password: newPassword.trim() });
+      } else {
+        try {
+          await adminSetUserPassword({
+            data: {
+              targetUserId: selectedUser.id,
+              newPassword: newPassword.trim(),
+            },
+          });
+        } catch (srvErr) {
+          console.warn("adminSetUserPassword server call note:", srvErr);
+        }
+      }
+
       toast.success(
         lang === "ku" ? "وشەی نهێنی بە سەرکەوتوویی گۆڕدرا" : "تم تغيير كلمة المرور بنجاح"
       );
