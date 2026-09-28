@@ -36,7 +36,13 @@ import { formatPrice, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminDeleteUser, adminSetUserPassword, deleteUserCompletely } from "@/lib/admin-users.functions";
+import { cn } from "@/lib/utils";
+import {
+  adminCreateNewUser,
+  adminDeleteUser,
+  adminSetUserPassword,
+  deleteUserCompletely,
+} from "@/lib/admin-users.functions";
 
 type ProfileRow = {
   id: string;
@@ -112,6 +118,78 @@ function AdminUsersContent() {
   const [editPhone, setEditPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add User Form State
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [addFullName, setAddFullName] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [addPassword, setAddPassword] = useState("");
+  const [addRole, setAddRole] = useState<"user" | "admin" | "brand_manager">("user");
+  const [addCity, setAddCity] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+
+  const handleGeneratePassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setAddPassword(pwd);
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addFullName.trim()) {
+      toast.error(lang === "ku" ? "تکایە ناوی تەواو بنووسە" : "يرجى كتابة الاسم الكامل");
+      return;
+    }
+    if (!addPhone.trim() || addPhone.replace(/\D/g, "").length < 9) {
+      toast.error(lang === "ku" ? "تکایە ژمارەی مۆبایلی دروست بنووسە" : "يرجى كتابة رقم هاتف صحيح");
+      return;
+    }
+    if (!addPassword || addPassword.length < 6) {
+      toast.error(
+        lang === "ku" ? "وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await adminCreateNewUser({
+        data: {
+          fullName: addFullName.trim(),
+          phone: addPhone.trim(),
+          password: addPassword,
+          role: addRole,
+          city: addCity.trim() || undefined,
+          email: addEmail.trim() || undefined,
+        },
+      });
+
+      toast.success(
+        lang === "ku" ? "بەکارهێنەری نوێ بەسەرکەوتوویی دروستکرا" : "تم إنشاء المستخدم الجديد بنجاح"
+      );
+
+      // Reset form
+      setAddFullName("");
+      setAddPhone("");
+      setAddPassword("");
+      setAddRole("user");
+      setAddCity("");
+      setAddEmail("");
+      setIsAddUserOpen(false);
+
+      // Invalidate queries
+      qc.invalidateQueries({ queryKey: ["admin_website_profiles"] });
+      qc.invalidateQueries({ queryKey: ["admin-users-list"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to create user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // 1. Fetch All Profiles
   const {
@@ -501,14 +579,52 @@ function AdminUsersContent() {
     <div className="space-y-6 w-full pb-8">
       
       {/* Header Banner */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20">
             <Users className="size-5" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-            {lang === "ku" ? "بەکارهێنەرانی سایت" : lang === "ar" ? "مستخدمو الموقع والعملاء" : "Website Users & Customers"}
-          </h1>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              {lang === "ku" ? "بەکارهێنەرانی سایت" : lang === "ar" ? "مستخدمو الموقع والعملاء" : "Website Users & Customers"}
+            </h1>
+            <p className="text-xs text-slate-400 font-medium">
+              {lang === "ku"
+                ? "بەڕێوەبردنی هەژمارەکانی کڕیاران و بەکارهێنەرانی سیستەم"
+                : "إدارة حسابات العملاء ومستخدمي النظام"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Refresh button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchProfiles()}
+            disabled={profilesLoading}
+            className="rounded-xl text-xs font-bold gap-1.5 h-10 border-slate-200 dark:border-slate-800"
+          >
+            <RefreshCw className={cn("size-3.5", profilesLoading && "animate-spin text-blue-600")} />
+            <span className="hidden xs:inline">{lang === "ku" ? "نوێکردنەوە" : "تحديث"}</span>
+          </Button>
+
+          {/* Add User Button */}
+          <Button
+            onClick={() => {
+              setAddFullName("");
+              setAddPhone("");
+              setAddPassword("");
+              setAddRole("user");
+              setAddCity("");
+              setAddEmail("");
+              setIsAddUserOpen(true);
+            }}
+            className="rounded-xl text-xs font-black gap-2 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer px-4"
+          >
+            <UserPlus className="size-4" />
+            <span>{lang === "ku" ? "زیادکردنی بەکارهێنەر" : lang === "ar" ? "إضافة مستخدم جديد" : "Add New User"}</span>
+          </Button>
         </div>
       </div>
 
@@ -1241,6 +1357,193 @@ function AdminUsersContent() {
                 {isSubmitting ? "Deleting..." : lang === "ku" ? "بەڵێ، بسڕەوە" : "نعم، احذف"}
               </Button>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Add New User Modal */}
+      {isAddUserOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md shadow-blue-500/20">
+                  <UserPlus className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {lang === "ku" ? "زیادکردنی بەکارهێنەری نوێ" : lang === "ar" ? "إضافة مستخدم جديد" : "Add New User"}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400">
+                    {lang === "ku" ? "دروستکردنی هەژماری کڕیار یان بەڕێوەبەر" : "إنشاء حساب عميل أو موظف"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddUserOpen(false)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                  {lang === "ku" ? "ناوی تەواو / ناوی دکتۆر یان کلینیک *" : "الاسم الكامل / الطبيب أو العيادة *"}
+                </Label>
+                <Input
+                  required
+                  value={addFullName}
+                  onChange={(e) => setAddFullName(e.target.value)}
+                  placeholder={lang === "ku" ? "بۆ نموونە: د. ئارام ئەحمەد" : "مثال: د. أحمد محمد"}
+                  className="h-10 rounded-xl text-xs font-bold"
+                />
+              </div>
+
+              {/* Phone Number */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                  {lang === "ku" ? "ژمارەی مۆبایل *" : "رقم الموبايل *"}
+                </Label>
+                <Input
+                  required
+                  type="tel"
+                  value={addPhone}
+                  onChange={(e) => setAddPhone(e.target.value)}
+                  placeholder="0770XXXXXXX / 0750XXXXXXX"
+                  className="h-10 rounded-xl text-xs font-bold font-mono"
+                />
+              </div>
+
+              {/* Role / Account Type */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                  {lang === "ku" ? "ڕۆڵ / جۆری هەژمار" : "نوع الحساب / الصلاحية"}
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAddRole("user")}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1 cursor-pointer",
+                      addRole === "user"
+                        ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/20"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                    )}
+                  >
+                    <User className="size-4" />
+                    <span>{lang === "ku" ? "کڕیار / دکتۆر" : "عميل / طبيب"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddRole("brand_manager")}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1 cursor-pointer",
+                      addRole === "brand_manager"
+                        ? "border-purple-600 bg-purple-50/50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 ring-2 ring-purple-500/20"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                    )}
+                  >
+                    <ShoppingBag className="size-4" />
+                    <span>{lang === "ku" ? "بەڕێوەبەری براند" : "مدير براند"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddRole("admin")}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1 cursor-pointer",
+                      addRole === "admin"
+                        ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                    )}
+                  >
+                    <BadgeCheck className="size-4" />
+                    <span>Admin</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Password with generator */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    {lang === "ku" ? "وشەی نهێنی *" : "كلمة المرور *"}
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <KeyRound className="size-3" />
+                    <span>{lang === "ku" ? "دروستکردنی بەهێز" : "توليد كلمة سر"}</span>
+                  </button>
+                </div>
+                <Input
+                  required
+                  type="text"
+                  value={addPassword}
+                  onChange={(e) => setAddPassword(e.target.value)}
+                  placeholder="Password123"
+                  className="h-10 rounded-xl text-xs font-bold font-mono"
+                />
+              </div>
+
+              {/* City */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                  {lang === "ku" ? "شار (ئیختیاری)" : "المدينة (اختياري)"}
+                </Label>
+                <Input
+                  value={addCity}
+                  onChange={(e) => setAddCity(e.target.value)}
+                  placeholder={lang === "ku" ? "سلێمانی، هەولێر، دهۆک..." : "السليمانية، أربيل، دهوك..."}
+                  className="h-10 rounded-xl text-xs font-bold"
+                />
+              </div>
+
+              {/* Email (Optional) */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                  {lang === "ku" ? "ئیمەیڵ (ئیختیاری)" : "البريد الإلكتروني (اختياري)"}
+                </Label>
+                <Input
+                  type="email"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className="h-10 rounded-xl text-xs font-bold font-mono"
+                />
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddUserOpen(false)}
+                  className="flex-1 rounded-xl text-xs font-bold h-10"
+                >
+                  {lang === "ku" ? "پاشگەزبوونەوە" : "إلغاء"}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black h-10 shadow-md shadow-blue-500/20"
+                >
+                  {isSubmitting ? (
+                    <RefreshCw className="size-4 animate-spin mx-auto" />
+                  ) : (
+                    lang === "ku" ? "دروستکردنی هەژمار" : "إنشاء الحساب"
+                  )}
+                </Button>
+              </div>
+            </form>
 
           </div>
         </div>

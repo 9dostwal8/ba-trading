@@ -251,6 +251,94 @@ export const updateUserRole = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+/** Admin: create a new user (customer, admin, or brand_manager) */
+export const adminCreateNewUser = createServerFn({ method: "POST" })
+  .validator(
+    (input: {
+      fullName: string;
+      phone: string;
+      password: string;
+      role?: "user" | "admin" | "brand_manager";
+      city?: string;
+      email?: string;
+    }) => input
+  )
+  .handler(async ({ data }) => {
+    const phone = normalizePhone(data.phone);
+    const fullName = (data.fullName ?? "").trim();
+    if (phone.length < 9) throw new Error("badPhone");
+    if ((data.password ?? "").length < 6) throw new Error("badPassword");
+    if (fullName.length < 2) throw new Error("badName");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email =
+      data.email && data.email.includes("@")
+        ? data.email.trim().toLowerCase()
+        : `${phone}@${PHONE_DOMAIN}`;
+
+    const existing = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    let userId = existing.data?.id ?? null;
+
+    if (userId) {
+      const upd = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, phone, email },
+      });
+      if (upd.error) throw new Error(upd.error.message);
+    } else {
+      const created = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, phone, email },
+      });
+      if (created.error || !created.data.user) {
+        throw new Error(created.error?.message ?? "createFailed");
+      }
+      userId = created.data.user.id;
+    }
+
+    const profPayload: any = {
+      id: userId,
+      full_name: fullName,
+      phone,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.city) profPayload.city = data.city;
+
+    const prof = await supabaseAdmin
+      .from("profiles")
+      .upsert(profPayload, { onConflict: "id" });
+    if (prof.error) throw new Error(prof.error.message);
+
+    if (data.role && data.role !== "user") {
+      const roleRes = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: userId, role: data.role }, { onConflict: "user_id,role" });
+      if (roleRes.error) throw new Error(roleRes.error.message);
+    }
+
+    // Save password in ui_texts for quick admin recovery
+    await supabaseAdmin.from("ui_texts").upsert(
+      {
+        key: `staff_pwd_${userId}`,
+        section: "staff_credentials",
+        ar: data.password,
+        ku: data.password,
+      },
+      { onConflict: "key" }
+    );
+
+    return { userId, phone, fullName, email, role: data.role || "user" };
+  });
+
 /** Admin: create staff account with specified role */
 export const createStaffAccount = createServerFn({ method: "POST" })
   .validator(
