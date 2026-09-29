@@ -400,7 +400,8 @@ export function DesktopHome({
       )}
 
       {/* 3. Circular Category Grid (Touch-friendly on mobile) */}
-      <section className="space-y-3 sm:space-y-4">
+      {data.categories.length > 0 && data.homeSections.find(s => s.kind === "categories")?.is_active !== false && (
+        <section className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-primary" />
@@ -463,9 +464,10 @@ export function DesktopHome({
           })}
         </div>
       </section>
+      )}
 
       {/* 4. Official Brand Showcase */}
-      {data.brandCards.length > 0 && (
+      {data.brandCards.length > 0 && data.homeSections.find(s => s.kind === "brands")?.is_active !== false && (
         <section className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
