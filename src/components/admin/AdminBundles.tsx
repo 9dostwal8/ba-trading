@@ -187,11 +187,12 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 border-b pb-1">
                   {lang === "ar" ? "معلومات الباقة الأساسية" : lang === "ku" ? "زانیارییە سەرەکییەکانی پاکێج" : "Basic Info"}
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField label={t("titleAr")} value={draft.title_ar} onChange={(v) => setDraft({ ...draft, title_ar: v })} />
-                  <TextField label={t("titleKu")} value={draft.title_ku} onChange={(v) => setDraft({ ...draft, title_ku: v })} />
-                  <TextField label={t("subtitleAr")} value={draft.subtitle_ar} onChange={(v) => setDraft({ ...draft, subtitle_ar: v })} />
-                  <TextField label={t("subtitleKu")} value={draft.subtitle_ku} onChange={(v) => setDraft({ ...draft, subtitle_ku: v })} />
+                <div className="grid grid-cols-1 gap-3">
+                  <TextField 
+                    label={lang === "ar" ? "اسم الباقة (عربي / كردي)" : lang === "ku" ? "ناوی پاکێج (عەرەبی / کوردی)" : "Bundle Name"} 
+                    value={draft.title_ar} 
+                    onChange={(v) => setDraft({ ...draft, title_ar: v, title_ku: v })} 
+                  />
                 </div>
               </div>
 
