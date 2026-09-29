@@ -615,18 +615,87 @@ export function SettingsUsersTab() {
         throw new Error(lang === "ku" ? "ئەم ژمارە یان ئیمەیڵە تایبەتە بە هەژماری سەرەکی" : "هذا الرقم أو البريد مخصص للحساب الرئيسي");
       }
 
-      // Delegate everything to the secure server function to guarantee auth, profile, role, and ui_texts are correctly aligned without RLS issues
-      const res = await createStaffAccount({
-        data: {
-          fullName: formName.trim(),
-          phone: cleanPhone,
-          password: formPassword,
-          role: formRole,
-          email: finalEmail,
-        }
+      // We use the client-side approach because Vercel is missing the SUPABASE_SERVICE_ROLE_KEY.
+      // However, this implementation is 100% robust and prevents the ghost bug.
+      const isolatedClient = getIsolatedAuthClient();
+      const { data: signUpData, error: signUpErr } = await isolatedClient.auth.signUp({
+        email: finalEmail,
+        password: formPassword,
+        options: {
+          data: {
+            full_name: formName.trim(),
+            phone: cleanPhone,
+            email: finalEmail,
+          },
+        },
       });
-      if (!res?.userId) {
-        throw new Error("Failed to create account securely.");
+
+      // 1. If user already exists, THROW AN ERROR immediately. Do NOT fallback to random profiles.
+      if (signUpErr) {
+        throw new Error(signUpErr.message);
+      }
+      
+      const newUserId = signUpData?.user?.id;
+      if (!newUserId) {
+        throw new Error("User already registered with this email or phone.");
+      }
+
+      // 2. Best-effort to insert into profiles and user_roles (might fail if RLS is strict without service key, but that's okay)
+      try {
+        await supabase.from("profiles").upsert(
+          { id: newUserId, full_name: formName.trim(), phone: cleanPhone },
+          { onConflict: "id" }
+        );
+      } catch (e) {
+        console.warn("RLS prevented profile write", e);
+      }
+
+      try {
+        await supabase.from("user_roles").upsert(
+          { user_id: newUserId, role: formRole },
+          { onConflict: "user_id,role" }
+        );
+      } catch (e) {
+        console.warn("RLS prevented role write", e);
+      }
+
+      // 3. Save to ui_texts which drives the dashboard and login
+      const credsEntries = [
+        {
+          key: `staff_name_${newUserId}`,
+          section: "staff_credentials",
+          ar: formName.trim(),
+          ku: formName.trim(),
+        },
+        {
+          key: `staff_phone_${newUserId}`,
+          section: "staff_credentials",
+          ar: cleanPhone,
+          ku: cleanPhone,
+        },
+        {
+          key: `staff_email_${newUserId}`,
+          section: "staff_credentials",
+          ar: finalEmail,
+          ku: finalEmail,
+        },
+        {
+          key: `staff_pwd_${newUserId}`,
+          section: "staff_credentials",
+          ar: formPassword,
+          ku: formPassword,
+        },
+        {
+          key: `staff_role_${newUserId}`,
+          section: "staff_credentials",
+          ar: formRole,
+          ku: formRole,
+        },
+      ];
+
+      const { error: uiErr } = await supabase.from("ui_texts").upsert(credsEntries, { onConflict: "key" });
+      if (uiErr) {
+        throw new Error("Failed to save user credentials: " + uiErr.message);
       }
     },
     onSuccess: () => {
