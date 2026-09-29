@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, X, Package } from "lucide-react";
+import { Pencil, Plus, Trash2, X, Package, Calculator, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice, pickName, useI18n } from "@/lib/i18n";
 import type { Bundle, Product } from "@/lib/store";
+import { PhotoField } from "@/components/catalog/PhotoField";
+import { Input } from "@/components/ui/input";
 
 type Draft = {
   id?: string;
@@ -63,6 +65,7 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [productSearch, setProductSearch] = useState("");
 
   const { data: bundles } = useQuery({
     queryKey: ["admin-bundles", vendorId ?? "all"],
@@ -136,6 +139,26 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
     });
   }
 
+  function autoSumComparePrice() {
+    if (!draft || !products) return;
+    let sum = 0;
+    draft.product_ids.forEach((id) => {
+      const p = products.find((p) => p.id === id);
+      if (p) sum += Number(p.price) || 0;
+    });
+    setDraft({ ...draft, compare_price: String(sum) });
+    toast.success(lang === "ar" ? "تم حساب السعر الأصلي" : lang === "ku" ? "نرخی ڕەسەن هەژمارکرا" : "Original price calculated");
+  }
+
+  const filteredProducts = (products ?? []).filter((p) => {
+    const s = productSearch.toLowerCase();
+    return (
+      (p.name_ar && p.name_ar.toLowerCase().includes(s)) ||
+      (p.name_ku && p.name_ku.toLowerCase().includes(s)) ||
+      (p.brand && p.brand.toLowerCase().includes(s))
+    );
+  });
+
   return (
     <div className="space-y-4">
       <SectionHeader
@@ -158,90 +181,112 @@ export function AdminBundles({ vendorId }: { vendorId?: string }) {
           </DialogHeader>
 
           {draft && (
-            <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-2">
-            <TextField
-              label={t("titleAr")}
-              value={draft.title_ar}
-              onChange={(v) => setDraft({ ...draft, title_ar: v })}
-            />
-            <TextField
-              label={t("titleKu")}
-              value={draft.title_ku}
-              onChange={(v) => setDraft({ ...draft, title_ku: v })}
-            />
-            <TextField
-              label={t("subtitleAr")}
-              value={draft.subtitle_ar}
-              onChange={(v) => setDraft({ ...draft, subtitle_ar: v })}
-            />
-            <TextField
-              label={t("subtitleKu")}
-              value={draft.subtitle_ku}
-              onChange={(v) => setDraft({ ...draft, subtitle_ku: v })}
-            />
-            <TextField
-              label={t("bundlePrice")}
-              type="number"
-              value={draft.price}
-              onChange={(v) => setDraft({ ...draft, price: v })}
-            />
-            <TextField
-              label={t("comparePrice")}
-              type="number"
-              value={draft.compare_price}
-              onChange={(v) => setDraft({ ...draft, compare_price: v })}
-            />
-            <div className="col-span-2">
-            </div>
-            <TextField
-              label={t("sortOrder")}
-              type="number"
-              value={draft.sort_order}
-              onChange={(v) => setDraft({ ...draft, sort_order: v })}
-            />
-          </div>
+            <div className="space-y-6 pt-2">
+              {/* SECTION 1: Basic Info */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 border-b pb-1">
+                  {lang === "ar" ? "معلومات الباقة الأساسية" : lang === "ku" ? "زانیارییە سەرەکییەکانی پاکێج" : "Basic Info"}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <TextField label={t("titleAr")} value={draft.title_ar} onChange={(v) => setDraft({ ...draft, title_ar: v })} />
+                  <TextField label={t("titleKu")} value={draft.title_ku} onChange={(v) => setDraft({ ...draft, title_ku: v })} />
+                  <TextField label={t("subtitleAr")} value={draft.subtitle_ar} onChange={(v) => setDraft({ ...draft, subtitle_ar: v })} />
+                  <TextField label={t("subtitleKu")} value={draft.subtitle_ku} onChange={(v) => setDraft({ ...draft, subtitle_ku: v })} />
+                </div>
+              </div>
 
-          <TextField
-            label={t("imageUrl")}
-            value={draft.image_url}
-            onChange={(v) => setDraft({ ...draft, image_url: v })}
-          />
+              {/* SECTION 2: Media */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 border-b pb-1">
+                  {lang === "ar" ? "صورة الباقة" : lang === "ku" ? "وێنەی پاکێج" : "Bundle Image"}
+                </h3>
+                <PhotoField
+                  value={draft.image_url}
+                  onChange={(v) => setDraft({ ...draft, image_url: v })}
+                  vendorId={vendorId}
+                />
+              </div>
 
-          <ToggleField
-            label={t("active")}
-            checked={draft.is_active}
-            onChange={(v) => setDraft({ ...draft, is_active: v })}
-          />
+              {/* SECTION 3: Bundle Contents (Searchable) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b pb-1">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {t("bundleItems")} <span className="text-[#007979]">({draft.product_ids.length} {t("selected")})</span>
+                  </h3>
+                </div>
+                
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                  <Input
+                    className="pl-9 bg-slate-50 dark:bg-slate-800/50"
+                    placeholder={lang === "ar" ? "ابحث عن منتج لإضافته..." : lang === "ku" ? "گەڕان بۆ بەرهەم..." : "Search products..."}
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                  />
+                </div>
 
-          <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">
-              {t("bundleItems")} — {draft.product_ids.length} {t("selected")}
-            </Label>
-            <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-border p-1">
-              {(products ?? []).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePick(p.id)}
-                  className={`flex w-full items-center gap-2 rounded-md p-1.5 text-start ${
-                    draft.product_ids.includes(p.id) ? "bg-primary/10" : ""
-                  }`}
-                >
-                  <span className="line-clamp-1 flex-1 text-[11px] font-bold">
-                    {pickName(p, lang)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatPrice(Number(p.price), lang)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+                <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 p-1.5">
+                  {filteredProducts.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => togglePick(p.id)}
+                      className={`flex w-full items-center gap-3 rounded-lg p-2 text-start transition-colors ${
+                        draft.product_ids.includes(p.id) 
+                          ? "bg-[#007979]/10 text-[#007979] font-semibold ring-1 ring-[#007979]/30" 
+                          : "hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                      }`}
+                    >
+                      {p.image_url ? (
+                        <img src={p.image_url} className="size-8 rounded object-contain bg-white shrink-0" alt="" />
+                      ) : (
+                        <div className="size-8 rounded bg-slate-200 dark:bg-slate-700 shrink-0" />
+                      )}
+                      <span className="line-clamp-1 flex-1 text-[12px]">
+                        {pickName(p, lang)}
+                      </span>
+                      <span className="text-[11px] whitespace-nowrap">
+                        {formatPrice(Number(p.price), lang)}
+                      </span>
+                    </button>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <div className="py-4 text-center text-xs text-muted-foreground">
+                      {t("noResults")}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          <Button className="w-full" onClick={() => save.mutate(draft)}>
-            {t("save")}
-          </Button>
+              {/* SECTION 4: Pricing & Display */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b pb-1">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {lang === "ar" ? "التسعير والعرض" : lang === "ku" ? "نرخ و پیشاندان" : "Pricing & Display"}
+                  </h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-[10px] px-2 py-0"
+                    onClick={autoSumComparePrice}
+                  >
+                    <Calculator className="size-3 mr-1" />
+                    {lang === "ar" ? "حساب السعر الأصلي تلقائياً" : lang === "ku" ? "کۆکردنەوەی نرخی ڕەسەن" : "Auto-sum Compare Price"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <TextField label={t("bundlePrice")} type="number" value={draft.price} onChange={(v) => setDraft({ ...draft, price: v })} />
+                  <TextField label={t("comparePrice")} type="number" value={draft.compare_price} onChange={(v) => setDraft({ ...draft, compare_price: v })} />
+                  <TextField label={t("sortOrder")} type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} />
+                </div>
+                <ToggleField label={t("active")} checked={draft.is_active} onChange={(v) => setDraft({ ...draft, is_active: v })} />
+              </div>
+
+              <div className="pt-2">
+                <Button className="w-full font-bold h-11 text-sm bg-[#007979] hover:bg-teal-700 text-white" onClick={() => save.mutate(draft)}>
+                  {t("save")}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
