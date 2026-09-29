@@ -166,7 +166,10 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
 
           for (const sp of staffPhones ?? []) {
             const pDigits = (sp.ar || "").replace(/\D/g, "");
-            if (pDigits === rawDigits || pDigits.endsWith(cleanPhone) || rawDigits.endsWith(pDigits)) {
+            if (
+              pDigits.length > 5 &&
+              (pDigits === rawDigits || pDigits.endsWith(cleanPhone) || rawDigits.endsWith(pDigits))
+            ) {
               const uId = sp.key.replace("staff_phone_", "");
               const { data: emRow } = await supabase
                 .from("ui_texts")
