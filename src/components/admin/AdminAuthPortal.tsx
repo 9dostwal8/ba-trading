@@ -151,10 +151,7 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
         const cleanPhone = rawDigits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
         const withZero = `0${cleanPhone}`;
 
-        // 1. Direct Dosty admin check
-        if (cleanPhone === "7702269722" || cleanPhone.includes("7702269722")) {
-          candidates.push("dosty.wal98@gmail.com");
-        }
+        // Removed hardcoded Dosty check
 
         // 2. Direct client lookup from ui_texts staff records
         try {

@@ -411,10 +411,7 @@ export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
     const cleanPhone = digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
     const withZero = `0${cleanPhone}`;
 
-    // 1. Direct Dosty admin check
-    if (cleanPhone === "7702269722" || cleanPhone.includes("7702269722")) {
-      return { email: "dosty.wal98@gmail.com" };
-    }
+    // Removed hardcoded Dosty check
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
