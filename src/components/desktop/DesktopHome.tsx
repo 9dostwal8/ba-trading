@@ -43,6 +43,15 @@ export function DesktopHome({
 }) {
   const { lang } = useI18n();
 
+  const getSectionTitle = (kind: string, defaultAr: string, defaultKu: string, defaultEn: string) => {
+    const sec = data.homeSections.find(s => s.kind === kind);
+    if (sec) {
+      if (lang === "ar" && sec.title_ar) return sec.title_ar;
+      if (lang === "ku" && sec.title_ku) return sec.title_ku;
+    }
+    return lang === "ar" ? defaultAr : lang === "ku" ? defaultKu : defaultEn;
+  };
+
   // High-Resolution 8K Hero Banners
   const highResBanners: AdCardData[] = [
     {
@@ -406,7 +415,7 @@ export function DesktopHome({
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-primary" />
             <h3 className="text-[15px] sm:text-[18px] font-black text-slate-800">
-              {lang === "ar" ? "أقسام وتصنيفات المتجر" : lang === "ku" ? "هاوپۆلەکانی فرۆشگا" : "Categories"}
+              {getSectionTitle("categories", "أقسام وتصنيفات المتجر", "هاوپۆلەکانی فرۆشگا", "Categories")}
             </h3>
           </div>
           <Link
@@ -473,7 +482,7 @@ export function DesktopHome({
             <div className="flex items-center gap-2">
               <Sparkles className="size-5 text-indigo-600" />
               <h3 className="text-[18px] font-black text-slate-800">
-                {lang === "ar" ? "الماركات العالمية المعتمدة" : lang === "ku" ? "براندە جیهانییە پەسەندکراوەکان" : "Official Brands"}
+                {getSectionTitle("brands", "الماركات العالمية المعتمدة", "براندە جیهانییە پەسەندکراوەکان", "Official Brands")}
               </h3>
             </div>
             <Link to="/brands" className="text-[12.5px] font-bold text-primary hover:underline">
@@ -530,7 +539,7 @@ export function DesktopHome({
             <div className="flex items-center gap-2">
               <Boxes className="size-5 text-amber-600" />
               <h3 className="text-[18px] font-black text-slate-800">
-                {lang === "ar" ? "باقات العيادات التوفيرية" : lang === "ku" ? "پاکێجەکانی کلینیک" : "Clinic Packages"}
+                {getSectionTitle("bundles", "باقات العيادات التوفيرية", "پاکێجەکانی کلینیک", "Clinic Packages")}
               </h3>
             </div>
             <Link to="/bundles" className="text-[12.5px] font-bold text-primary hover:underline">
@@ -585,7 +594,7 @@ export function DesktopHome({
           <div className="flex items-center gap-2">
             <Flame className="size-5 text-rose-500" />
             <h3 className="text-[18px] font-black text-slate-800">
-              {lang === "ar" ? "المنتجات الأكثر طلباً في العيادات" : lang === "ku" ? "بەرهەمە پڕفرۆشەکان" : "Featured Dental Supplies"}
+              {getSectionTitle("featured", "المنتجات الأكثر طلباً في العيادات", "بەرهەمە پڕفرۆشەکان", "Featured Dental Supplies")}
             </h3>
           </div>
           <Link to="/products" className="text-[12.5px] font-bold text-primary hover:underline">
@@ -606,7 +615,7 @@ export function DesktopHome({
           <div className="flex items-center gap-2">
             <Sparkles className="size-5 text-primary" />
             <h3 className="text-[18px] font-black text-slate-800">
-              {lang === "ar" ? "وصل حديثاً" : lang === "ku" ? "نوێ گەیشتووە" : "New Arrivals"}
+              {getSectionTitle("newest", "وصل حديثاً", "نوێ گەیشتووە", "New Arrivals")}
             </h3>
           </div>
           <Link to="/products" className="text-[12.5px] font-bold text-primary hover:underline">
