@@ -615,110 +615,19 @@ export function SettingsUsersTab() {
         throw new Error(lang === "ku" ? "ئەم ژمارە یان ئیمەیڵە تایبەتە بە هەژماری سەرەکی" : "هذا الرقم أو البريد مخصص للحساب الرئيسي");
       }
 
-      // 1. Register with isolated client so active admin session is NEVER replaced or logged out!
-      let newUserId: string | null = null;
-      try {
-        const isolatedClient = getIsolatedAuthClient();
-        const { data: signUpData, error: signUpErr } = await isolatedClient.auth.signUp({
-          email: finalEmail,
+      // Delegate everything to the secure server function to guarantee auth, profile, role, and ui_texts are correctly aligned without RLS issues
+      const res = await createStaffAccount({
+        data: {
+          fullName: formName.trim(),
+          phone: cleanPhone,
           password: formPassword,
-          options: {
-            data: {
-              full_name: formName.trim(),
-              phone: cleanPhone,
-              email: finalEmail,
-            },
-          },
-        });
-
-        if (signUpErr && !signUpErr.message.toLowerCase().includes("already registered")) {
-          throw signUpErr;
+          role: formRole,
+          email: finalEmail,
         }
-
-        newUserId = signUpData?.user?.id || null;
-      } catch (authErr: any) {
-        console.warn("Isolated auth registration warning:", authErr);
+      });
+      if (!res?.userId) {
+        throw new Error("Failed to create account securely.");
       }
-
-      // Check if an existing profile already exists with this phone
-      if (!newUserId) {
-        try {
-          const { data: existingProf } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("phone", cleanPhone)
-            .maybeSingle();
-
-          if (existingProf?.id) {
-            newUserId = existingProf.id;
-          }
-        } catch (profCheckErr) {
-          console.warn("Profile check note:", profCheckErr);
-        }
-      }
-
-      // Fallback: must ALWAYS be a valid UUID for PostgreSQL
-      if (!newUserId) {
-        newUserId = crypto.randomUUID();
-      }
-
-      // 2. Safely attempt profile upsert without failing if RLS restricts direct profile writes
-      try {
-        const { error: profErr } = await supabase.from("profiles").upsert(
-          { id: newUserId, full_name: formName.trim(), phone: cleanPhone },
-          { onConflict: "id" }
-        );
-        if (profErr) console.warn("Direct profile upsert note:", profErr);
-      } catch (profErr) {
-        console.warn("Direct profile upsert RLS warning:", profErr);
-      }
-
-      // 3. Safely attempt role assignment in user_roles table
-      try {
-        const { error: roleErr } = await supabase.from("user_roles").upsert(
-          { user_id: newUserId, role: formRole },
-          { onConflict: "user_id,role" }
-        );
-        if (roleErr) console.warn("Direct user_roles upsert note:", roleErr);
-      } catch (roleErr) {
-        console.warn("Direct user_roles upsert RLS warning:", roleErr);
-      }
-
-      // 4. Save metadata, role, password, and email to ui_texts (100% unrestricted for admin)
-      const credsEntries = [
-        {
-          key: `staff_name_${newUserId}`,
-          section: "staff_credentials",
-          ar: formName.trim(),
-          ku: formName.trim(),
-        },
-        {
-          key: `staff_phone_${newUserId}`,
-          section: "staff_credentials",
-          ar: cleanPhone,
-          ku: cleanPhone,
-        },
-        {
-          key: `staff_email_${newUserId}`,
-          section: "staff_credentials",
-          ar: finalEmail,
-          ku: finalEmail,
-        },
-        {
-          key: `staff_pwd_${newUserId}`,
-          section: "staff_credentials",
-          ar: formPassword,
-          ku: formPassword,
-        },
-        {
-          key: `staff_role_${newUserId}`,
-          section: "staff_credentials",
-          ar: formRole,
-          ku: formRole,
-        },
-      ];
-
-      await supabase.from("ui_texts").upsert(credsEntries, { onConflict: "key" });
     },
     onSuccess: () => {
       toast.success(tx("createSuccess"));

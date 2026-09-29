@@ -348,26 +348,43 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       .from("user_roles")
       .upsert({ user_id: userId, role: data.role }, { onConflict: "user_id,role" });
 
-    // Store email and password reference in ui_texts
-    await supabaseAdmin.from("ui_texts").upsert(
+    // Save all credentials in ui_texts for phone login fallback and admin dashboard display
+    const credsEntries = [
+      {
+        key: `staff_name_${userId}`,
+        section: "staff_credentials",
+        ar: fullName,
+        ku: fullName,
+      },
+      {
+        key: `staff_phone_${userId}`,
+        section: "staff_credentials",
+        ar: phone,
+        ku: phone,
+      },
       {
         key: `staff_email_${userId}`,
         section: "staff_credentials",
         ar: email,
         ku: email,
       },
-      { onConflict: "key" }
-    );
-
-    await supabaseAdmin.from("ui_texts").upsert(
       {
         key: `staff_pwd_${userId}`,
         section: "staff_credentials",
         ar: data.password,
         ku: data.password,
       },
-      { onConflict: "key" }
-    );
+      {
+        key: `staff_role_${userId}`,
+        section: "staff_credentials",
+        ar: data.role,
+        ku: data.role,
+      },
+    ];
+
+    for (const entry of credsEntries) {
+      await supabaseAdmin.from("ui_texts").upsert(entry, { onConflict: "key" });
+    }
 
     return { userId, phone, fullName, email, role: data.role };
   });
