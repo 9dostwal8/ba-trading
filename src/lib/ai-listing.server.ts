@@ -1,4 +1,4 @@
-/** Lovable AI Gateway helpers for the vendor "sell in 60 seconds" onboarding. */
+/** AI Gateway helpers for the vendor "sell in 60 seconds" onboarding. */
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -10,7 +10,7 @@ type Msg = {
 
 /** Calls the gateway and returns the parsed JSON payload of the reply. */
 export async function askJson<T>(messages: Msg[]): Promise<T> {
-  const key = process.env["LOVABLE_API_KEY"];
+  const key = process.env["GATEWAY_API_KEY"] || process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI is not configured");
 
   const res = await fetch(GATEWAY, {

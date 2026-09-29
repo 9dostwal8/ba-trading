@@ -14,15 +14,15 @@ export const reverseGeocode = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const lovableKey = process.env["LOVABLE_API_KEY"];
+    const gatewayKey = process.env["GATEWAY_API_KEY"] || process.env["LOVABLE_API_KEY"];
     const mapsKey = process.env["GOOGLE_MAPS_API_KEY"];
-    if (!lovableKey || !mapsKey) throw new Error("Missing Google Maps connector credentials");
+    if (!gatewayKey || !mapsKey) throw new Error("Missing Gateway or Maps credentials");
 
     const lang = data.language === "ku" ? "ckb" : data.language;
     const url = `${GATEWAY_URL}/maps/api/geocode/json?latlng=${data.latitude},${data.longitude}&language=${lang}`;
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${lovableKey}`,
+        Authorization: `Bearer ${gatewayKey}`,
         "X-Connection-Api-Key": mapsKey,
       },
     });
