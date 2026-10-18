@@ -351,6 +351,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
         section: "staff_credentials",
         ar: email,
         ku: email,
+      },
       {
         key: `staff_pwd_${userId}`,
         section: "staff_credentials",
