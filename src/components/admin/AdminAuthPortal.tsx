@@ -145,10 +145,7 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
         const cleanPhone = rawDigits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
         const withZero = `0${cleanPhone}`;
 
-        // 1. Direct Dosty admin check
-        if (cleanPhone === "7702269722" || cleanPhone.includes("7702269722")) {
-          candidates.push("dosty.wal98@gmail.com");
-        }
+        // Removed hardcoded Dosty check
 
         // 2. Direct client lookup from ui_texts staff records
         try {
@@ -160,7 +157,10 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
 
           for (const sp of staffPhones ?? []) {
             const pDigits = (sp.ar || "").replace(/\D/g, "");
-            if (pDigits === rawDigits || pDigits.endsWith(cleanPhone) || rawDigits.endsWith(pDigits)) {
+            if (
+              pDigits.length > 5 &&
+              (pDigits === rawDigits || pDigits.endsWith(cleanPhone) || rawDigits.endsWith(pDigits))
+            ) {
               const uId = sp.key.replace("staff_phone_", "");
               const { data: emRow } = await supabase
                 .from("ui_texts")

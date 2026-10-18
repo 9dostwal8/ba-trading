@@ -10,7 +10,7 @@ import { useI18n } from "@/lib/i18n";
 /**
  * Running-cost tracker.
  *
- * Lovable bills in credits. We can't read the credit meter from inside the app,
+ * The application bills in credits. We can't read the credit meter from inside the app,
  * so the admin stores the per-credit price + per-event credit assumptions once,
  * and this panel turns the store's real activity (orders, vendors, dentists)
  * into a monthly USD estimate, plus two forward-looking scenarios.
