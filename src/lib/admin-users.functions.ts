@@ -6,7 +6,7 @@ import { normalizePhone, generateSystemEmail, getLoginEmailCandidates, resolveAu
 /** Admin-only: create a vendor login (phone + password) and link it to a vendor. */
 export const createBrandManager = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { fullName: string; phone: string; password: string; vendorId?: string }) => input,
   )
   .handler(async ({ data, context }) => {

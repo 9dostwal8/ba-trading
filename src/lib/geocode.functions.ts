@@ -4,7 +4,7 @@ import { z } from "zod";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
 
 export const reverseGeocode = createServerFn({ method: "POST" })
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         latitude: z.number().min(-90).max(90),

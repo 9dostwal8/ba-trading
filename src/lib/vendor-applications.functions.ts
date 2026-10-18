@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /** Admin-only: approve (unblock login) or reject a vendor application. */
 export const reviewVendorApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         id: z.string().uuid(),

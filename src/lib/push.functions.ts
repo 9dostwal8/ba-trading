@@ -27,7 +27,7 @@ const textSchema = z.object({
  */
 export const sendPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => textSchema.parse(input))
+  .validator((input: unknown) => textSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { deliverPush } = await import("@/lib/push.server");
     const sb = context.supabase as unknown as {

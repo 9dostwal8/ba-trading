@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /** Starts a QiCard payment for an order the caller owns and returns the payment link. */
 export const startQiPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         orderId: z.string().uuid(),
@@ -56,7 +56,7 @@ export const startQiPayment = createServerFn({ method: "POST" })
 /** Re-checks the gateway for an order's payment status (used on the return page). */
 export const refreshQiPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ orderId: z.string().uuid() }).parse(data))
+  .validator((data) => z.object({ orderId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: order } = await supabase

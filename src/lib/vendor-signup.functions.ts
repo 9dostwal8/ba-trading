@@ -7,7 +7,7 @@ const BAN_FOREVER = "876000h";
 
 /** Public: a store owner applies for a vendor account. Login stays blocked until approved. */
 export const applyAsVendor = createServerFn({ method: "POST" })
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         storeName: z.string().trim().min(2).max(80),

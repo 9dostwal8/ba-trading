@@ -17,7 +17,7 @@ export type AiScannedItem = { name: string; brand: string; price: number; stock:
 /** One rough product name -> trilingual listing fields. */
 export const aiFillProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string; categories?: string[] }) => ({
+  .validator((input: { name: string; categories?: string[] }) => ({
     name: String(input.name ?? "").slice(0, 200),
     categories: (input.categories ?? []).slice(0, 40).map((c) => String(c).slice(0, 60)),
   }))
@@ -49,7 +49,7 @@ export const aiFillProduct = createServerFn({ method: "POST" })
 /** Photo of a price list -> rows the vendor can confirm and publish in bulk. */
 export const aiScanPriceList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { imageDataUrl: string }) => {
+  .validator((input: { imageDataUrl: string }) => {
     const url = String(input.imageDataUrl ?? "");
     if (!url.startsWith("data:image/")) throw new Error("Invalid image");
     if (url.length > 8_000_000) throw new Error("Image too large");
