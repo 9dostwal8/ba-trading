@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminAuthPortal } from "@/components/admin/AdminAuthPortal";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/admin/")({
   ssr: false,
@@ -18,11 +18,12 @@ export const Route = createFileRoute("/admin/")({
 
 function AdminIndexPage() {
   const { user, loading: authLoading } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
   const navigate = useNavigate();
 
   useEffect(() => {
     async function checkAndNavigate() {
-      if (!authLoading && user) {
+      if (!authLoading && user && isAdmin === true) {
         try {
           const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
@@ -36,9 +37,9 @@ function AdminIndexPage() {
       }
     }
     checkAndNavigate();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isAdmin, navigate]);
 
-  if (authLoading) {
+  if (authLoading || (user && isAdmin === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
         <div className="flex flex-col items-center gap-3">

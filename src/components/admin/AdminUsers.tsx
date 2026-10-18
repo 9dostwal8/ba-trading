@@ -42,8 +42,8 @@ import {
   adminCreateNewUser,
   adminDeleteUser,
   adminSetUserPassword,
-  deleteUserCompletely,
 } from "@/lib/admin-users.functions";
+import { resolveAuthEmail } from "@/lib/auth-helpers";
 
 // Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
 function getIsolatedAuthClient() {
@@ -175,7 +175,7 @@ function AdminUsersContent() {
     }
 
     const trimmedEmail = addEmail.trim().toLowerCase();
-    const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
+    const finalEmail = resolveAuthEmail(cleanPhone, trimmedEmail);
 
     setIsSubmitting(true);
     try {
@@ -276,12 +276,6 @@ function AdminUsersContent() {
           section: "staff_credentials",
           ar: finalEmail,
           ku: finalEmail,
-        },
-        {
-          key: `staff_pwd_${newUserId}`,
-          section: "staff_credentials",
-          ar: addPassword,
-          ku: addPassword,
         },
         {
           key: `staff_role_${newUserId}`,
@@ -710,18 +704,7 @@ function AdminUsersContent() {
     }
     setIsSubmitting(true);
     try {
-      // 1. Save in ui_texts for immediate reference
-      await supabase.from("ui_texts").upsert(
-        {
-          key: `staff_pwd_${selectedUser.id}`,
-          section: "staff_credentials",
-          ar: newPassword.trim(),
-          ku: newPassword.trim(),
-        },
-        { onConflict: "key" }
-      );
-
-      // 2. If changing own account, update directly via supabase.auth
+      // Update natively via Supabase Auth
       const currentAuthUser = (await supabase.auth.getUser()).data.user;
       if (currentAuthUser && selectedUser.id === currentAuthUser.id) {
         await supabase.auth.updateUser({ password: newPassword.trim() });

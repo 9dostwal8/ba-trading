@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Mail,
   MapPin,
   MessageCircle,
   Phone,
@@ -44,7 +45,12 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const PHONE_DOMAIN = "batrading.com";
+import {
+  normalizePhone,
+  generateSystemEmail,
+  resolveAuthEmail,
+  getLoginEmailCandidates,
+} from "@/lib/auth-helpers";
 
 const IRAQI_CITIES = [
   { ar: "أربيل", ku: "هەولێر", en: "Erbil" },
@@ -67,9 +73,13 @@ const IRAQI_CITIES = [
   { ar: "صلاح الدين", ku: "سەلاحەدین", en: "Saladin" },
 ];
 
-function normalizePhone(input: string) {
-  const digits = input.replace(/\D/g, "");
-  return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
+function generateSecureOtp(): string {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    return (100000 + ((array[0] ?? 0) % 900000)).toString();
+  }
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function authErrorText(e: unknown, fallback: string) {
@@ -98,6 +108,7 @@ function AuthPage() {
   // Form State
   const [form, setForm] = useState({
     phone: "",
+    email: "",
     password: "",
     fullName: "",
     city: "",
@@ -111,7 +122,7 @@ function AuthPage() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpChannel, setOtpChannel] = useState<"whatsapp" | "sms">("whatsapp");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
-  const [generatedOtp, setGeneratedOtp] = useState("123456");
+  const [generatedOtp, setGeneratedOtp] = useState("");
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
@@ -197,8 +208,9 @@ function AuthPage() {
   // Trigger Login directly or OTP Dispatch Modal for Registration
   async function handleInitiateAuth(e: React.FormEvent) {
     e.preventDefault();
+    const isDirectEmail = form.phone.includes("@");
     const phone = normalizePhone(form.phone);
-    if (phone.length < 9) {
+    if (!isDirectEmail && phone.length < 9) {
       toast.error(lang === "ar" ? "يرجى إدخال رقم هاتف صحيح (مثال: 07701234567)" : lang === "ku" ? "تکایە ژمارەی مۆبایلی دروست بنووسە" : "Please enter a valid phone number");
       return;
     }
@@ -210,11 +222,9 @@ function AuthPage() {
     // Direct Login (No OTP needed for Login)
     if (mode === "in") {
       setBusy(true);
-      const candidates: string[] = [
-        `${phone}@${PHONE_DOMAIN}`,
-        `0${phone}@${PHONE_DOMAIN}`,
-        `${phone}@batrading.com`,
-      ];
+      const candidates: string[] = isDirectEmail
+        ? [form.phone.trim().toLowerCase()]
+        : getLoginEmailCandidates(phone);
 
       // Check if user has custom email stored in ui_texts staff records
       try {
@@ -297,7 +307,7 @@ function AuthPage() {
     }
 
     // Generate fresh 6-digit OTP for Registration Verification
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const newOtp = generateSecureOtp();
     setGeneratedOtp(newOtp);
     setOtpDigits(["", "", "", "", "", ""]);
     setCountdown(60);
@@ -364,7 +374,7 @@ function AuthPage() {
   // Resend OTP
   function handleResendOtp(channel = otpChannel) {
     const phone = normalizePhone(form.phone);
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const newOtp = generateSecureOtp();
     setGeneratedOtp(newOtp);
     setCountdown(60);
     setCanResend(false);
@@ -411,34 +421,40 @@ function AuthPage() {
         toast.error(lang === "ar" ? "رمز التحقق غير صحيح، يرجى المحاولة ثانية" : lang === "ku" ? "کۆدی پشتڕاستکردنەوە هەڵەیە" : "Invalid verification code");
         return;
       }
-    } else if (enteredCode !== generatedOtp && enteredCode !== "123456") {
+    } else if (!generatedOtp || enteredCode !== generatedOtp) {
       toast.error(lang === "ar" ? "رمز التحقق غير صحيح، يرجى المحاولة ثانية" : lang === "ku" ? "کۆدی پشتڕاستکردنەوە هەڵەیە" : "Invalid verification code");
       return;
     }
 
     const phone = normalizePhone(form.phone);
-    const email = `${phone}@${PHONE_DOMAIN}`;
+    const authEmail = resolveAuthEmail(phone, form.email);
     setBusy(true);
 
     try {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: authEmail,
           password: form.password,
         });
         if (error) throw error;
         toast.success(lang === "ar" ? "تم التحقق وتسجيل الدخول بنجاح" : lang === "ku" ? "بە سەرکەوتوویی پشتڕاستکرایەوە و چوویتە ژوورەوە" : "Verified & Signed in successfully");
         setShowOtpModal(false);
+        setGeneratedOtp("");
         navigate({ to: "/profile" });
         return;
       }
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: authEmail,
         password: form.password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: { full_name: form.fullName.trim(), phone, city: form.city.trim() },
+          data: {
+            full_name: form.fullName.trim(),
+            phone,
+            city: form.city.trim(),
+            ...(form.email?.trim() ? { email: form.email.trim() } : {}),
+          },
         },
       });
 
@@ -447,6 +463,7 @@ function AuthPage() {
           toast.error(lang === "ar" ? "هذا الرقم مسجل مسبقاً، يرجى تسجيل الدخول" : lang === "ku" ? "ئەم ژمارەیە پێشتر تۆمارکراوە، تکایە بچۆ ژوورەوە" : "This phone is already registered. Please sign in.");
           setMode("in");
           setShowOtpModal(false);
+          setGeneratedOtp("");
           return;
         }
         throw error;
@@ -454,7 +471,7 @@ function AuthPage() {
 
       if (!data.session) {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
+          email: authEmail,
           password: form.password,
         });
         if (signInError) throw signInError;
@@ -463,6 +480,7 @@ function AuthPage() {
       await saveDentistDetails();
       toast.success(lang === "ar" ? "تم تأكيد الحساب وإنشاؤه بنجاح!" : lang === "ku" ? "هەژماری کلینیک بە سەرکەوتوویی پشتڕاستکرایەوە و دروستکرا!" : "Account confirmed & created successfully!");
       setShowOtpModal(false);
+      setGeneratedOtp("");
       navigate({ to: "/profile" });
     } catch (e) {
       toast.error(authErrorText(e, t("error")));
@@ -538,21 +556,25 @@ function AuthPage() {
               <div className="relative pt-1.5">
                 <div className="rounded-2xl border-2 border-slate-200 bg-white p-2.5 transition focus-within:border-[#0051cc] focus-within:ring-2 focus-within:ring-blue-100">
                   <label className="absolute -top-1 start-4 bg-white px-2 text-[11px] font-extrabold text-slate-600">
-                    {lang === "ar" ? "يرجى إدخال رقم الموبايل" : lang === "ku" ? "تکایە ژمارەی مۆبایل بنووسە" : "Please enter your mobile number"}
+                    {mode === "in"
+                      ? (lang === "ar" ? "رقم الموبايل أو البريد الإلكتروني" : lang === "ku" ? "ژمارەی مۆبایل یان ئیمەیڵ" : "Mobile Number or Email")
+                      : (lang === "ar" ? "يرجى إدخال رقم الموبايل" : lang === "ku" ? "تکایە ژمارەی مۆبایل بنووسە" : "Please enter your mobile number")}
                   </label>
                   
                   <div className="flex items-center gap-2 pt-0.5">
-                    <span className="flex items-center gap-1 text-[12px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg select-none">
-                      <span>🇮🇶</span>
-                      <span dir="ltr">+964</span>
-                    </span>
+                    {!form.phone.includes("@") && (
+                      <span className="flex items-center gap-1 text-[12px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg select-none">
+                        <span>🇮🇶</span>
+                        <span dir="ltr">+964</span>
+                      </span>
+                    )}
                     <input
-                      type="tel"
+                      type={mode === "in" ? "text" : "tel"}
                       required
                       dir="ltr"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      placeholder="0770 123 4567"
+                      placeholder={mode === "in" ? "0770 123 4567 / doctor@email.com" : "0770 123 4567"}
                       className="h-8 w-full bg-transparent text-[15px] font-mono font-black text-slate-900 placeholder:text-slate-300 focus:outline-none"
                     />
                   </div>
@@ -587,6 +609,21 @@ function AuthPage() {
               {/* City & Address & Captcha (Sign-up only) */}
               {mode === "up" && (
                 <>
+                  <div className="space-y-1 animate-in fade-in duration-200">
+                    <label className="text-[11px] font-extrabold text-slate-600 block">
+                      {lang === "ar" ? "البريد الإلكتروني (اختياري)" : lang === "ku" ? "ئیمەیڵ (ئارەزوومەندانە)" : "Email Address (Optional)"}
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute top-1/2 start-3 -translate-y-1/2 size-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        placeholder="doctor@example.com"
+                        className="h-10 ps-9 rounded-xl border-slate-200 bg-slate-50/50 text-[13px] font-bold focus:bg-white focus:border-[#0051cc]"
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-2.5 animate-in fade-in duration-200">
                     <div className="space-y-1">
                       <label className="text-[11px] font-extrabold text-slate-600 block">

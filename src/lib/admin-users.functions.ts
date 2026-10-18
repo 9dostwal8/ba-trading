@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PHONE_DOMAIN = "dentalstore.app";
-
-function normalizePhone(raw: string) {
-  const digits = (raw ?? "").replace(/\D/g, "");
-  return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
-}
+import { normalizePhone, generateSystemEmail, getLoginEmailCandidates, resolveAuthEmail } from "@/lib/auth-helpers";
 
 /** Admin-only: create a vendor login (phone + password) and link it to a vendor. */
 export const createBrandManager = createServerFn({ method: "POST" })
@@ -28,7 +23,7 @@ export const createBrandManager = createServerFn({ method: "POST" })
     if (fullName.length < 2) throw new Error("badName");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email = `${phone}@${PHONE_DOMAIN}`;
+    const email = generateSystemEmail(phone);
 
     // Reuse an existing account with the same phone instead of failing.
     const existing = await supabaseAdmin
@@ -174,7 +169,7 @@ export const fetchUsersWithRoles = createServerFn({ method: "GET" })
     const [profilesRes, rolesRes, deletedRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
-        .select("id, full_name, phone, created_at, avatar_url")
+        .select("id, full_name, phone, created_at")
         .order("created_at", { ascending: false })
         .limit(200),
       supabaseAdmin.from("user_roles").select("user_id, role"),
@@ -208,7 +203,7 @@ export const fetchUsersWithRoles = createServerFn({ method: "GET" })
           id: p.id,
           full_name: p.full_name || "Unknown User",
           phone: p.phone || "",
-          avatar_url: p.avatar_url || null,
+          avatar_url: null,
           created_at: p.created_at,
           role,
           roles: userRoles,
@@ -271,10 +266,7 @@ export const adminCreateNewUser = createServerFn({ method: "POST" })
     if (fullName.length < 2) throw new Error("badName");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email =
-      data.email && data.email.includes("@")
-        ? data.email.trim().toLowerCase()
-        : `${phone}@${PHONE_DOMAIN}`;
+    const email = resolveAuthEmail(phone, data.email);
 
     const existing = await supabaseAdmin
       .from("profiles")
@@ -325,17 +317,6 @@ export const adminCreateNewUser = createServerFn({ method: "POST" })
       if (roleRes.error) throw new Error(roleRes.error.message);
     }
 
-    // Save password in ui_texts for quick admin recovery
-    await supabaseAdmin.from("ui_texts").upsert(
-      {
-        key: `staff_pwd_${userId}`,
-        section: "staff_credentials",
-        ar: data.password,
-        ku: data.password,
-      },
-      { onConflict: "key" }
-    );
-
     return { userId, phone, fullName, email, role: data.role || "user" };
   });
 
@@ -359,10 +340,7 @@ export const createStaffAccount = createServerFn({ method: "POST" })
     if (fullName.length < 2) throw new Error("badName");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email =
-      data.email && data.email.includes("@")
-        ? data.email.trim().toLowerCase()
-        : `${phone}@${PHONE_DOMAIN}`;
+    const email = resolveAuthEmail(phone, data.email);
 
     const existing = await supabaseAdmin
       .from("profiles")
@@ -411,16 +389,6 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       { onConflict: "key" }
     );
 
-    await supabaseAdmin.from("ui_texts").upsert(
-      {
-        key: `staff_pwd_${userId}`,
-        section: "staff_credentials",
-        ar: data.password,
-        ku: data.password,
-      },
-      { onConflict: "key" }
-    );
-
     return { userId, phone, fullName, email, role: data.role };
   });
 
@@ -436,17 +404,6 @@ export const adminSetUserPassword = createServerFn({ method: "POST" })
       password: data.newPassword,
     });
     if (upd.error) throw new Error(upd.error.message);
-
-    // Save in ui_texts for admin quick reference
-    await supabaseAdmin.from("ui_texts").upsert(
-      {
-        key: `staff_pwd_${data.targetUserId}`,
-        section: "staff_credentials",
-        ar: data.newPassword,
-        ku: data.newPassword,
-      },
-      { onConflict: "key" }
-    );
 
     return { success: true };
   });
@@ -488,7 +445,7 @@ export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
       // 3. Search auth users list
       const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 100 });
       for (const u of listData?.users ?? []) {
-        const uPhone = (u.phone || (u.user_metadata?.phone as string) || "").replace(/\D/g, "");
+        const uPhone = (u.phone || ((u.user_metadata as any)?.phone as string) || "").replace(/\D/g, "");
         if (uPhone.endsWith(cleanPhone) && u.email) {
           return { email: u.email };
         }
@@ -498,13 +455,8 @@ export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
     }
 
     return {
-      email: `${cleanPhone}@dentalstore.app`,
-      candidates: [
-        `${cleanPhone}@dentalstore.app`,
-        `${withZero}@dentalstore.app`,
-        `${cleanPhone}@batrading.com`,
-        `${withZero}@batrading.com`,
-      ],
+      email: generateSystemEmail(cleanPhone),
+      candidates: getLoginEmailCandidates(cleanPhone),
     };
   });
 
@@ -520,21 +472,29 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-      // 1. Clean up user's orders and items
+      // 1. Preserve financial records: NEVER DELETE orders, order_items, or vendor_reward_points!
+      let hasOrders = false;
       try {
         const { data: userOrders } = await supabaseAdmin
           .from("orders")
           .select("id")
           .eq("user_id", targetUserId);
 
-        if (userOrders && userOrders.length > 0) {
-          const orderIds = userOrders.map((o) => o.id);
-          await supabaseAdmin.from("order_items").delete().in("order_id", orderIds);
-          await supabaseAdmin.from("vendor_reward_points").delete().in("order_id", orderIds);
-          await supabaseAdmin.from("orders").delete().in("id", orderIds);
+        hasOrders = !!(userOrders && userOrders.length > 0);
+
+        if (hasOrders) {
+          // Attempt to anonymize/detach the orders by setting user_id to null
+          const { error: unlinkErr } = await (supabaseAdmin.from("orders") as any)
+            .update({ user_id: null })
+            .eq("user_id", targetUserId);
+
+          if (!unlinkErr) {
+            // Orders detached successfully
+            hasOrders = false;
+          }
         }
       } catch (e) {
-        console.warn("orders cleanup note:", e);
+        console.warn("orders preservation note:", e);
       }
 
       // 2. Unlink any referral pointing to this user
@@ -554,7 +514,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
         console.warn("product_reviews cleanup:", e);
       }
       try {
-        await supabaseAdmin.from("product_favorites").delete().eq("user_id", targetUserId);
+        await (supabaseAdmin.from as any)("product_favorites").delete().eq("user_id", targetUserId);
       } catch (e) {
         console.warn("product_favorites cleanup:", e);
       }
@@ -588,14 +548,25 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
         console.warn("related tables cleanup:", e);
       }
 
-      // 6. Delete profile record or wipe fallback
+      // 6. Handle profile (anonymize if user has attached orders, delete otherwise)
       try {
-        const profDel = await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
-        if (profDel.error) {
+        if (hasOrders) {
           await supabaseAdmin
             .from("profiles")
-            .update({ full_name: "[DELETED]", phone: null, referred_by: null })
+            .update({
+              full_name: "[DELETED USER]",
+              phone: "",
+              referred_by: null,
+            })
             .eq("id", targetUserId);
+        } else {
+          const profDel = await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
+          if (profDel.error) {
+            await supabaseAdmin
+              .from("profiles")
+              .update({ full_name: "[DELETED USER]", phone: "", referred_by: null })
+              .eq("id", targetUserId);
+          }
         }
       } catch (e) {
         console.warn("profiles cleanup:", e);
@@ -626,11 +597,21 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
         console.warn("ui_texts blacklist note:", e);
       }
 
-      // 9. Delete from Supabase Auth
+      // 9. Clean up or disable Auth account
       try {
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
-        if (error) {
-          console.warn("Auth deleteUser note:", error.message);
+        if (hasOrders) {
+          // If orders could not be unlinked, do NOT hard-delete from Auth to prevent PostgreSQL ON DELETE CASCADE from wiping financial orders.
+          // Instead, permanently ban and disable the Auth account.
+          await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+            ban_duration: "876000h",
+            user_metadata: { is_deleted: true },
+          });
+        } else {
+          // Safe to permanently delete from Supabase Auth
+          const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+          if (error) {
+            console.warn("Auth deleteUser note:", error.message);
+          }
         }
       } catch (err: any) {
         console.warn("Auth deleteUser exception:", err?.message || err);
@@ -690,7 +671,7 @@ export async function deleteUserCompletely(targetUserId: string): Promise<boolea
     try { await supabase.from("notifications").delete().eq("user_id", targetUserId); } catch {}
     try { await supabase.from("push_subscriptions").delete().eq("user_id", targetUserId); } catch {}
     try { await supabase.from("product_reviews").delete().eq("user_id", targetUserId); } catch {}
-    try { await supabase.from("product_favorites").delete().eq("user_id", targetUserId); } catch {}
+    try { await (supabase.from as any)("product_favorites").delete().eq("user_id", targetUserId); } catch {}
     try { await supabase.from("profiles").update({ full_name: "[DELETED]", phone: "" }).eq("id", targetUserId); } catch {}
     try { await supabase.from("profiles").delete().eq("id", targetUserId); } catch {}
   } catch (clientErr) {
