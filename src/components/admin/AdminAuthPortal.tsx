@@ -16,13 +16,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { lookupAdminLoginEmail } from "@/lib/admin-users.functions";
-
-const PHONE_DOMAIN = "batrading.com";
-
-function normalizePhone(input: string) {
-  const digits = input.replace(/\D/g, "");
-  return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
-}
+import { normalizePhone, getLoginEmailCandidates } from "@/lib/auth-helpers";
 
 interface AdminAuthPortalProps {
   onSuccess?: () => void;
@@ -201,13 +195,10 @@ export function AdminAuthPortal({ onSuccess }: AdminAuthPortalProps) {
         }
 
         // 3. Additional standard domain fallbacks
-        candidates.push(
-          `${cleanPhone}@dentalstore.app`,
-          `${withZero}@dentalstore.app`,
-          `${cleanPhone}@batrading.com`,
-          `${withZero}@batrading.com`,
-          `${cleanPhone}@batrading.iq`
-        );
+        for (const c of getLoginEmailCandidates(cleanPhone)) {
+          candidates.push(c);
+        }
+        candidates.push(`${cleanPhone}@batrading.iq`);
         candidates = Array.from(new Set(candidates));
       } else {
         candidates = [trimmed.toLowerCase()];

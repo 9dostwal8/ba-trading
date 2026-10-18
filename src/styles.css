@@ -221,6 +221,7 @@
     line-height: 24px;
     letter-spacing: 0;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
 
   h1,

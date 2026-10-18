@@ -16,8 +16,6 @@ import {
   Trash2,
   Calendar,
   AlertTriangle,
-  Eye,
-  EyeOff,
   Copy,
   Key,
   Mail,
@@ -28,6 +26,7 @@ import { AdminCard, SectionHeader } from "../AdminKit";
 import { supabase } from "@/integrations/supabase/client";
 import { createClient } from "@supabase/supabase-js";
 import { adminSetUserPassword, createStaffAccount, deleteUserCompletely } from "@/lib/admin-users.functions";
+import { resolveAuthEmail, generateSystemEmail } from "@/lib/auth-helpers";
 
 // Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
 function getIsolatedAuthClient() {
@@ -150,7 +149,6 @@ export function SettingsUsersTab() {
   const [roleFilter, setRoleFilter] = useState<"panel_users" | "admin" | "brand_manager" | "all">("panel_users");
   
   // Password Visibility Toggle per user ID
-  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   // Modals & Navigation State
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -176,10 +174,6 @@ export function SettingsUsersTab() {
   // Form State for Quick Password Change Modal
   const [quickNewPassword, setQuickNewPassword] = useState("");
 
-  // Toggle Password Visibility
-  const togglePasswordVisibility = (userId: string) => {
-    setVisiblePasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
-  };
 
   // Copy to Clipboard Helper
   const copyToClipboard = (text: string, label: string) => {
@@ -224,18 +218,14 @@ export function SettingsUsersTab() {
 
       const currentUser = userAuthRes?.data?.user;
       
-      // Map stored staff passwords, emails, names, phones, and roles
-      const pwdsMap = new Map<string, string>();
+      // Map stored staff emails, names, phones, and roles
       const emailsMap = new Map<string, string>();
       const namesMap = new Map<string, string>();
       const phonesMap = new Map<string, string>();
       const staffRolesMap = new Map<string, string>();
 
       for (const item of credsRes.data ?? []) {
-        if (item.key.startsWith("staff_pwd_")) {
-          const uId = item.key.replace("staff_pwd_", "");
-          pwdsMap.set(uId, item.ar);
-        } else if (item.key.startsWith("staff_email_")) {
+        if (item.key.startsWith("staff_email_")) {
           const uId = item.key.replace("staff_email_", "");
           emailsMap.set(uId, item.ar);
         } else if (item.key.startsWith("staff_name_")) {
@@ -273,7 +263,7 @@ export function SettingsUsersTab() {
 
         const phone = p.phone || phonesMap.get(p.id) || "";
         const name = p.full_name || namesMap.get(p.id) || phone || "User";
-        const savedEmail = emailsMap.get(p.id) || (phone ? `${phone}@dentalstore.app` : "");
+        const savedEmail = emailsMap.get(p.id) || (phone ? generateSystemEmail(phone) : "");
         const username = phone || (name ? name.toLowerCase().replace(/\s+/g, '_') : `user_${p.id.slice(0, 6)}`);
 
         userMap.set(p.id, {
@@ -282,7 +272,7 @@ export function SettingsUsersTab() {
           phone,
           email: savedEmail,
           username,
-          saved_password: pwdsMap.get(p.id) || "",
+          saved_password: "",
           avatar_url: p.avatar_url || null,
           created_at: p.created_at,
           role,
@@ -309,7 +299,7 @@ export function SettingsUsersTab() {
             phone: savedPhone,
             email: savedEmail,
             username: savedPhone || (savedEmail ? savedEmail.split("@")[0] : `staff_${userId.slice(0, 6)}`),
-            saved_password: pwdsMap.get(userId) || "",
+            saved_password: "",
             avatar_url: null,
             created_at: new Date().toISOString(),
             role,
@@ -339,7 +329,7 @@ export function SettingsUsersTab() {
             phone: savedPhone,
             email: savedEmail,
             username: savedPhone || (savedEmail ? savedEmail.split("@")[0] : `staff_${userId.slice(0, 6)}`),
-            saved_password: pwdsMap.get(userId) || "",
+            saved_password: "",
             avatar_url: null,
             created_at: new Date().toISOString(),
             role,
@@ -380,7 +370,7 @@ export function SettingsUsersTab() {
             phone: metaPhone,
             email: metaEmail,
             username: metaPhone || (metaEmail ? metaEmail.split("@")[0] : currentUser.id.slice(0, 6)),
-            saved_password: pwdsMap.get(currentUser.id) || "",
+            saved_password: "",
             avatar_url: null,
             created_at: currentUser.created_at || new Date().toISOString(),
             role: "admin",
@@ -400,13 +390,13 @@ export function SettingsUsersTab() {
     setEditPhone(user.phone);
     setEditEmail(user.email || "");
     setEditRole(user.role);
-    setEditPassword(user.saved_password || "");
+    setEditPassword("");
   };
 
   // Open Quick Password Change Modal
   const openQuickPasswordModal = (user: UserItem) => {
     setUserForPasswordChange(user);
-    setQuickNewPassword(user.saved_password || "");
+    setQuickNewPassword("");
   };
 
   // Update User Mutation (Full Name, Phone, Email, Role, and optional Password)
@@ -483,17 +473,6 @@ export function SettingsUsersTab() {
           throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
         }
 
-        // Save to ui_texts for quick reference
-        await supabase.from("ui_texts").upsert(
-          {
-            key: `staff_pwd_${userToEdit.id}`,
-            section: "staff_credentials",
-            ar: editPassword.trim(),
-            ku: editPassword.trim(),
-          },
-          { onConflict: "key" }
-        );
-
         // If editing own account, update directly via client auth without needing service role key!
         if (currentAuthUser && userToEdit.id === currentAuthUser.id) {
           await supabase.auth.updateUser({
@@ -536,17 +515,6 @@ export function SettingsUsersTab() {
       if (!quickNewPassword.trim() || quickNewPassword.trim().length < 6) {
         throw new Error(lang === "ku" ? "وشەی تێپەڕ دەبێت لانیکەم ٦ پیت بێت" : "كلمة المرور يجب أن لا تقل عن 6 أحرف");
       }
-
-      // Save to ui_texts for quick reference
-      await supabase.from("ui_texts").upsert(
-        {
-          key: `staff_pwd_${userForPasswordChange.id}`,
-          section: "staff_credentials",
-          ar: quickNewPassword.trim(),
-          ku: quickNewPassword.trim(),
-        },
-        { onConflict: "key" }
-      );
 
       // If updating own password, update directly via client auth!
       if (currentAuthUser && userForPasswordChange.id === currentAuthUser.id) {
@@ -608,7 +576,7 @@ export function SettingsUsersTab() {
       if (!formName.trim()) throw new Error(lang === "ku" ? "تکایە ناو بنووسە" : "يرجى كتابة الاسم");
 
       const trimmedEmail = formEmail.trim().toLowerCase();
-      const finalEmail = trimmedEmail.includes("@") ? trimmedEmail : `${cleanPhone}@dentalstore.app`;
+      const finalEmail = resolveAuthEmail(cleanPhone, trimmedEmail);
 
       // Prevent reusing owner phone/email
       if (cleanPhone.includes("7702269722") || finalEmail.includes("dosty.wal98@gmail.com")) {
@@ -703,12 +671,6 @@ export function SettingsUsersTab() {
           section: "staff_credentials",
           ar: finalEmail,
           ku: finalEmail,
-        },
-        {
-          key: `staff_pwd_${newUserId}`,
-          section: "staff_credentials",
-          ar: formPassword,
-          ku: formPassword,
         },
         {
           key: `staff_role_${newUserId}`,
@@ -998,8 +960,6 @@ export function SettingsUsersTab() {
                     const isAdmin = user.role === "admin";
                     const isManager = user.role === "brand_manager";
                     const isSelf = currentAuthUser?.id === user.id;
-                    const isPasswordRevealed = !!visiblePasswords[user.id];
-                    const pwdDisplay = user.saved_password || "";
 
                     const formattedDate = user.created_at
                       ? new Date(user.created_at).toLocaleDateString(lang === "ku" ? "ku" : lang === "ar" ? "ar-EG" : "en-US", {
@@ -1090,38 +1050,8 @@ export function SettingsUsersTab() {
                           <div className="flex items-center gap-1.5">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
                               <Key className="size-3 text-slate-400 shrink-0" />
-                              <span dir="ltr">
-                                {pwdDisplay
-                                  ? isPasswordRevealed
-                                    ? pwdDisplay
-                                    : "••••••••"
-                                  : "••••••••"}
-                              </span>
+                              <span dir="ltr">••••••••</span>
                             </div>
-
-                            {/* Show/Hide Toggle */}
-                            {pwdDisplay && (
-                              <button
-                                type="button"
-                                onClick={() => togglePasswordVisibility(user.id)}
-                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition"
-                                title={isPasswordRevealed ? "Hide password" : "Show password"}
-                              >
-                                {isPasswordRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                              </button>
-                            )}
-
-                            {/* Copy Password Button */}
-                            {pwdDisplay && (
-                              <button
-                                type="button"
-                                onClick={() => copyToClipboard(pwdDisplay, tx("colPassword"))}
-                                className="size-7 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition"
-                                title={tx("colPassword")}
-                              >
-                                <Copy className="size-3" />
-                              </button>
-                            )}
 
                             {/* Quick Set/Change Password Key Button */}
                             <button

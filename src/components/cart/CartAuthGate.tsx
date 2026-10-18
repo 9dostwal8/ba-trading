@@ -6,13 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-
-const PHONE_DOMAIN = "dentalstore.app";
-
-function normalizePhone(input: string) {
-  const digits = input.replace(/\D/g, "");
-  return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
-}
+import { normalizePhone, generateSystemEmail, getLoginEmailCandidates } from "@/lib/auth-helpers";
 
 type Txt = { ar: string; ku: string; en: string };
 const C = {
@@ -74,15 +68,40 @@ export function CartAuthGate({ locked, children }: { locked: boolean; children: 
       toast.error(tx(C.needName));
       return;
     }
-    const email = `${p}@${PHONE_DOMAIN}`;
     setBusy(true);
     try {
       if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const candidates = getLoginEmailCandidates(p);
+        let signedIn = false;
+        let lastErr: any = null;
+
+        for (const candEmail of candidates) {
+          const { error } = await supabase.auth.signInWithPassword({ email: candEmail, password });
+          if (!error) {
+            signedIn = true;
+            break;
+          }
+          lastErr = error;
+        }
+
+        if (!signedIn) {
+          // Native phone fallback
+          try {
+            const { error: phoneErr } = await supabase.auth.signInWithPassword({
+              phone: `+964${p}`,
+              password,
+            });
+            if (!phoneErr) signedIn = true;
+          } catch {}
+        }
+
+        if (!signedIn) {
+          throw lastErr || new Error("Sign in failed");
+        }
       } else {
+        const systemEmail = generateSystemEmail(p);
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: systemEmail,
           password,
           options: {
             emailRedirectTo: window.location.origin,
@@ -98,7 +117,7 @@ export function CartAuthGate({ locked, children }: { locked: boolean; children: 
           throw error;
         }
         if (!data.session) {
-          const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
+          const { error: e2 } = await supabase.auth.signInWithPassword({ email: systemEmail, password });
           if (e2) throw e2;
         }
       }

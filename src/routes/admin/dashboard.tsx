@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/admin/dashboard")({
   ssr: false,
@@ -21,31 +21,33 @@ export const Route = createFileRoute("/admin/dashboard")({
 
 function AdminDashboardPage() {
   const { user, loading: authLoading } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
   const { tab } = Route.useSearch();
   const navigate = useNavigate();
 
   useEffect(() => {
     async function enforceAuthAndMfa() {
-      if (!authLoading && !user) {
+      if (authLoading || isAdmin === null) return;
+
+      if (!user || isAdmin === false) {
         navigate({ to: "/admin", replace: true });
         return;
       }
-      if (!authLoading && user) {
-        try {
-          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-          if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
-            navigate({ to: "/admin", replace: true });
-          }
-        } catch (err) {
-          console.warn("AAL error:", err);
+
+      try {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") {
+          navigate({ to: "/admin", replace: true });
         }
+      } catch (err) {
+        console.warn("AAL error:", err);
       }
     }
     enforceAuthAndMfa();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isAdmin, navigate]);
 
-  // 1. Loading State
-  if (authLoading) {
+  // 1. Loading State (waiting for auth or admin role verification)
+  if (authLoading || (user && isAdmin === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
         <div className="flex flex-col items-center gap-3">
@@ -56,8 +58,8 @@ function AdminDashboardPage() {
     );
   }
 
-  // 2. Unauthenticated -> Handled by navigate in useEffect
-  if (!user) {
+  // 2. Unauthenticated or Non-Admin -> Handled by navigate in useEffect
+  if (!user || isAdmin !== true) {
     return null;
   }
 

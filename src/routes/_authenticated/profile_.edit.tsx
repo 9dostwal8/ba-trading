@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/lib/i18n";
+import { generateSystemEmail, isSystemEmail, normalizePhone } from "@/lib/auth-helpers";
 
 export const Route = createFileRoute("/_authenticated/profile_/edit")({
   head: () => ({
@@ -209,13 +210,23 @@ function EditProfilePage() {
 
       if (profileErr) throw profileErr;
 
-      await supabase.auth.updateUser({
+      const cleanNewPhone = normalizePhone(phone);
+      const currentEmail = user.email || "";
+
+      const authUpdatePayload: { data: Record<string, any>; email?: string } = {
         data: {
           full_name: fullName.trim(),
           name: fullName.trim(),
           phone: phone.trim(),
         },
-      });
+      };
+
+      // If the user's Auth account is using a system-generated phone email, synchronize Auth email to match new phone
+      if (isSystemEmail(currentEmail) && cleanNewPhone) {
+        authUpdatePayload.email = generateSystemEmail(cleanNewPhone);
+      }
+
+      await supabase.auth.updateUser(authUpdatePayload);
 
       toast.success(L.savedSuccess[lang]);
       qc.invalidateQueries({ queryKey: ["profile"] });

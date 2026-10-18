@@ -1,14 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { normalizePhone, resolveAuthEmail } from "@/lib/auth-helpers";
 
-const PHONE_DOMAIN = "dentalstore.app";
 /** ~100 years — the login stays blocked until an admin approves it. */
 const BAN_FOREVER = "876000h";
-
-function normalizePhone(raw: string) {
-  const digits = (raw ?? "").replace(/\D/g, "");
-  return digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
-}
 
 /** Public: a store owner applies for a vendor account. Login stays blocked until approved. */
 export const applyAsVendor = createServerFn({ method: "POST" })
@@ -19,6 +14,7 @@ export const applyAsVendor = createServerFn({ method: "POST" })
         city: z.string().trim().min(2).max(60),
         addressLine: z.string().trim().max(200).default(""),
         phone: z.string().trim().min(9).max(20),
+        email: z.string().trim().email().optional(),
         password: z.string().min(6).max(72),
         captchaA: z.number().int().min(0).max(20),
         captchaB: z.number().int().min(0).max(20),
@@ -45,8 +41,10 @@ export const applyAsVendor = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pending.data) throw new Error("alreadyApplied");
 
+    const authEmail = resolveAuthEmail(phone, data.email);
+
     const created = await supabaseAdmin.auth.admin.createUser({
-      email: `${phone}@${PHONE_DOMAIN}`,
+      email: authEmail,
       password: data.password,
       email_confirm: true,
       ban_duration: BAN_FOREVER,

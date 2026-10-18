@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCart } from "@/lib/cart";
 import { fetchStoreData } from "@/lib/store";
 import { formatPrice, pick, pickName, useI18n } from "@/lib/i18n";
@@ -42,22 +43,61 @@ export function GooshiHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [isPromoDismissed, setIsPromoDismissed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const catMenuRef = useRef<HTMLDivElement>(null);
   const qrFileRef = useRef<HTMLInputElement>(null);
 
-  // Close dropdowns on click outside
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setIsCategoryMenuOpen(false);
+    setIsSearchOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while category menu is open (Requirement 3)
+  useEffect(() => {
+    if (!isCategoryMenuOpen || typeof document === "undefined") return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isCategoryMenuOpen]);
+
+  // Close dropdowns on click outside & Escape key
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (searchRef.current && !searchRef.current.contains(target)) {
         setIsSearchOpen(false);
       }
-      if (catMenuRef.current && !catMenuRef.current.contains(event.target as Node)) {
+      const drawerEl = typeof document !== "undefined" ? document.getElementById("mobile-category-drawer") : null;
+      if (
+        catMenuRef.current &&
+        !catMenuRef.current.contains(target) &&
+        !(drawerEl && drawerEl.contains(target))
+      ) {
         setIsCategoryMenuOpen(false);
       }
     }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsCategoryMenuOpen(false);
+        setIsSearchOpen(false);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   // Filter products for live suggestions
@@ -162,6 +202,223 @@ export function GooshiHeader() {
     </Link>
   );
 
+  const menuContentNode = (
+    <>
+      {/* Top Section: Quick Features & Special Sections */}
+      <div className="mb-4">
+        <p className="mb-2.5 px-1 text-[11px] font-black uppercase tracking-wider text-slate-400">
+          {lang === "ar"
+            ? "الأقسام والعروض المميزة"
+            : lang === "ku"
+            ? "بەشە تایبەت و ئۆفەرەکان"
+            : "Featured Sections"}
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {/* Flash Deals */}
+          <Link
+            to="/deals"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="flex items-center gap-2.5 rounded-2xl bg-teal-50/80 p-2.5 border border-teal-100/80 transition-all hover:bg-teal-100 hover:scale-[1.02]"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#007979] text-white shadow-sm">
+              <Zap className="size-4.5 fill-white" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-[12.5px] font-black text-teal-900">
+                {lang === "ar"
+                  ? "عروض سريعة"
+                  : lang === "ku"
+                  ? "ئۆفەری خێرا"
+                  : "Flash Deals"}
+              </span>
+              <span className="block text-[10px] font-medium text-[#007979]">
+                {lang === "ar"
+                  ? "خصومات قوية"
+                  : lang === "ku"
+                  ? "داشکاندنی بەهێز"
+                  : "Hot discounts"}
+              </span>
+            </div>
+          </Link>
+
+          {/* Special Offers */}
+          <Link
+            to="/offers"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="flex items-center gap-2.5 rounded-2xl bg-blue-50/80 p-2.5 border border-blue-100/80 transition-all hover:bg-blue-100 hover:scale-[1.02]"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+              <Tag className="size-4.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-[12.5px] font-black text-blue-800">
+                {lang === "ar"
+                  ? "تخفيضات خاصة"
+                  : lang === "ku"
+                  ? "داشکاندنی تایبەت"
+                  : "Special Offers"}
+              </span>
+              <span className="block text-[10px] font-medium text-blue-500">
+                {lang === "ar"
+                  ? "عروض حصرية"
+                  : lang === "ku"
+                  ? "ئۆفەری تایبەت"
+                  : "Exclusive deals"}
+              </span>
+            </div>
+          </Link>
+
+          {/* Clinic Bundles */}
+          <Link
+            to="/bundles"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="flex items-center gap-2.5 rounded-2xl bg-amber-50/80 p-2.5 border border-amber-100/80 transition-all hover:bg-amber-100 hover:scale-[1.02]"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white shadow-sm">
+              <Boxes className="size-4.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-[12.5px] font-black text-amber-900">
+                {lang === "ar"
+                  ? "باقات العيادات"
+                  : lang === "ku"
+                  ? "پاکێجی کلینیک"
+                  : "Clinic Bundles"}
+              </span>
+              <span className="block text-[10px] font-medium text-amber-600">
+                {lang === "ar"
+                  ? "توفير أكبر"
+                  : lang === "ku"
+                  ? "پاشەکەوتی زۆرتر"
+                  : "Save more"}
+              </span>
+            </div>
+          </Link>
+
+          {/* Brands */}
+          <Link
+            to="/brands"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="flex items-center gap-2.5 rounded-2xl bg-purple-50/80 p-2.5 border border-purple-100/80 transition-all hover:bg-purple-100 hover:scale-[1.02]"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
+              <Sparkles className="size-4.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-[12.5px] font-black text-purple-900">
+                {lang === "ar"
+                  ? "الماركات العالمية"
+                  : lang === "ku"
+                  ? "براندە جیهانییەکان"
+                  : "Brands"}
+              </span>
+              <span className="block text-[10px] font-medium text-purple-500">
+                {lang === "ar"
+                  ? "3M, GC, Tokuyama"
+                  : lang === "ku"
+                  ? "براندی فەرمی"
+                  : "Official agents"}
+              </span>
+            </div>
+          </Link>
+
+          {/* Vendor Signup */}
+          <Link
+            to="/vendor-signup"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="flex items-center gap-2.5 rounded-2xl bg-emerald-50/80 p-2.5 border border-emerald-100/80 transition-all hover:bg-emerald-100 hover:scale-[1.02] col-span-2 sm:col-span-2"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+              <Store className="size-4.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate text-[12.5px] font-black text-emerald-900">
+                {lang === "ar"
+                  ? "انضم كمورد / افتح متجرك"
+                  : lang === "ku"
+                  ? "وەک فرۆشیار بەشداربە"
+                  : "Sell with Us"}
+              </span>
+              <span className="block text-[10px] font-medium text-emerald-600">
+                {lang === "ar"
+                  ? "سجل كشركة أو مستودع طبي"
+                  : lang === "ku"
+                  ? "تۆمارکردنی کۆمپانیا"
+                  : "Register vendor store"}
+              </span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Divider & Categories Grid */}
+      <div className="border-t border-slate-100 pt-3">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+            {lang === "ar"
+              ? "تصنيفات المواد والمستلزمات الطبية"
+              : lang === "ku"
+              ? "هاوپۆلەکانی کەرەستەی پزیشکی"
+              : "Dental Categories"}
+          </p>
+          <Link
+            to="/products"
+            onClick={() => setIsCategoryMenuOpen(false)}
+            className="text-[11.5px] font-bold text-primary hover:underline"
+          >
+            {lang === "ar" ? "عرض الكل" : lang === "ku" ? "بینینی هەمووی" : "View All"}
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 md:max-h-64 overflow-y-auto pr-1">
+          {categories.map((c) => {
+            const Icon = categoryIcon(c.icon);
+            const hasValidImage = c.image_url && !c.image_url.startsWith("/__l5e");
+            return (
+              <Link
+                key={c.id}
+                to="/products"
+                search={{ cat: c.id } as never}
+                onClick={() => setIsCategoryMenuOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[12.5px] font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-primary active:bg-slate-100"
+              >
+                <div
+                  style={tintStyle(c.hue, c.chroma)}
+                  className="flex size-7 items-center justify-center rounded-lg p-1 shrink-0 border border-slate-100/60"
+                >
+                  {hasValidImage ? (
+                    <img
+                      src={c.image_url!}
+                      alt={pickName(c, lang)}
+                      className="size-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.nextElementSibling) {
+                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="size-full items-center justify-center"
+                    style={{ display: hasValidImage ? "none" : "flex" }}
+                  >
+                    <Icon
+                      className="size-4"
+                      strokeWidth={2}
+                      style={{ color: "var(--tint-strong)" }}
+                    />
+                  </div>
+                </div>
+                <span className="truncate">{pickName(c, lang)}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       <input
@@ -241,6 +498,8 @@ export function GooshiHeader() {
               <button
                 type="button"
                 onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
+                aria-expanded={isCategoryMenuOpen}
+                aria-haspopup="dialog"
                 title={
                   lang === "ar"
                     ? "الأقسام وتصنيفات المنتجات"
@@ -265,221 +524,10 @@ export function GooshiHeader() {
                 <Menu className="size-5" />
               </button>
 
-              {/* Beautiful Mega Dropdown Menu */}
+              {/* Desktop Mega Dropdown Menu (>= md) */}
               {isCategoryMenuOpen && (
-                <div className="absolute top-full mt-2.5 rtl:right-0 ltr:left-0 w-[560px] max-w-[90vw] overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-                  {/* Top Section: Quick Features & Special Sections */}
-                  <div className="mb-4">
-                    <p className="mb-2.5 px-1 text-[11px] font-black uppercase tracking-wider text-slate-400">
-                      {lang === "ar"
-                        ? "الأقسام والعروض المميزة"
-                        : lang === "ku"
-                        ? "بەشە تایبەت و ئۆفەرەکان"
-                        : "Featured Sections"}
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {/* Flash Deals */}
-                      <Link
-                        to="/deals"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-teal-50/80 p-2.5 border border-teal-100/80 transition-all hover:bg-teal-100 hover:scale-[1.02]"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#007979] text-white shadow-sm">
-                          <Zap className="size-4.5 fill-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-teal-900">
-                            {lang === "ar"
-                              ? "عروض سريعة"
-                              : lang === "ku"
-                              ? "ئۆفەری خێرا"
-                              : "Flash Deals"}
-                          </span>
-                          <span className="block text-[10px] font-medium text-[#007979]">
-                            {lang === "ar"
-                              ? "خصومات قوية"
-                              : lang === "ku"
-                              ? "داشکاندنی بەهێز"
-                              : "Hot discounts"}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Special Offers */}
-                      <Link
-                        to="/offers"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-blue-50/80 p-2.5 border border-blue-100/80 transition-all hover:bg-blue-100 hover:scale-[1.02]"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
-                          <Tag className="size-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-blue-800">
-                            {lang === "ar"
-                              ? "تخفيضات خاصة"
-                              : lang === "ku"
-                              ? "داشکاندنی تایبەت"
-                              : "Special Offers"}
-                          </span>
-                          <span className="block text-[10px] font-medium text-blue-500">
-                            {lang === "ar"
-                              ? "عروض حصرية"
-                              : lang === "ku"
-                              ? "ئۆفەری تایبەت"
-                              : "Exclusive deals"}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Clinic Bundles */}
-                      <Link
-                        to="/bundles"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-amber-50/80 p-2.5 border border-amber-100/80 transition-all hover:bg-amber-100 hover:scale-[1.02]"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white shadow-sm">
-                          <Boxes className="size-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-amber-900">
-                            {lang === "ar"
-                              ? "باقات العيادات"
-                              : lang === "ku"
-                              ? "پاکێجی کلینیک"
-                              : "Clinic Bundles"}
-                          </span>
-                          <span className="block text-[10px] font-medium text-amber-600">
-                            {lang === "ar"
-                              ? "توفير أكبر"
-                              : lang === "ku"
-                              ? "پاشەکەوتی زۆرتر"
-                              : "Save more"}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Brands */}
-                      <Link
-                        to="/brands"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-purple-50/80 p-2.5 border border-purple-100/80 transition-all hover:bg-purple-100 hover:scale-[1.02]"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
-                          <Sparkles className="size-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-purple-900">
-                            {lang === "ar"
-                              ? "الماركات العالمية"
-                              : lang === "ku"
-                              ? "براندە جیهانییەکان"
-                              : "Brands"}
-                          </span>
-                          <span className="block text-[10px] font-medium text-purple-500">
-                            {lang === "ar"
-                              ? "3M, GC, Tokuyama"
-                              : lang === "ku"
-                              ? "براندی فەرمی"
-                              : "Official agents"}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Vendor Signup */}
-                      <Link
-                        to="/vendor-signup"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="flex items-center gap-2.5 rounded-2xl bg-emerald-50/80 p-2.5 border border-emerald-100/80 transition-all hover:bg-emerald-100 hover:scale-[1.02] sm:col-span-2"
-                      >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-                          <Store className="size-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="block truncate text-[12.5px] font-black text-emerald-900">
-                            {lang === "ar"
-                              ? "انضم كمورد / افتح متجرك"
-                              : lang === "ku"
-                              ? "وەک فرۆشیار بەشداربە"
-                              : "Sell with Us"}
-                          </span>
-                          <span className="block text-[10px] font-medium text-emerald-600">
-                            {lang === "ar"
-                              ? "سجل كشركة أو مستودع طبي"
-                              : lang === "ku"
-                              ? "تۆمارکردنی کۆمپانیا"
-                              : "Register vendor store"}
-                          </span>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Divider & Categories Grid */}
-                  <div className="border-t border-slate-100 pt-3">
-                    <div className="flex items-center justify-between mb-2 px-1">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                        {lang === "ar"
-                          ? "تصنيفات المواد والمستلزمات الطبية"
-                          : lang === "ku"
-                          ? "هاوپۆلەکانی کەرەستەی پزیشکی"
-                          : "Dental Categories"}
-                      </p>
-                      <Link
-                        to="/products"
-                        onClick={() => setIsCategoryMenuOpen(false)}
-                        className="text-[11.5px] font-bold text-primary hover:underline"
-                      >
-                        {lang === "ar" ? "عرض الكل" : lang === "ku" ? "بینینی هەمووی" : "View All"}
-                      </Link>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto pr-1">
-                      {categories.map((c) => {
-                        const Icon = categoryIcon(c.icon);
-                        const hasValidImage = c.image_url && !c.image_url.startsWith("/__l5e");
-                        return (
-                          <Link
-                            key={c.id}
-                            to="/products"
-                            search={{ cat: c.id } as never}
-                            onClick={() => setIsCategoryMenuOpen(false)}
-                            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[12.5px] font-bold text-slate-700 transition-colors hover:bg-slate-50 hover:text-primary"
-                          >
-                            <div
-                              style={tintStyle(c.hue, c.chroma)}
-                              className="flex size-7 items-center justify-center rounded-lg p-1 shrink-0 border border-slate-100/60"
-                            >
-                              {hasValidImage ? (
-                                <img
-                                  src={c.image_url!}
-                                  alt={pickName(c, lang)}
-                                  className="size-full object-contain"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                    if (e.currentTarget.nextElementSibling) {
-                                      (e.currentTarget.nextElementSibling as HTMLElement).style.display = "flex";
-                                    }
-                                  }}
-                                />
-                              ) : null}
-                              <div
-                                className="size-full items-center justify-center"
-                                style={{ display: hasValidImage ? "none" : "flex" }}
-                              >
-                                <Icon
-                                  className="size-4"
-                                  strokeWidth={2}
-                                  style={{ color: "var(--tint-strong)" }}
-                                />
-                              </div>
-                            </div>
-                            <span className="truncate">{pickName(c, lang)}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
+                <div className="hidden md:block absolute top-full mt-2.5 rtl:right-0 ltr:left-0 w-[560px] max-w-[90vw] overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {menuContentNode}
                 </div>
               )}
             </div>
@@ -695,6 +743,65 @@ export function GooshiHeader() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Category Drawer & Backdrop (< md) */}
+      {isMounted && isCategoryMenuOpen && typeof document !== "undefined" && Boolean(document.body)
+        ? createPortal(
+            <div className="md:hidden">
+              {/* Backdrop Overlay with blur - sits at z-[60] above bottom nav */}
+              <div
+                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+                onClick={() => setIsCategoryMenuOpen(false)}
+                aria-hidden="true"
+              />
+
+              {/* Slide-in Mobile Drawer - sits at z-[70] above bottom nav and floating cart */}
+              <div
+                id="mobile-category-drawer"
+                role="dialog"
+                aria-modal="true"
+                aria-label={
+                  lang === "ar"
+                    ? "الأقسام وتصنيفات المنتجات"
+                    : lang === "ku"
+                    ? "هاوپۆلی بەرهەمەکان و بەشەکان"
+                    : "Categories & Menu"
+                }
+                className="fixed inset-y-0 rtl:right-0 ltr:left-0 z-[70] flex h-full w-[85vw] max-w-sm flex-col bg-white dark:bg-card shadow-2xl overflow-hidden animate-in rtl:slide-in-from-right ltr:slide-in-from-left duration-250 ease-out"
+              >
+                {/* Header with Title and Close Button */}
+                <div className="flex shrink-0 items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3.5 bg-white/95 dark:bg-card/95 backdrop-blur-sm">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <Menu className="size-4.5" />
+                    </span>
+                    <span className="font-display text-[14px] font-black text-foreground">
+                      {lang === "ar"
+                        ? "الأقسام وتصنيفات المنتجات"
+                        : lang === "ku"
+                        ? "هاوپۆلی بەرهەمەکان و بەشەکان"
+                        : "Categories & Menu"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryMenuOpen(false)}
+                    className="flex size-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 transition cursor-pointer"
+                    aria-label="Close menu"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+
+                {/* Scrollable content container */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+                  {menuContentNode}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }

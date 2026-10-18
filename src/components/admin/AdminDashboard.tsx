@@ -24,12 +24,13 @@ import {
   Wallet,
   Zap,
   Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { PanelShell, type PanelGroup } from "@/components/panel/PanelShell";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { useI18n } from "@/lib/i18n";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useIsAdmin } from "@/hooks/useAuth";
 
 // Core Admin Modules
 const AdminOrders = lazy(() => import("@/components/admin/AdminOrders").then((m) => ({ default: m.AdminOrders })));
@@ -98,9 +99,38 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ initialTab }: AdminDashboardProps) {
   const { lang } = useI18n();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const isAdmin = useIsAdmin(user?.id);
   const [active, setActive] = useState<string | null>(initialTab ?? null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  if (!authLoading && user && isAdmin === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-rose-500/30 rounded-2xl p-6 text-center shadow-xl">
+          <div className="size-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto mb-4">
+            <ShieldAlert className="size-6" />
+          </div>
+          <h2 className="text-lg font-bold text-white mb-2">
+            {lang === "ku" ? "ڕێگەت پێ نەدراوە" : lang === "ar" ? "تم رفض الوصول" : "Access Denied"}
+          </h2>
+          <p className="text-sm text-slate-400 mb-6">
+            {lang === "ku"
+              ? "دەسەڵاتی بەڕێوەبەرایەتیت نییە بۆ بەکارهێنانی ئەم بەشە."
+              : lang === "ar"
+              ? "ليس لديك صلاحيات إدارية للوصول إلى لوحة التحكم."
+              : "You do not have administrative privileges to access this control panel."}
+          </p>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold transition"
+          >
+            {lang === "ku" ? "گەڕانەوە بۆ فرۆشگا" : lang === "ar" ? "العودة للمتجر" : "Return to Store"}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const handleOpenTab = (key: string) => {
     setActive(key);
