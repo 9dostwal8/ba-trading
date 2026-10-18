@@ -102,58 +102,6 @@ export const updateCurrentAdminEmail = createServerFn({ method: "POST" })
     return { success: true, email };
   });
 
-/** Secure Owner Activation: Ensure Dosty's account is verified and has admin role */
-export const claimSuperAdminForDosty = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Fetch user details from auth.users
-    const { data: userData, error: userErr } = await supabaseAdmin.auth.admin.getUserById(context.userId);
-    if (userErr || !userData?.user) throw new Error("User not found");
-
-    const user = userData.user;
-    const email = (user.email || "").toLowerCase();
-    const phone = (user.phone || "").replace(/\D/g, "");
-    const name = ((user.user_metadata?.["full_name"] || "") as string).toLowerCase();
-
-    // Check if user is Dosty
-    const isDosty =
-      email.includes("dosty") ||
-      email.includes("7702269722") ||
-      phone.includes("7702269722") ||
-      name.includes("dosty");
-
-    if (!isDosty) {
-      throw new Error("Unauthorized");
-    }
-
-    // 1. Update email to dosty.wal98@gmail.com and confirm
-    await supabaseAdmin.auth.admin.updateUserById(context.userId, {
-      email: "dosty.wal98@gmail.com",
-      email_confirm: true,
-      user_metadata: {
-        ...user.user_metadata,
-        full_name: "Dosty Rebwar",
-        phone: "07702269722",
-      },
-    });
-
-    // 2. Insert admin role into user_roles
-    await supabaseAdmin.from("user_roles").upsert(
-      { user_id: context.userId, role: "admin" },
-      { onConflict: "user_id,role" }
-    );
-
-    // 3. Update profile
-    await supabaseAdmin.from("profiles").upsert(
-      { id: context.userId, full_name: "Dosty Rebwar", phone: "07702269722" },
-      { onConflict: "id" }
-    );
-
-    return { success: true };
-  });
-
 /** Admin-only: list all user profiles with their assigned roles */
 export const fetchUsersWithRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -384,16 +332,42 @@ export const createStaffAccount = createServerFn({ method: "POST" })
       .from("user_roles")
       .upsert({ user_id: userId, role: data.role }, { onConflict: "user_id,role" });
 
-    // Store email and password reference in ui_texts
-    await supabaseAdmin.from("ui_texts").upsert(
+    // Save all credentials in ui_texts for phone login fallback and admin dashboard display
+    const credsEntries = [
+      {
+        key: `staff_name_${userId}`,
+        section: "staff_credentials",
+        ar: fullName,
+        ku: fullName,
+      },
+      {
+        key: `staff_phone_${userId}`,
+        section: "staff_credentials",
+        ar: phone,
+        ku: phone,
+      },
       {
         key: `staff_email_${userId}`,
         section: "staff_credentials",
         ar: email,
         ku: email,
+      {
+        key: `staff_pwd_${userId}`,
+        section: "staff_credentials",
+        ar: data.password,
+        ku: data.password,
       },
-      { onConflict: "key" }
-    );
+      {
+        key: `staff_role_${userId}`,
+        section: "staff_credentials",
+        ar: data.role,
+        ku: data.role,
+      },
+    ];
+
+    for (const entry of credsEntries) {
+      await supabaseAdmin.from("ui_texts").upsert(entry, { onConflict: "key" });
+    }
 
     return { userId, phone, fullName, email, role: data.role };
   });
@@ -426,10 +400,7 @@ export const lookupAdminLoginEmail = createServerFn({ method: "POST" })
     const cleanPhone = digits.replace(/^00964/, "").replace(/^964/, "").replace(/^0/, "");
     const withZero = `0${cleanPhone}`;
 
-    // 1. Direct Dosty admin check
-    if (cleanPhone === "7702269722" || cleanPhone.includes("7702269722")) {
-      return { email: "dosty.wal98@gmail.com" };
-    }
+    // Removed hardcoded Dosty check
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
