@@ -16,7 +16,7 @@ export function PhotoField({
 }: {
   value: string;
   onChange: (url: string) => void;
-  vendorId?: string | null;
+  vendorId?: string | null | undefined;
 }) {
   const { t, lang } = useI18n();
   const [busy, setBusy] = useState(false);

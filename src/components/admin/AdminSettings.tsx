@@ -390,10 +390,10 @@ export function AdminSettings() {
       };
 
       // Auto-fallback: if logo_url is provided but favicon_url is empty, sync favicon_url to logo_url (and vice versa)
-      if (patch.logo_url && !patch.favicon_url) {
-        patch.favicon_url = patch.logo_url;
-      } else if (patch.favicon_url && !patch.logo_url) {
-        patch.logo_url = patch.favicon_url;
+      if (patch["logo_url"] && !patch["favicon_url"]) {
+        patch["favicon_url"] = patch["logo_url"];
+      } else if (patch["favicon_url"] && !patch["logo_url"]) {
+        patch["logo_url"] = patch["favicon_url"];
       }
 
       const now = new Date().toISOString();
@@ -431,7 +431,7 @@ export function AdminSettings() {
       if (updatedRow) {
         setDraft(updatedRow);
       }
-      const fav = updatedRow?.favicon_url || updatedRow?.logo_url;
+      const fav = updatedRow?.["favicon_url"] || updatedRow?.["logo_url"];
       if (fav) {
         setDocumentFavicon(String(fav));
       }

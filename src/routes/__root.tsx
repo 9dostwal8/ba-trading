@@ -36,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
 
@@ -46,9 +46,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           حدث خطأ في تحميل الصفحة
         </h1>
-        {error?.message && (
+        {Boolean((error as any)?.message) && (
           <p className="mt-3 text-xs text-muted-foreground font-mono bg-muted/60 p-2 rounded-md max-h-32 overflow-auto text-left break-words" dir="ltr">
-            {error.message}
+            {(error as any).message}
           </p>
         )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">

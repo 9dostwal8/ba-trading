@@ -690,12 +690,12 @@ function ModernRowLink({
   hint,
   badge,
 }: {
-  to: "/orders" | "/brand" | "/profile/edit" | "/profile/wallet" | "/profile/addresses" | "/savings";
+  to: "/orders" | "/brand" | "/profile/edit" | "/profile/wallet" | "/profile/addresses" | "/savings" | "/profile/favorites";
   icon: ComponentType<{ className?: string }>;
-  iconColor?: string;
+  iconColor?: string | undefined;
   label: string;
-  hint?: string;
-  badge?: string;
+  hint?: string | undefined;
+  badge?: string | undefined;
 }) {
   return (
     <Link

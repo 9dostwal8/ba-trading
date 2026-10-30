@@ -18,7 +18,13 @@ export const Route = createFileRoute("/api/public/qi-webhook")({
         const raw = await request.text();
         const qi = await import("@/lib/qi.server");
 
-        const parsed = payloadSchema.safeParse(JSON.parse(raw));
+        let bodyJson: unknown;
+        try {
+          bodyJson = JSON.parse(raw);
+        } catch {
+          return new Response("Invalid JSON payload", { status: 400 });
+        }
+        const parsed = payloadSchema.safeParse(bodyJson);
         if (!parsed.success) return new Response("Invalid payload", { status: 400 });
         const event = parsed.data;
 

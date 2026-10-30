@@ -129,7 +129,7 @@ export function AdminBuilder() {
   const [previewLang, setPreviewLang] = useState<Lang>(language);
   const [dragId, setDragId] = useState<string | null>(null);
   const [history, setHistory] = useState<PageDocument[]>([]);
-  const page = PAGE_REGISTRY.find((entry) => entry.key === pageKey) ?? PAGE_REGISTRY[0];
+  const page = (PAGE_REGISTRY.find((entry) => entry.key === pageKey) ?? PAGE_REGISTRY[0])!;
   const row = documents?.find((item) => item.page === pageKey);
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export function AdminBuilder() {
   const modules = draft?.modules ?? [];
   const selected = modules.find((item) => item.id === selectedId);
   const dirty = useMemo(() => draft && page ? JSON.stringify(draft) !== JSON.stringify(pageDocumentFor(documents, page, "draft")) : false, [draft, documents, page]);
-  if (!page) return null;
+  // commit helper
 
   const commit = (next: PageDocument) => { if (draft) setHistory((items) => [...items.slice(-14), clone(draft)]); setDraft(next); };
   const updateModule = (next: PageModule) => commit({ version: draft?.version ?? 1, modules: modules.map((item) => item.id === next.id ? next : item) });
@@ -175,6 +175,8 @@ export function AdminBuilder() {
     const module: PageModule = { id, type: `custom-${kind}`, label: { ar: "محتوى مخصص", ku: "ناوەڕۆکی تایبەت", en: "Custom content" }, locked: false, enabled: true, region: "content", content: {}, style: { template: "default", tone: "primary", icon: "sparkles", padding: "normal", showMobile: true, showDesktop: true }, block: { kind, config: clone(DEFAULT_BLOCK_CONFIG[kind]) } };
     commit({ version: draft?.version ?? 1, modules: [...modules, module] }); setSelectedId(id);
   };
+
+  if (!page) return null;
 
   return <div className="space-y-3">
     <SectionHeader title={pick(WORDS.title, language)} action={<div className="flex gap-1.5"><Button size="sm" variant="outline" disabled={!dirty || save.isPending} onClick={() => save.mutate(false)}>{save.isPending ? <Loader2 className="animate-spin" /> : <Save />}{pick(WORDS.draft, language)}</Button><Button size="sm" disabled={!draft || save.isPending} onClick={() => save.mutate(true)}><Send />{pick(WORDS.publish, language)}</Button></div>} />

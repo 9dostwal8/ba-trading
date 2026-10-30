@@ -30,8 +30,8 @@ import { resolveAuthEmail, generateSystemEmail } from "@/lib/auth-helpers";
 
 // Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
 function getIsolatedAuthClient() {
-  const url = import.meta.env.VITE_SUPABASE_URL || "https://yiaykxjwvwibotildtpo.supabase.co";
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
+  const url = import.meta.env["VITE_SUPABASE_URL"] || "https://yiaykxjwvwibotildtpo.supabase.co";
+  const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
   return createClient(url, key, {
     auth: {
       persistSession: false,
@@ -196,7 +196,7 @@ export function SettingsUsersTab() {
         supabase.auth.getUser().catch(() => ({ data: { user: null } })),
         supabase
           .from("profiles")
-          .select("id, full_name, phone, created_at, avatar_url")
+          .select("id, full_name, phone, created_at")
           .order("created_at", { ascending: false }),
         supabase.from("user_roles").select("user_id, role"),
         supabase
@@ -273,7 +273,7 @@ export function SettingsUsersTab() {
           email: savedEmail,
           username,
           saved_password: "",
-          avatar_url: p.avatar_url || null,
+          avatar_url: null,
           created_at: p.created_at,
           role,
           roles: userRoles.length > 0 ? userRoles : [role],
@@ -298,7 +298,7 @@ export function SettingsUsersTab() {
             full_name: savedName,
             phone: savedPhone,
             email: savedEmail,
-            username: savedPhone || (savedEmail ? savedEmail.split("@")[0] : `staff_${userId.slice(0, 6)}`),
+            username: savedPhone || (savedEmail ? (savedEmail.split("@")[0] ?? "") : `staff_${userId.slice(0, 6)}`),
             saved_password: "",
             avatar_url: null,
             created_at: new Date().toISOString(),
@@ -328,7 +328,7 @@ export function SettingsUsersTab() {
             full_name: savedName,
             phone: savedPhone,
             email: savedEmail,
-            username: savedPhone || (savedEmail ? savedEmail.split("@")[0] : `staff_${userId.slice(0, 6)}`),
+            username: savedPhone || (savedEmail ? (savedEmail.split("@")[0] ?? "") : `staff_${userId.slice(0, 6)}`),
             saved_password: "",
             avatar_url: null,
             created_at: new Date().toISOString(),
@@ -369,7 +369,7 @@ export function SettingsUsersTab() {
             full_name: metaName || "Admin Staff",
             phone: metaPhone,
             email: metaEmail,
-            username: metaPhone || (metaEmail ? metaEmail.split("@")[0] : currentUser.id.slice(0, 6)),
+            username: metaPhone || (metaEmail ? (metaEmail.split("@")[0] ?? "") : currentUser.id.slice(0, 6)),
             saved_password: "",
             avatar_url: null,
             created_at: currentUser.created_at || new Date().toISOString(),

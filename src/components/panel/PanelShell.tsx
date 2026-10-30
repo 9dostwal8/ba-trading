@@ -67,10 +67,10 @@ export type ScreenItem = AppEntry | FolderEntry;
 
 interface DragState {
   source: "root" | "folder";
-  itemIndex?: number;
+  itemIndex?: number | undefined;
   item: ScreenItem;
-  appKey?: string;
-  folderId?: string;
+  appKey?: string | undefined;
+  folderId?: string | undefined;
 }
 
 interface DragOverState {
@@ -152,7 +152,7 @@ function reconcileLayout(rawList: ScreenItem[], items: PanelItem[]): ScreenItem[
           appKeys: validAppKeys,
         });
       } else if (validAppKeys.length === 1) {
-        cleaned.push({ type: "app", key: validAppKeys[0] });
+        cleaned.push({ type: "app", key: validAppKeys[0] ?? "" });
       }
     }
   }
@@ -212,7 +212,7 @@ export function PanelShell({
   onClose: () => void;
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
-  userId?: string;
+  userId?: string | undefined;
   children?: ReactNode;
 }) {
   const { lang } = useI18n();
@@ -293,11 +293,13 @@ export function PanelShell({
     // Sync from Supabase ui_texts cloud backup if userId is available
     if (userId) {
       const remoteKey = `dashboard_layout_${userId}`;
-      supabase
-        .from("ui_texts")
-        .select("en")
-        .eq("key", remoteKey)
-        .maybeSingle()
+      Promise.resolve(
+        supabase
+          .from("ui_texts")
+          .select("en")
+          .eq("key", remoteKey)
+          .maybeSingle()
+      )
         .then(({ data }) => {
           if (data?.en) {
             try {
@@ -337,20 +339,22 @@ export function PanelShell({
 
     if (userId) {
       const remoteKey = `dashboard_layout_${userId}`;
-      supabase
-        .from("ui_texts")
-        .upsert(
-          {
-            key: remoteKey,
-            section: "admin_screen_layout",
-            en: JSON.stringify(newLayout),
-            ar: "",
-            ku: "",
-          },
-          { onConflict: "key" }
-        )
+      Promise.resolve(
+        supabase
+          .from("ui_texts")
+          .upsert(
+            {
+              key: remoteKey,
+              section: "admin_screen_layout",
+              en: JSON.stringify(newLayout),
+              ar: "",
+              ku: "",
+            },
+            { onConflict: "key" }
+          )
+      )
         .then(() => {})
-        .catch((err) => console.warn("Failed to sync layout to cloud:", err));
+        .catch((err: unknown) => console.warn("Failed to sync layout to cloud:", err));
     }
   };
 
@@ -434,7 +438,7 @@ export function PanelShell({
       // 1 item left -> convert folder back into regular app tile
       const folderIndex = screenItems.findIndex((item) => item.type === "folder" && item.id === folderId);
       updated = [...screenItems];
-      updated.splice(folderIndex, 1, { type: "app", key: remainingKeys[0] }, { type: "app", key: appKey });
+      updated.splice(folderIndex, 1, { type: "app", key: remainingKeys[0] ?? "" }, { type: "app", key: appKey });
       setOpenFolderId(null);
     } else {
       // Update folder with remaining keys, place removed app right next to folder
@@ -554,7 +558,7 @@ export function PanelShell({
           ? targetIndex - 1
           : targetIndex;
 
-      updated.splice(Math.max(0, insertAt), 0, moved);
+      if (moved) updated.splice(Math.max(0, insertAt), 0, moved);
       saveLayout(updated);
     }
 

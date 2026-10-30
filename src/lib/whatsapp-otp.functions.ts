@@ -7,7 +7,11 @@ const otpSchema = z.object({
   lang: z.enum(["ar", "ku", "en"]).default("ar"),
 });
 
-const GREEN_API_URL = "https://7107.api.greenapi.com/waInstance710722723229/sendMessage/47c9b8d2bd2e4f10a30c44b8a273a3951277c20da1a5495bb6";
+const GREEN_API_URL =
+  process.env["GREEN_API_URL"] ||
+  (process.env["GREEN_API_INSTANCE_ID"] && process.env["GREEN_API_TOKEN"]
+    ? `https://7107.api.greenapi.com/waInstance${process.env["GREEN_API_INSTANCE_ID"]}/sendMessage/${process.env["GREEN_API_TOKEN"]}`
+    : "https://7107.api.greenapi.com/waInstance710722723229/sendMessage/47c9b8d2bd2e4f10a30c44b8a273a3951277c20da1a5495bb6");
 
 export const sendWhatsAppOtp = createServerFn({ method: "POST" })
   .validator((input: unknown) => otpSchema.parse(input))

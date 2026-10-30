@@ -59,8 +59,8 @@ export function SiteMeta({
   settings: propSettings,
   lang: propLang,
 }: {
-  settings?: StoreSettings | null;
-  lang?: Lang;
+  settings?: StoreSettings | null | undefined;
+  lang?: Lang | undefined;
 } = {}) {
   const { lang: contextLang } = useI18n();
   const { data: storeData } = useQuery({

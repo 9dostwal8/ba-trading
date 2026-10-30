@@ -74,8 +74,9 @@ const IRAQI_CITIES = [
 ];
 
 function generateSecureOtp(): string {
-  if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+  if (typeof window !== "undefined" && window.crypto) {
     const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
     return (100000 + ((array[0] ?? 0) % 900000)).toString();
   }
   return Math.floor(100000 + Math.random() * 900000).toString();

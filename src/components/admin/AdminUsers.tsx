@@ -42,13 +42,14 @@ import {
   adminCreateNewUser,
   adminDeleteUser,
   adminSetUserPassword,
+  deleteUserCompletely,
 } from "@/lib/admin-users.functions";
 import { resolveAuthEmail } from "@/lib/auth-helpers";
 
 // Dedicated isolated client: creates new users in Auth WITHOUT touching or overwriting the active admin session!
 function getIsolatedAuthClient() {
-  const url = import.meta.env.VITE_SUPABASE_URL || "https://yiaykxjwvwibotildtpo.supabase.co";
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
+  const url = import.meta.env["VITE_SUPABASE_URL"] || "https://yiaykxjwvwibotildtpo.supabase.co";
+  const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "sb_publishable_ecUDK7NsmMOTJO6itBoLcg_PQpHWpOG";
   return createClient(url, key, {
     auth: {
       persistSession: false,
@@ -91,10 +92,10 @@ class AdminUsersErrorBoundary extends Component<
   static getDerivedStateFromError(error: any) {
     return { hasError: true, errorMsg: String(error?.message || error) };
   }
-  componentDidCatch(error: any, errorInfo: any) {
+  override componentDidCatch(error: any, errorInfo: any) {
     console.error("AdminUsers error caught:", error, errorInfo);
   }
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/50 space-y-4 max-w-lg mx-auto my-8">
@@ -234,7 +235,7 @@ function AdminUsersContent() {
             id: newUserId,
             full_name: addFullName.trim(),
             phone: cleanPhone,
-            city: addCity.trim() || null,
+            ...(addCity.trim() ? { city: addCity.trim() } : {}),
             updated_at: new Date().toISOString(),
           },
           { onConflict: "id" }
@@ -306,7 +307,7 @@ function AdminUsersContent() {
             phone: cleanPhone,
             password: addPassword,
             role: addRole,
-            city: addCity.trim() || undefined,
+            ...(addCity.trim() ? { city: addCity.trim() } : {}),
             email: finalEmail,
           },
         });

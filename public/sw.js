@@ -14,8 +14,8 @@ self.addEventListener("push", (event) => {
   const title = p.title || "OfferDent";
   const options = {
     body: p.body || "",
-    icon: p.icon || "/favicon.ico",
-    badge: "/favicon.ico",
+    icon: p.icon || "/favicon.svg",
+    badge: "/favicon.svg",
     dir: p.dir || "rtl",
     lang: p.lang || "ar",
     tag: p.tag || undefined,

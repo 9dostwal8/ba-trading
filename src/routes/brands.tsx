@@ -44,7 +44,7 @@ interface BrandItem {
   name: string;
   mark: string;
   matchKey: string;
-  card?: BrandCard;
+  card?: BrandCard | undefined;
   count: number;
 }
 
@@ -61,7 +61,7 @@ function BrandsPage() {
 
   // Discover and aggregate all unique brands from products + brandCards
   const brandsList = useMemo(() => {
-    const brandMap = new Map<string, { card?: BrandCard; count: number; name: string; mark: string }>();
+    const brandMap = new Map<string, { card?: BrandCard | undefined; count: number; name: string; mark: string }>();
 
     // 1. Seed with configured brand cards
     brandCards.forEach((b) => {
@@ -82,7 +82,6 @@ function BrandsPage() {
 
       if (!brandMap.has(key)) {
         brandMap.set(key, {
-          card: undefined,
           count: 1,
           name: raw,
           mark: raw.slice(0, 3).toUpperCase(),

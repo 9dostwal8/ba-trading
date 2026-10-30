@@ -238,6 +238,89 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          bundle_id: string | null
+          bundle_title_ar: string | null
+          bundle_title_ku: string | null
+          created_at: string
+          id: string
+          price: number
+          product_id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bundle_id?: string | null
+          bundle_title_ar?: string | null
+          bundle_title_ku?: string | null
+          created_at?: string
+          id?: string
+          price?: number
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bundle_id?: string | null
+          bundle_title_ar?: string | null
+          bundle_title_ku?: string | null
+          created_at?: string
+          id?: string
+          price?: number
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bundles: {
         Row: {
           chroma: number

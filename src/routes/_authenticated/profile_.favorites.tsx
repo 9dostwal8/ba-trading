@@ -140,7 +140,13 @@ function FavoritesPage() {
         id: p.id,
         name_ar: p.name_ar,
         name_ku: p.name_ku,
-        price: effectivePrice(p),
+        price: effectivePrice(
+          p,
+          storeData?.offers ?? [],
+          storeData?.offerProducts ?? [],
+          1,
+          storeData?.flashDeals ?? [],
+        ),
         image_url: p.image_url,
         vendor_id: p.vendor_id ?? null,
       });
@@ -243,7 +249,13 @@ function FavoritesPage() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  price={effectivePrice(product)}
+                  price={effectivePrice(
+                    product,
+                    storeData?.offers ?? [],
+                    storeData?.offerProducts ?? [],
+                    1,
+                    storeData?.flashDeals ?? [],
+                  )}
                 />
               ))}
             </div>

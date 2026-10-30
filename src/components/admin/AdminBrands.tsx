@@ -43,11 +43,11 @@ type FilterTab = "all" | "featured" | "in_stock" | "out_of_stock";
 type SortOption = "most_products" | "name_asc" | "highest_stock" | "highest_price";
 
 interface BrandAggregation {
-  id?: string;
+  id?: string | undefined;
   name: string;
   mark: string;
   matchKey: string;
-  card?: BrandCard;
+  card?: BrandCard | undefined;
   isFeatured: boolean;
   totalProducts: number;
   inStockCount: number;
@@ -101,14 +101,14 @@ export function AdminBrands() {
   const vendorMap = useMemo(() => {
     const map = new Map<string, string>();
     vendors.forEach((v: Vendor) => {
-      map.set(v.id, v.store_name || v.name);
+      map.set(v.id, v.name);
     });
     return map;
   }, [vendors]);
 
   // 4. Toggle Feature / Showcase mutation
   const toggleFeatureMutation = useMutation({
-    mutationFn: async ({ brandName, currentCard }: { brandName: string; currentCard?: BrandCard }) => {
+    mutationFn: async ({ brandName, currentCard }: { brandName: string; currentCard?: BrandCard | undefined }) => {
       if (currentCard) {
         // Toggle active status
         const nextActive = !currentCard.is_active;
@@ -155,7 +155,7 @@ export function AdminBrands() {
 
   // 5. Aggregate all unique brands from products + brandCards
   const brandList = useMemo(() => {
-    const brandMap = new Map<string, { products: Product[]; card?: BrandCard }>();
+    const brandMap = new Map<string, { products: Product[]; card?: BrandCard | undefined }>();
 
     // Index from brandCards first
     brandCards.forEach((b) => {
@@ -174,7 +174,7 @@ export function AdminBrands() {
       const normKey = rawBrand.toLowerCase();
 
       if (!brandMap.has(normKey)) {
-        brandMap.set(normKey, { products: [p], card: undefined });
+        brandMap.set(normKey, { products: [p] });
       } else {
         brandMap.get(normKey)!.products.push(p);
       }

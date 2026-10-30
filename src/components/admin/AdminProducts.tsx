@@ -453,7 +453,7 @@ export function AdminProducts() {
                   }`}
                 >
                   <Select
-                    value={draft.category_id || undefined}
+                    value={draft.category_id || ""}
                     onValueChange={(v) => setDraft({ ...draft, category_id: v })}
                   >
                     <SelectTrigger
@@ -476,7 +476,7 @@ export function AdminProducts() {
 
               <Field label={t("brandManager")}>
                 <Select
-                  value={draft.vendor_id || undefined}
+                  value={draft.vendor_id || ""}
                   onValueChange={(v) =>
                     setDraft({
                       ...draft,
