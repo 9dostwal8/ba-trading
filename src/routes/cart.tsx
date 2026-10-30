@@ -39,6 +39,7 @@ import { CartRewardsCard } from "@/components/cart/CartRewardsCard";
 import { useCanOrder } from "@/hooks/useCanOrder";
 import { lineKey, useCart, type CartItem } from "@/lib/cart";
 import { startQiPayment } from "@/lib/qi.functions";
+import { placeOrderSecure } from "@/lib/order.functions";
 import { formatPrice, pickName, useI18n } from "@/lib/i18n";
 import { useMyWallet } from "@/lib/wallet";
 import {
@@ -206,7 +207,6 @@ const DELIV = {
     ku: "دەگەیەنرێت بۆ",
     en: "Delivering to",
   },
-
 };
 
 
@@ -233,6 +233,7 @@ function CartPage() {
   const coinBalance = Math.floor(myWallet?.balance ?? 0);
   const coinsFrozen = myWallet?.frozen === true;
   const startPayment = useServerFn(startQiPayment);
+  const placeOrderServerFn = useServerFn(placeOrderSecure);
   const payCopy = PAY_COPY[lang === "ku" ? "ku" : lang === "en" ? "en" : "ar"];
 
 
@@ -328,8 +329,6 @@ function CartPage() {
   const finalCity = (form.city || savedLoc.city).trim();
   const finalAddress = (form.address || savedLoc.line || finalCity).trim();
 
-
-
   const discount = coupon
     ? coupon.discount_type === "fixed"
       ? Math.min(Number(coupon.discount_value), cart.subtotal)
@@ -405,94 +404,66 @@ function CartPage() {
 
     setPlacing(true);
     const picked = addresses?.find((a) => a.id === addressId);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        customer_name: form.name,
-        phone: form.phone,
-        city: finalCity,
-        address_line: finalAddress,
-        latitude: picked?.latitude ?? null,
-        longitude: picked?.longitude ?? null,
-        note: [form.note || null, multiVendor ? multiVendorNote : null]
-          .filter(Boolean)
-          .join(" — ") || null,
-        coupon_code: coupon?.code ?? null,
-        // Money is recomputed server-side from the real lines, coupon and
-        // delivery settings — these are only an optimistic placeholder.
-        subtotal: cart.subtotal,
-        discount,
-        total,
-        payment_method: payMethod,
-      })
-      .select()
-      .single();
 
-    if (error || !order) {
-      setPlacing(false);
-      toast.error(error?.message ?? t("error"));
-      return;
-    }
-
-    const { error: itemsError } = await supabase.from("order_items").insert(
-      cart.items.map((i) => ({
-        order_id: order.id,
-        product_id: i.id,
-        bundle_id: i.bundle_id ?? null,
-        name_ar: i.name_ar,
-        name_ku: i.name_ku,
-        unit_price: i.price,
-        quantity: i.quantity,
-        image_url: i.image_url,
-      })),
-    );
-
-    if (itemsError) {
-      setPlacing(false);
-      toast.error(itemsError.message);
-      return;
-    }
-
-    if (useCoins && coinsReady) {
-      const { error: coinError } = await supabase.rpc("reward_redeem_order", {
-        _order_id: order.id,
-        _points: spendableCoins,
+    try {
+      const order = await placeOrderServerFn({
+        data: {
+          items: cart.items.map((i) => ({
+            productId: i.id,
+            quantity: i.quantity,
+            bundleId: i.bundle_id ?? null,
+          })),
+          customerName: form.name.trim(),
+          phone: form.phone.trim(),
+          city: finalCity,
+          addressLine: finalAddress,
+          latitude: picked?.latitude ?? null,
+          longitude: picked?.longitude ?? null,
+          note: form.note || null,
+          couponCode: coupon?.code ?? null,
+          paymentMethod: payMethod,
+          useCoins: Boolean(useCoins && coinsReady),
+          spendableCoins: useCoins && coinsReady ? spendableCoins : 0,
+        },
       });
-      if (coinError) toast.error(payCopy.coinsFail);
-      else toast.success(payCopy.coinsDone);
-    }
 
-    if (payMethod === "qi") {
-      try {
-        const res = await startPayment({
-          data: {
-            orderId: order.id,
-            origin: window.location.origin,
-            locale: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
-          },
-        });
-        cart.clear();
-        if (res.formUrl) {
-          window.location.href = res.formUrl;
+      if (useCoins && coinsReady) {
+        toast.success(payCopy.coinsDone);
+      }
+
+      if (payMethod === "qi") {
+        try {
+          const res = await startPayment({
+            data: {
+              orderId: order.orderId,
+              origin: window.location.origin,
+              locale: lang === "ku" ? "ku" : lang === "en" ? "en" : "ar",
+            },
+          });
+          cart.clear();
+          if (res.formUrl) {
+            window.location.href = res.formUrl;
+            return;
+          }
+          setPlacing(false);
+          navigate({ to: "/payment/$orderId", params: { orderId: order.orderId } });
+          return;
+        } catch (err) {
+          setPlacing(false);
+          toast.error(err instanceof Error ? err.message : payCopy.payError);
           return;
         }
-        setPlacing(false);
-        navigate({ to: "/payment/$orderId", params: { orderId: order.id } });
-        return;
-      } catch (err) {
-        setPlacing(false);
-        toast.error(err instanceof Error ? err.message : payCopy.payError);
-        return;
       }
+
+      setPlacing(false);
+      cart.clear();
+      toast.success(t("orderPlaced"));
+      navigate({ to: "/orders" });
+    } catch (err) {
+      setPlacing(false);
+      toast.error(err instanceof Error ? err.message : t("error"));
     }
-
-    setPlacing(false);
-    cart.clear();
-    toast.success(t("orderPlaced"));
-    navigate({ to: "/orders" });
   }
-
 
   if (cart.items.length === 0)
     return (
